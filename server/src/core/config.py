@@ -1,17 +1,18 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "siftrio"
     PROJECT_VERSION: str = "0.1.0"
-    API_VERSION: str = "v1"
-    FRONTEND_URL: str = "http://localhost:3000"
-    DATABASE_URL: str | None = None
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_PORT: str = "5432"
-    POSTGRES_DB: str = "ai_project_memory"
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL") or "http://localhost:3000"
+    DATABASE_URL: str = os.getenv("DATABASE_URL") or "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_project_memory"
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER") or "postgres"
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD") or "postgres"
+    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER") or "localhost"
+    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT") or "5432"
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB") or "ai_project_memory"
 
     @property
     def database_url(self) -> str:
