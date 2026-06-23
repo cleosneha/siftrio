@@ -1,0 +1,57 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.v1 import api_router
+from src.core.config import settings
+from src.exceptions.base import BaseAPIException
+from src.exceptions.handlers import (
+    base_exception_handler,
+    global_exception_handler,
+    validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        version=settings.PROJECT_VERSION,
+    )
+
+    register_middlewares(app)
+    register_exception_handlers(app)
+    register_routes(app)
+
+    return app
+
+
+def register_middlewares(app: FastAPI) -> None:
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        settings.FRONTEND_URL,
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(BaseAPIException, base_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(Exception, global_exception_handler)
+
+
+def register_routes(app: FastAPI) -> None:
+    prefix = f"/api"
+    app.include_router(api_router, prefix=prefix)
+
+
+app = create_app()
