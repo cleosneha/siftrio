@@ -35,9 +35,10 @@ class MeetingChunk(UUIDMixin, TimestampMixin, Base):
         back_populates="chunks",
     )
     
-    metadata: Mapped[dict | None] = mapped_column(
+    chunk_metadata: Mapped[dict | None] = mapped_column(
     JSONB,
     nullable=True,
+    default=dict,
     )
 
     __table_args__ = (

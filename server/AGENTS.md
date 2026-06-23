@@ -285,6 +285,7 @@ Prefer:
 }
 
 Avoid free-form text whenever data will be persisted.
+No need to add API_VERSION
 
 ---
 
