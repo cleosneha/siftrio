@@ -340,6 +340,7 @@ github_tool.py
 - Single responsibility principle.
 - Consistent naming.
 - Remove dead code immediately.
+- Use Pydantic wherever required, don't miss it anyhow.
 
 ##
 
