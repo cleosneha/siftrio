@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER") or "localhost"
     POSTGRES_PORT: str = os.getenv("POSTGRES_PORT") or "5432"
     POSTGRES_DB: str = os.getenv("POSTGRES_DB") or "ai_project_memory"
+    MISTRAL_API_KEY: str = os.getenv("MISTRAL_API_KEY") or ""
 
     @property
     def database_url(self) -> str:
@@ -31,3 +32,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.MISTRAL_API_KEY:
+    os.environ["MISTRAL_API_KEY"] = settings.MISTRAL_API_KEY

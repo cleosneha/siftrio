@@ -48,7 +48,6 @@ class Project(UUIDMixin, TimestampMixin, Base):
     meetings = relationship(
         "Meeting",
         back_populates="project",
-        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
