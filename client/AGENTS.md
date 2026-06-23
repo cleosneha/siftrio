@@ -159,6 +159,12 @@ Avoid fixed widths.
 
 Use responsive utility classes consistently.
 
+Use Shadcn library for everything, don't creating everything by your own, just install whatever required and use it.
+
+Use Cursor Pointer wherever required.
+
+The modal should have a different color so that they don't blend and look mixed into the background, the background should get blurred when modal opens.
+
 ---
 
 ### Clean and Functional UI
@@ -175,6 +181,8 @@ Avoid excessive animations.
 Avoid visual clutter.
 
 Prioritize functionality over decoration.
+
+Use only react icons wherever required.
 
 ---
 
@@ -279,6 +287,7 @@ project.service.ts
 - Use Client Components only when needed.
 - Lazy load heavy components.
 - Minimize unnecessary re-renders.
+- Add proper Error Handling and loading states.
 
 ---
 
