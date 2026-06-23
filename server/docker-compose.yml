@@ -1,7 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: kairo-postgres
+    container_name: siftrio-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Kairo"
+    PROJECT_NAME: str = "siftrio"
     PROJECT_VERSION: str = "0.1.0"
     API_VERSION: str = "v1"
     FRONTEND_URL: str = "http://localhost:3000"
