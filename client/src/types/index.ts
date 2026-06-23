@@ -31,3 +31,16 @@ export interface Project {
   created_at: string | null;
   updated_at: string | null;
 }
+
+export interface Meeting {
+  id: string;
+  client_id: string;
+  project_id: string | null;
+  title: string;
+  meeting_type: "project" | "miscellaneous";
+  tags: string[];
+  transcript: string | null;
+  meeting_date: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
