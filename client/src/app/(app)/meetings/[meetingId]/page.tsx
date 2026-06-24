@@ -1,8 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { Menu, ArrowLeft, RefreshCw, Upload, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,7 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAppContext } from "@/lib/app-context";
+import {
+  useAppContext
+} from "@/lib/app-context";
 import {
   useMeeting,
   useMeetingAnalysis,
@@ -75,6 +76,9 @@ export default function MeetingPage() {
     await uploadTranscript.mutateAsync({ meetingId, file });
   };
 
+  const providerLabel =
+    meeting?.meeting_provider === "google_meet" ? "Google Meet" : "Manual";
+
   return (
     <>
       <header className="flex items-center gap-3 border-b px-4 py-3 md:px-6">
@@ -123,6 +127,25 @@ export default function MeetingPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        {meeting && (
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <Badge variant="outline">
+              <Video className="mr-1 h-3 w-3" />
+              {providerLabel}
+            </Badge>
+            {meeting.meeting_url && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => window.open(meeting.meeting_url!, "_blank")}
+              >
+                <ExternalLink className="mr-1.5 h-4 w-4" />
+                Join Meeting
+              </Button>
+            )}
+          </div>
+        )}
+
         {!meeting?.transcript ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
             <h3 className="mb-2 text-lg font-medium">No transcript yet</h3>
