@@ -48,6 +48,7 @@ class User(UUIDMixin, TimestampMixin, Base):
         "Workspace",
         back_populates="creator",
         foreign_keys="Workspace.created_by",
+        cascade="all, delete-orphan",
     )
 
     created_clients = relationship(

@@ -13,6 +13,11 @@ class MeetingType(str, Enum):
     MISCELLANEOUS = "miscellaneous"
 
 
+class MeetingProvider(str, Enum):
+    MANUAL = "manual"
+    GOOGLE_MEET = "google_meet"
+
+
 class Meeting(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "meetings"
 
@@ -64,6 +69,27 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
 
     meeting_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
+        nullable=True,
+    )
+
+    start_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    end_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    meeting_provider: Mapped[MeetingProvider] = mapped_column(
+        SQLEnum(MeetingProvider),
+        default=MeetingProvider.MANUAL,
+        nullable=False,
+    )
+
+    meeting_url: Mapped[str | None] = mapped_column(
+        Text,
         nullable=True,
     )
 
