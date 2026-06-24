@@ -8,6 +8,18 @@ from src.models.base import Base, TimestampMixin, UUIDMixin
 class Client(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "clients"
 
+    created_by: Mapped[UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    creator = relationship(
+        "User",
+        back_populates="created_clients",
+        foreign_keys=[created_by],
+    )
+
     workspace_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("workspaces.id", ondelete="CASCADE"),

@@ -17,6 +17,18 @@ class ProjectStatus(str, Enum):
 class Project(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "projects"
 
+    created_by: Mapped[UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    creator = relationship(
+        "User",
+        back_populates="created_projects",
+        foreign_keys=[created_by],
+    )
+
     client_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("clients.id", ondelete="CASCADE"),

@@ -4,6 +4,8 @@ from src.models.project import Project
 from src.models.meeting import Meeting
 from src.models.meeting_chunk import MeetingChunk
 from src.models.meeting_analysis import MeetingAnalysis
+from src.models.user import User
+from src.models.user_integration import UserIntegration
 
 __all__ = [
     "Workspace",
@@ -12,4 +14,6 @@ __all__ = [
     "Meeting",
     "MeetingChunk",
     "MeetingAnalysis",
+    "User",
+    "UserIntegration",
 ]

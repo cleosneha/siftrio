@@ -16,6 +16,18 @@ class MeetingType(str, Enum):
 class Meeting(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "meetings"
 
+    created_by: Mapped[UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    creator = relationship(
+        "User",
+        back_populates="created_meetings",
+        foreign_keys=[created_by],
+    )
+
     client_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("clients.id", ondelete="CASCADE"),
