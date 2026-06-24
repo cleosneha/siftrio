@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from fastapi import Request
@@ -6,6 +7,8 @@ from fastapi.responses import JSONResponse
 
 from src.exceptions.base import BaseAPIException
 from src.schemas.base_response import ErrorResponse
+
+logger = logging.getLogger(__name__)
 
 
 async def base_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:
@@ -33,6 +36,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error("Unhandled exception: %s", exc, exc_info=True)
     return JSONResponse(
         status_code=500,
         content=ErrorResponse(
