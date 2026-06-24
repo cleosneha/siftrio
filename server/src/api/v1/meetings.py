@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.database import get_db
+from src.core.database import async_session_factory, get_db
 from src.middlewares.auth import require_authenticated_user
 from src.repositories.meeting_repository import MeetingRepository
 from src.schemas.base_response import BaseResponse
@@ -12,6 +12,7 @@ from src.schemas.meeting_schema import (
     MeetingResponse,
     TranscriptStatusResponse,
 )
+from src.services.fireflies_service import process_fireflies_transcript
 from src.services.meeting_service import MeetingService
 
 router = APIRouter(
@@ -138,6 +139,37 @@ async def get_transcript_status(
             fireflies_meeting_id=meeting.fireflies_meeting_id,
         ).model_dump()
     )
+
+
+@router.post("/{meeting_id}/retry-transcript", response_model=BaseResponse)
+async def retry_transcript(
+    meeting_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    meeting = await MeetingRepository(db).get_by_id(UUID(meeting_id))
+    if meeting is None:
+        return BaseResponse(success=False, message="Meeting not found", data=None)
+
+    if not meeting.fireflies_meeting_id:
+        return BaseResponse(
+            success=False,
+            message="No Fireflies meeting ID associated with this meeting",
+            data=None,
+        )
+
+    try:
+        async with async_session_factory() as session:
+            result = await process_fireflies_transcript(session, meeting.fireflies_meeting_id)
+        return BaseResponse(
+            message="Transcript retrieved and processed successfully",
+            data=result,
+        )
+    except Exception as e:
+        return BaseResponse(
+            success=False,
+            message=f"Failed to retrieve transcript: {e}",
+            data=None,
+        )
 
 
 @router.delete("/{meeting_id}", response_model=BaseResponse)

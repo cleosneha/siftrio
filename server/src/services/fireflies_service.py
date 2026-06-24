@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 
 import httpx
 
@@ -21,12 +22,26 @@ def verify_webhook_signature(payload: bytes, signature: str) -> bool:
     if not secret:
         logger.warning("FIREFLIES_WEBHOOK_SECRET not configured")
         return False
+
+    raw_sig = signature
+    if signature.startswith("sha256="):
+        raw_sig = signature[7:]
+
     expected = hmac.new(
         secret.encode("utf-8"),
         payload,
         hashlib.sha256,
     ).hexdigest()
-    return hmac.compare_digest(expected, signature)
+
+    logger.info(
+        "Signature verification - received prefix: %s, received length: %s, expected length: %s, match: %s",
+        signature[:20] + ("..." if len(signature) > 20 else ""),
+        len(signature),
+        len(expected),
+        hmac.compare_digest(expected, raw_sig),
+    )
+
+    return hmac.compare_digest(expected, raw_sig)
 
 
 async def fetch_fireflies_transcript(meeting_id: str) -> dict | None:
@@ -43,7 +58,6 @@ async def fetch_fireflies_transcript(meeting_id: str) -> dict | None:
         date
         calendar_id
         meeting_link
-        conference_id
         transcript_url
         duration
         sentences {
@@ -105,6 +119,51 @@ def _build_transcript_text(transcript: dict) -> str:
     return "\n".join(lines) if lines else transcript.get("title", "")
 
 
+async def _find_meeting(repo: MeetingRepository, transcript: dict, fireflies_meeting_id: str):
+    """Try to match a transcript to a meeting using multiple strategies."""
+    match_log = {"fireflies_meeting_id": fireflies_meeting_id}
+
+    calendar_id = transcript.get("calendar_id")
+    if calendar_id:
+        meeting = await repo.find_by_google_event_id(calendar_id)
+        if meeting:
+            logger.info("Matched meeting %s by calendar_id: %s", meeting.id, calendar_id)
+            return meeting
+        match_log["calendar_id"] = calendar_id
+
+    meeting_link = transcript.get("meeting_link")
+    if meeting_link:
+        normalized = meeting_link.rstrip("/")
+        meeting = await repo.find_by_google_meet_url(normalized)
+        if meeting:
+            logger.info("Matched meeting %s by meeting_link: %s", meeting.id, normalized)
+            return meeting
+        meet_code = _extract_meet_code(meeting_link)
+        if meet_code:
+            meeting = await repo.find_by_google_meet_code(meet_code)
+            if meeting:
+                logger.info("Matched meeting %s by meet_code extracted from link: %s", meeting.id, meet_code)
+                return meeting
+        match_log["meeting_link"] = meeting_link
+
+    meeting = await repo.find_by_fireflies_meeting_id(fireflies_meeting_id)
+    if meeting:
+        logger.info("Matched meeting %s by fireflies_meeting_id: %s", meeting.id, fireflies_meeting_id)
+        return meeting
+    match_log["stored_fireflies_id"] = None
+
+    logger.warning("Meeting matching failed. Match context: %s", json.dumps(match_log))
+    return None
+
+
+def _extract_meet_code(url: str) -> str | None:
+    """Extract the Google Meet code from a meet.google.com URL."""
+    match = re.search(r"meet\.google\.com/([a-z0-9-]+)", url, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return None
+
+
 async def process_fireflies_transcript(
     db_session,
     fireflies_meeting_id: str,
@@ -118,33 +177,9 @@ async def process_fireflies_transcript(
             status_code=500,
         )
 
-    meeting = None
-
-    calendar_id = transcript.get("calendar_id")
-    if calendar_id:
-        meeting = await repo.find_by_google_event_id(calendar_id)
-        if meeting:
-            logger.info("Matched by calendar_id: %s", calendar_id)
+    meeting = await _find_meeting(repo, transcript, fireflies_meeting_id)
 
     if not meeting:
-        meeting_link = transcript.get("meeting_link")
-        if meeting_link:
-            meeting = await repo.find_by_google_meet_url(meeting_link)
-            if meeting:
-                logger.info("Matched by meeting_link: %s", meeting_link)
-
-    if not meeting:
-        conference_id = transcript.get("conference_id")
-        if conference_id:
-            meeting = await repo.find_by_google_meet_code(conference_id)
-            if meeting:
-                logger.info("Matched by conference_id: %s", conference_id)
-
-    if not meeting:
-        logger.warning(
-            "No matching meeting found for Fireflies transcript %s",
-            fireflies_meeting_id,
-        )
         raise BaseAPIException(
             message="No matching meeting found for Fireflies transcript",
             status_code=404,

@@ -85,6 +85,12 @@ class MeetingRepository:
         )
         return result.scalar_one_or_none()
 
+    async def find_by_fireflies_meeting_id(self, fireflies_id: str) -> Meeting | None:
+        result = await self.db.execute(
+            select(Meeting).where(Meeting.fireflies_meeting_id == fireflies_id)
+        )
+        return result.scalar_one_or_none()
+
     async def list_by_client(self, client_id: UUID) -> list[Meeting]:
         result = await self.db.execute(
             select(Meeting)
