@@ -5,6 +5,7 @@ from src.schemas.client_schema import ClientCreate, ClientResponse
 from src.schemas.project_schema import ProjectCreate, ProjectResponse
 from src.schemas.meeting_schema import MeetingCreate, MeetingResponse
 from src.schemas.transcript_schema import TranscriptUploadResponse
+from src.schemas.meeting_analysis_schema import MeetingAnalysisCreate, MeetingAnalysisResponse
 
 __all__ = [
     "BaseResponse",
@@ -20,4 +21,6 @@ __all__ = [
     "MeetingCreate",
     "MeetingResponse",
     "TranscriptUploadResponse",
+    "MeetingAnalysisCreate",
+    "MeetingAnalysisResponse",
 ]

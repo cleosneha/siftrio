@@ -1,0 +1,106 @@
+from datetime import datetime, timezone
+from uuid import UUID
+
+from langchain_mistralai import ChatMistralAI
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.repositories.meeting_analysis_repository import MeetingAnalysisRepository
+from src.repositories.meeting_repository import MeetingRepository
+
+
+from src.schemas.meeting_analysis_schema import MeetingAnalysisOutput
+
+
+ANALYSIS_PROMPT = """You are an AI meeting analyst. Analyze the following meeting transcript and extract structured information.
+
+Return ONLY a valid JSON object with these exact fields:
+- summary: A brief 2-3 sentence summary of the meeting
+- goal: The main goal or purpose of the meeting
+- outcomes: List of key outcomes achieved
+- decisions: List of decisions made
+- action_items: List of action items with responsible person if mentioned
+- answered_questions: List of questions that were answered
+- unanswered_questions: List of questions left unanswered
+- risks: List of risks identified
+- blockers: List of blockers or impediments
+- future_meetings: List of future meetings mentioned
+
+If a field has no information, use an empty list [].
+
+Meeting Title: {title}
+Meeting Date: {date}
+
+Transcript:
+{transcript}"""
+
+
+class MeetingAnalysisService:
+    def __init__(self, db: AsyncSession) -> None:
+        self.repo = MeetingAnalysisRepository(db)
+        self.meeting_repo = MeetingRepository(db)
+        self.llm = ChatMistralAI(
+            model="mistral-small-latest",
+            temperature=0.1,
+        ).with_structured_output(MeetingAnalysisOutput)
+
+    async def generate_analysis(self, meeting_id: UUID) -> dict:
+        meeting = await self.meeting_repo.get_by_id(meeting_id)
+        if meeting is None:
+            raise ValueError("Meeting not found")
+        if not meeting.transcript:
+            raise ValueError("Meeting has no transcript")
+
+        date_str = meeting.meeting_date.strftime("%Y-%m-%d") if meeting.meeting_date else "Not specified"
+
+        result: MeetingAnalysisOutput = await self.llm.ainvoke(
+            ANALYSIS_PROMPT.format(
+                title=meeting.title,
+                date=date_str,
+                transcript=meeting.transcript,
+            )
+        )
+
+        analysis = await self.repo.upsert(
+            meeting_id=meeting_id,
+            summary=result.summary,
+            goal=result.goal,
+            outcomes=result.outcomes,
+            decisions=result.decisions,
+            action_items=result.action_items,
+            answered_questions=result.answered_questions,
+            unanswered_questions=result.unanswered_questions,
+            risks=result.risks,
+            blockers=result.blockers,
+            future_meetings=result.future_meetings,
+        )
+
+        now = datetime.now(timezone.utc)
+        analysis.generated_at = now
+        await self.repo.db.commit()
+        await self.repo.db.refresh(analysis)
+
+        return self._to_dict(analysis)
+
+    async def get_analysis(self, meeting_id: UUID) -> dict | None:
+        analysis = await self.repo.get_by_meeting(meeting_id)
+        if analysis is None:
+            return None
+        return self._to_dict(analysis)
+
+    def _to_dict(self, analysis) -> dict:
+        return {
+            "id": str(analysis.id),
+            "meeting_id": str(analysis.meeting_id),
+            "summary": analysis.summary,
+            "goal": analysis.goal,
+            "outcomes": analysis.outcomes or [],
+            "decisions": analysis.decisions or [],
+            "action_items": analysis.action_items or [],
+            "answered_questions": analysis.answered_questions or [],
+            "unanswered_questions": analysis.unanswered_questions or [],
+            "risks": analysis.risks or [],
+            "blockers": analysis.blockers or [],
+            "future_meetings": analysis.future_meetings or [],
+            "generated_at": analysis.generated_at.isoformat() if analysis.generated_at else None,
+        }

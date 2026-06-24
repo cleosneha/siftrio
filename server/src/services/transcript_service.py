@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repositories.meeting_repository import MeetingRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
+from src.services.meeting_analysis_service import MeetingAnalysisService
 
 
 class TranscriptService:
@@ -18,6 +19,7 @@ class TranscriptService:
             length_function=len,
         )
         self.embeddings = MistralAIEmbeddings(model="mistral-embed")
+        self.analysis_service = MeetingAnalysisService(db)
 
     async def process_upload(
         self,
@@ -48,6 +50,8 @@ class TranscriptService:
                     "meeting_title": meeting.title,
                 },
             )
+
+        await self.analysis_service.generate_analysis(meeting_id)
 
         return {
             "meeting_id": str(meeting.id),

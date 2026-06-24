@@ -3,6 +3,7 @@ from src.models.client import Client
 from src.models.project import Project
 from src.models.meeting import Meeting
 from src.models.meeting_chunk import MeetingChunk
+from src.models.meeting_analysis import MeetingAnalysis
 
 __all__ = [
     "Workspace",
@@ -10,4 +11,5 @@ __all__ = [
     "Project",
     "Meeting",
     "MeetingChunk",
+    "MeetingAnalysis",
 ]

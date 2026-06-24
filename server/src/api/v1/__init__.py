@@ -6,6 +6,7 @@ from src.api.v1.clients import router as clients_router
 from src.api.v1.projects import router as projects_router
 from src.api.v1.meetings import router as meetings_router
 from src.api.v1.transcripts import router as transcripts_router
+from src.api.v1.meeting_analysis import router as meeting_analysis_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -14,3 +15,4 @@ api_router.include_router(clients_router)
 api_router.include_router(projects_router)
 api_router.include_router(meetings_router)
 api_router.include_router(transcripts_router)
+api_router.include_router(meeting_analysis_router)

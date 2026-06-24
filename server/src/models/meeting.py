@@ -71,6 +71,13 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    analysis = relationship(
+        "MeetingAnalysis",
+        back_populates="meeting",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index(
             "idx_meeting_client_id",
