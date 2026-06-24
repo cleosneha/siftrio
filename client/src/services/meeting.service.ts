@@ -9,6 +9,10 @@ export const meetingService = {
     meeting_type: string;
     tags?: string[];
     meeting_date?: string | null;
+    meeting_provider?: string;
+    meeting_url?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
   }) {
     const res = await api.post<ApiResponse<Meeting>>("/meetings", data);
     return res.data;
