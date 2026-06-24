@@ -70,6 +70,8 @@ alembic revision --autogenerate -m "description"
 
 # Start server
 uvicorn src.main:app --reload
+
+python -m ensurepip --upgrade
 ```
 
 ---
