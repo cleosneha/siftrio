@@ -45,6 +45,12 @@ export interface Meeting {
   end_time: string | null;
   meeting_provider: "manual" | "google_meet";
   meeting_url: string | null;
+  google_calendar_event_id: string | null;
+  google_meet_url: string | null;
+  google_meet_code: string | null;
+  fireflies_meeting_id: string | null;
+  transcript_status: "pending" | "processing" | "completed" | "failed" | null;
+  guest_emails: string[];
   created_at: string | null;
   updated_at: string | null;
 }

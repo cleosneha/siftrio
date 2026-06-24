@@ -37,6 +37,7 @@ const formSchema = z.object({
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   meeting_url: z.string().optional(),
+  guest_emails: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -75,6 +76,7 @@ export function CreateMeetingModal({
       start_time: "",
       end_time: "",
       meeting_url: "",
+      guest_emails: "",
     },
   });
 
@@ -90,6 +92,13 @@ export function CreateMeetingModal({
       ? values.tags
           .split(",")
           .map((t) => t.trim())
+          .filter(Boolean)
+      : [];
+
+    const guestEmails = values.guest_emails
+      ? values.guest_emails
+          .split(",")
+          .map((e) => e.trim())
           .filter(Boolean)
       : [];
 
@@ -117,6 +126,7 @@ export function CreateMeetingModal({
       meeting_url: meetingUrl,
       start_time: values.start_time ? new Date(values.start_time).toISOString() : null,
       end_time: values.end_time ? new Date(values.end_time).toISOString() : null,
+      guest_emails: guestEmails,
     });
 
     form.reset();
@@ -382,6 +392,22 @@ export function CreateMeetingModal({
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="guest_emails"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Guests (comma separated emails)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="alice@example.com, bob@example.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 

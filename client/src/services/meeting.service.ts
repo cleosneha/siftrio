@@ -13,6 +13,7 @@ export const meetingService = {
     meeting_url?: string | null;
     start_time?: string | null;
     end_time?: string | null;
+    guest_emails?: string[];
   }) {
     const res = await api.post<ApiResponse<Meeting>>("/meetings", data);
     return res.data;
@@ -73,6 +74,14 @@ export const meetingService = {
     const res = await api.post<ApiResponse<MeetingAnalysis>>(
       `/meetings/${meetingId}/analysis/regenerate`,
     );
+    return res.data;
+  },
+
+  async getTranscriptStatus(meetingId: string) {
+    const res = await api.get<ApiResponse<{
+      transcript_status: string | null;
+      fireflies_meeting_id: string | null;
+    }>>(`/meetings/${meetingId}/transcript-status`);
     return res.data;
   },
 };

@@ -19,6 +19,7 @@ export function useCreateMeeting() {
       meeting_url?: string | null;
       start_time?: string | null;
       end_time?: string | null;
+      guest_emails?: string[];
     }) => meetingService.create(data),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
@@ -107,6 +108,18 @@ export function useMeetingAnalysis(meetingId?: string) {
     queryKey: ["meeting-analysis", meetingId],
     queryFn: () => meetingService.getAnalysis(meetingId!),
     enabled: !!meetingId,
+  });
+}
+
+export function useTranscriptStatus(meetingId?: string) {
+  return useQuery({
+    queryKey: ["transcript-status", meetingId],
+    queryFn: () => meetingService.getTranscriptStatus(meetingId!),
+    enabled: !!meetingId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.transcript_status;
+      return status === "pending" || status === "processing" ? 5000 : false;
+    },
   });
 }
 

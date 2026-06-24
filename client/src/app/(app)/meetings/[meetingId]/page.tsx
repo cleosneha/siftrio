@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video } from "lucide-react";
+import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video, Mail, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,6 +19,7 @@ import {
   useMeetingAnalysis,
   useRegenerateAnalysis,
   useUploadTranscript,
+  useTranscriptStatus,
 } from "@/hooks/useMeetings";
 
 function AnalysisSection({
@@ -53,6 +54,22 @@ function AnalysisSection({
   );
 }
 
+function TranscriptStatusBadge({ status }: { status: string | null | undefined }) {
+  if (!status) return null;
+  const variants: Record<string, { label: string; className: string }> = {
+    pending: { label: "Pending", className: "bg-yellow-100 text-yellow-800" },
+    processing: { label: "Processing", className: "bg-blue-100 text-blue-800" },
+    completed: { label: "Completed", className: "bg-green-100 text-green-800" },
+    failed: { label: "Failed", className: "bg-red-100 text-red-800" },
+  };
+  const v = variants[status] || { label: status, className: "bg-gray-100 text-gray-800" };
+  return (
+    <Badge className={v.className} variant="outline">
+      {v.label}
+    </Badge>
+  );
+}
+
 export default function MeetingPage() {
   const params = useParams();
   const router = useRouter();
@@ -62,11 +79,13 @@ export default function MeetingPage() {
   const { data: meetingData } = useMeeting(meetingId);
   const { data: analysisData, isLoading: analysisLoading } =
     useMeetingAnalysis(meetingId);
+  const { data: transcriptStatusData } = useTranscriptStatus(meetingId);
   const regenerateAnalysis = useRegenerateAnalysis();
   const uploadTranscript = useUploadTranscript();
 
   const meeting = meetingData?.data;
   const analysis = analysisData?.data;
+  const transcriptStatus = transcriptStatusData?.data?.transcript_status;
 
   const handleRegenerate = () => {
     regenerateAnalysis.mutate(meetingId);
@@ -133,11 +152,12 @@ export default function MeetingPage() {
               <Video className="mr-1 h-3 w-3" />
               {providerLabel}
             </Badge>
-            {meeting.meeting_url && (
+            <TranscriptStatusBadge status={transcriptStatus} />
+            {(meeting.meeting_url || meeting.google_meet_url) && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => window.open(meeting.meeting_url!, "_blank")}
+                onClick={() => window.open(meeting.meeting_url || meeting.google_meet_url!, "_blank")}
               >
                 <ExternalLink className="mr-1.5 h-4 w-4" />
                 Join Meeting
@@ -146,7 +166,61 @@ export default function MeetingPage() {
           </div>
         )}
 
-        {!meeting?.transcript ? (
+        {meeting && meeting.guest_emails.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Guests
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {meeting.guest_emails.map((email) => (
+                  <Badge key={email} variant="secondary">
+                    {email}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {transcriptStatus === "processing" && (
+          <div className="flex items-center justify-center rounded-lg border p-12 text-center mb-6">
+            <Loader className="h-5 w-5 animate-spin mr-2 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Fireflies is processing the transcript...
+            </span>
+          </div>
+        )}
+
+        {transcriptStatus === "failed" && (
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-red-300 p-12 text-center mb-6">
+            <h3 className="mb-2 text-lg font-medium text-red-600">Transcript processing failed</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Upload a .txt transcript manually to generate analysis
+            </p>
+            <Button
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".txt";
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) await handleFileUpload(file);
+                };
+                input.click();
+              }}
+              disabled={uploadTranscript.isPending}
+            >
+              <Upload className="h-4 w-4" />
+              {uploadTranscript.isPending ? "Uploading..." : "Upload Transcript"}
+            </Button>
+          </div>
+        )}
+
+        {(!meeting?.transcript && transcriptStatus !== "processing" && transcriptStatus !== "failed") ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
             <h3 className="mb-2 text-lg font-medium">No transcript yet</h3>
             <p className="mb-4 text-sm text-muted-foreground">
