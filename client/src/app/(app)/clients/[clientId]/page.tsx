@@ -134,28 +134,30 @@ export default function ClientPage() {
                 meeting_date?: string | null;
                 tags?: string[];
               }) => (
-                <Card key={meeting.id} className="transition-shadow hover:shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base">{meeting.title}</CardTitle>
-                    {meeting.meeting_date && (
-                      <CardDescription>
-                        {new Date(meeting.meeting_date).toLocaleDateString()}
-                      </CardDescription>
-                    )}
-                    {meeting.tags && meeting.tags.length > 0 && (
-                      <CardDescription className="flex flex-wrap gap-1">
-                        {meeting.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                </Card>
+                <Link key={meeting.id} href={`/meetings/${meeting.id}`}>
+                  <Card className="transition-shadow hover:shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-base">{meeting.title}</CardTitle>
+                      {meeting.meeting_date && (
+                        <CardDescription>
+                          {new Date(meeting.meeting_date).toLocaleDateString()}
+                        </CardDescription>
+                      )}
+                      {meeting.tags && meeting.tags.length > 0 && (
+                        <CardDescription className="flex flex-wrap gap-1">
+                          {meeting.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

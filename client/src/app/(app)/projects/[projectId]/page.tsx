@@ -120,16 +120,21 @@ export default function ProjectPage() {
                 transcript?: string | null;
               }) => (
                 <Card key={meeting.id} className="transition-shadow hover:shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      {meeting.title}
-                    </CardTitle>
-                    {meeting.meeting_date && (
-                      <CardDescription>
-                        {new Date(meeting.meeting_date).toLocaleDateString()}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
+                  <Link
+                    href={`/meetings/${meeting.id}`}
+                    className="block"
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        {meeting.title}
+                      </CardTitle>
+                      {meeting.meeting_date && (
+                        <CardDescription>
+                          {new Date(meeting.meeting_date).toLocaleDateString()}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                  </Link>
                   <CardContent>
                     {meeting.transcript ? (
                       <p className="text-xs text-muted-foreground">
