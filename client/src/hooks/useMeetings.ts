@@ -15,6 +15,10 @@ export function useCreateMeeting() {
       meeting_type: string;
       tags?: string[];
       meeting_date?: string | null;
+      meeting_provider?: string;
+      meeting_url?: string | null;
+      start_time?: string | null;
+      end_time?: string | null;
     }) => meetingService.create(data),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
