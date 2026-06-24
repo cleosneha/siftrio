@@ -55,16 +55,19 @@ class User(UUIDMixin, TimestampMixin, Base):
         "Client",
         back_populates="creator",
         foreign_keys="Client.created_by",
+        cascade="all, delete-orphan",
     )
 
     created_projects = relationship(
         "Project",
         back_populates="creator",
         foreign_keys="Project.created_by",
+        cascade="all, delete-orphan",
     )
 
     created_meetings = relationship(
         "Meeting",
         back_populates="creator",
         foreign_keys="Meeting.created_by",
+        cascade="all, delete-orphan",
     )

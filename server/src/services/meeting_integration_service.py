@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.repositories.auth_repository import AuthRepository
-from src.tools.google_oauth import create_oauth_client, refresh_google_token
+from src.services.auth_service import AuthService
+from src.tools.google_oauth import create_oauth_client
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def _validate_rfc3339(ts: str) -> dict:
 
 class MeetingIntegrationService:
     def __init__(self, db: AsyncSession) -> None:
-        self.repo = AuthRepository(db)
+        self.db = db
 
     async def create_google_meet(
         self,
@@ -50,50 +51,16 @@ class MeetingIntegrationService:
         guest_emails: list[str] | None = None,
         user_email: str | None = None,
     ) -> dict:
-        integration = await self.repo.get_integration(user_id, "google")
-        if not integration or not integration.access_token:
+        auth_service = AuthService(AuthRepository(self.db))
+        access_token = await auth_service.get_valid_google_access_token(user_id)
+
+        if not access_token:
             raise BaseAPIException(
-                message="Google integration not found. Please log in with Google.",
+                message="Google integration not found or expired. Please log in with Google.",
                 status_code=400,
             )
 
-        access_token = integration.access_token
-
-        logger.info("=== TOKEN DIAGNOSTICS ===")
-        logger.info("Access token (first 20 chars): %s...", access_token[:20])
-        logger.info("Granted scopes: %s", integration.scopes)
-        logger.info("Token expires at: %s", integration.token_expires_at)
-        logger.info("Has refresh token: %s", bool(integration.refresh_token))
-        logger.info("Token expiry UTC: %s, now UTC: %s", integration.token_expires_at, datetime.now(timezone.utc))
-        if integration.token_expires_at:
-            logger.info("Token expired: %s", integration.token_expires_at < datetime.now(timezone.utc))
-
-        now = datetime.now(timezone.utc)
-        if integration.token_expires_at and integration.token_expires_at < now:
-            if not integration.refresh_token:
-                raise BaseAPIException(
-                    message="Google session expired. Please log in again.",
-                    status_code=400,
-                )
-            token_data = await refresh_google_token(integration.refresh_token)
-            if not token_data:
-                raise BaseAPIException(
-                    message="Failed to refresh Google token. Please log in again.",
-                    status_code=400,
-                )
-            access_token = token_data["access_token"]
-            await self.repo.upsert_integration(
-                user_id=user_id,
-                provider="google",
-                access_token=token_data["access_token"],
-                refresh_token=token_data.get("refresh_token") or integration.refresh_token,
-                token_expires_at=(
-                    datetime.fromtimestamp(token_data["expires_at"], tz=timezone.utc)
-                    if token_data.get("expires_at")
-                    else None
-                ),
-                scopes=token_data.get("scope") or integration.scopes,
-            )
+        logger.info("Google access token obtained for user %s", user_id)
 
         result = await self._create_calendar_event(
             access_token=access_token,

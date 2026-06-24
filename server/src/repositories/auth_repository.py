@@ -79,7 +79,8 @@ class AuthRepository:
         existing = await self.get_integration(user_id, provider)
         if existing:
             existing.access_token = access_token
-            existing.refresh_token = refresh_token
+            if refresh_token is not None:
+                existing.refresh_token = refresh_token
             existing.token_expires_at = token_expires_at
             existing.scopes = scopes
         else:

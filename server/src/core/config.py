@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET") or ""
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or ""
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM") or "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") or "1440")
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") or "15")
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS") or "30")
     FIREFLIES_API_KEY: str = os.getenv("FIREFLIES_API_KEY") or ""
     FIREFLIES_WEBHOOK_SECRET: str = os.getenv("FIREFLIES_WEBHOOK_SECRET") or ""
 

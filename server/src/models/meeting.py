@@ -30,7 +30,7 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
 
     created_by: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
     )
 

@@ -1,7 +1,11 @@
+import logging
+
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from authlib.oauth2.rfc6749 import OAuth2Token
 
 from src.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def create_oauth_client() -> AsyncOAuth2Client:
@@ -17,7 +21,8 @@ def get_authorization_url() -> str:
     client = create_oauth_client()
     uri, _ = client.create_authorization_url(
         "https://accounts.google.com/o/oauth2/auth",
-        prompt="select_account",
+        access_type="offline",
+        prompt="consent",
     )
     return uri
 
@@ -28,12 +33,14 @@ async def fetch_token(code: str) -> dict:
         "https://oauth2.googleapis.com/token",
         code=code,
     )
-    return {
+    result = {
         "access_token": token.get("access_token"),
         "refresh_token": token.get("refresh_token"),
         "expires_at": token.get("expires_at"),
         "scope": token.get("scope"),
     }
+    logger.info("Google OAuth callback - refresh_token present: %s", bool(result.get("refresh_token")))
+    return result
 
 
 async def refresh_google_token(refresh_token: str) -> dict | None:

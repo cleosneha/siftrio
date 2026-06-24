@@ -17,18 +17,27 @@ class AuthController:
 
     async def callback(self, code: str) -> RedirectResponse:
         try:
-            user, jwt_token = await self.service.handle_google_callback(code)
+            user, access_token, refresh_token = await self.service.handle_google_callback(code)
         except ValueError:
             return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=true")
 
         response = RedirectResponse(url=settings.FRONTEND_URL)
         response.set_cookie(
             key="access_token",
-            value=jwt_token,
+            value=access_token,
             httponly=True,
             secure=False,
             samesite="lax",
-            max_age=86400,
+            max_age=15 * 60,
             path="/",
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=30 * 24 * 60 * 60,
+            path="/api/auth/refresh",
         )
         return response
