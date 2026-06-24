@@ -44,3 +44,19 @@ export interface Meeting {
   created_at: string | null;
   updated_at: string | null;
 }
+
+export interface MeetingAnalysis {
+  id: string;
+  meeting_id: string;
+  summary: string | null;
+  goal: string | null;
+  outcomes: string[];
+  decisions: string[];
+  action_items: string[];
+  answered_questions: string[];
+  unanswered_questions: string[];
+  risks: string[];
+  blockers: string[];
+  future_meetings: string[];
+  generated_at: string | null;
+}

@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { ApiResponse, Meeting } from "@/types";
+import type { ApiResponse, Meeting, MeetingAnalysis } from "@/types";
 
 export const meetingService = {
   async create(data: {
@@ -55,6 +55,20 @@ export const meetingService = {
     }>>(`/transcripts/${meetingId}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return res.data;
+  },
+
+  async getAnalysis(meetingId: string) {
+    const res = await api.get<ApiResponse<MeetingAnalysis>>(
+      `/meetings/${meetingId}/analysis`,
+    );
+    return res.data;
+  },
+
+  async regenerateAnalysis(meetingId: string) {
+    const res = await api.post<ApiResponse<MeetingAnalysis>>(
+      `/meetings/${meetingId}/analysis/regenerate`,
+    );
     return res.data;
   },
 };

@@ -97,3 +97,29 @@ export function useDeleteMeeting() {
     },
   });
 }
+
+export function useMeetingAnalysis(meetingId?: string) {
+  return useQuery({
+    queryKey: ["meeting-analysis", meetingId],
+    queryFn: () => meetingService.getAnalysis(meetingId!),
+    enabled: !!meetingId,
+  });
+}
+
+export function useRegenerateAnalysis() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (meetingId: string) =>
+      meetingService.regenerateAnalysis(meetingId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["meeting-analysis"] });
+      toast.success(res.message || "Analysis regenerated");
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof Error ? err.message : "Failed to regenerate analysis";
+      toast.error(msg);
+    },
+  });
+}
