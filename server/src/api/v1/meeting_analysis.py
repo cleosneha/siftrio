@@ -3,9 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.meeting_analysis_controller import MeetingAnalysisController
 from src.core.database import get_db
+from src.middlewares.auth import require_authenticated_user
 from src.schemas.base_response import BaseResponse
 
-router = APIRouter(prefix="/meetings", tags=["meeting-analysis"])
+router = APIRouter(
+    prefix="/meetings",
+    tags=["meeting-analysis"],
+    dependencies=[Depends(require_authenticated_user)],
+)
 
 
 @router.get("/{meeting_id}/analysis", response_model=BaseResponse)
