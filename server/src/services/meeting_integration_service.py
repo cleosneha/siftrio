@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -13,6 +14,28 @@ from src.tools.google_oauth import create_oauth_client, refresh_google_token
 logger = logging.getLogger(__name__)
 
 
+def _validate_rfc3339(ts: str) -> dict:
+    """Validate RFC3339 compliance and return diagnostics."""
+    issues = []
+    if not ts.endswith("Z") and "+" not in ts[10:]:
+        issues.append("Missing timezone offset (no Z or +HH:MM suffix)")
+    if not ts.endswith("Z") and "+" in ts[10:]:
+        has_tz = True
+    else:
+        has_tz = bool(ts.endswith("Z")) or ("+" in ts[10:])
+    if not has_tz:
+        issues.append("Not RFC3339 compliant - missing timezone designator")
+    try:
+        datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError as e:
+        issues.append(f"Unparseable datetime: {e}")
+    return {
+        "raw": ts,
+        "valid": len(issues) == 0,
+        "issues": issues,
+    }
+
+
 class MeetingIntegrationService:
     def __init__(self, db: AsyncSession) -> None:
         self.repo = AuthRepository(db)
@@ -24,7 +47,9 @@ class MeetingIntegrationService:
         description: str | None = None,
         start_time: str | None = None,
         end_time: str | None = None,
-    ) -> str:
+        guest_emails: list[str] | None = None,
+        user_email: str | None = None,
+    ) -> dict:
         integration = await self.repo.get_integration(user_id, "google")
         if not integration or not integration.access_token:
             raise BaseAPIException(
@@ -33,7 +58,15 @@ class MeetingIntegrationService:
             )
 
         access_token = integration.access_token
-        logger.info("Google granted scopes: %s", integration.scopes)
+
+        logger.info("=== TOKEN DIAGNOSTICS ===")
+        logger.info("Access token (first 20 chars): %s...", access_token[:20])
+        logger.info("Granted scopes: %s", integration.scopes)
+        logger.info("Token expires at: %s", integration.token_expires_at)
+        logger.info("Has refresh token: %s", bool(integration.refresh_token))
+        logger.info("Token expiry UTC: %s, now UTC: %s", integration.token_expires_at, datetime.now(timezone.utc))
+        if integration.token_expires_at:
+            logger.info("Token expired: %s", integration.token_expires_at < datetime.now(timezone.utc))
 
         now = datetime.now(timezone.utc)
         if integration.token_expires_at and integration.token_expires_at < now:
@@ -62,15 +95,17 @@ class MeetingIntegrationService:
                 scopes=token_data.get("scope") or integration.scopes,
             )
 
-        meet_url = await self._create_calendar_event(
+        result = await self._create_calendar_event(
             access_token=access_token,
             title=title,
             description=description,
             start_time=start_time,
             end_time=end_time,
+            guest_emails=guest_emails,
+            user_email=user_email,
         )
 
-        return meet_url
+        return result
 
     async def _create_calendar_event(
         self,
@@ -79,7 +114,17 @@ class MeetingIntegrationService:
         description: str | None = None,
         start_time: str | None = None,
         end_time: str | None = None,
-    ) -> str:
+        guest_emails: list[str] | None = None,
+        user_email: str | None = None,
+    ) -> dict:
+        logger.info("=== RFC3339 VALIDATION ===")
+        if start_time:
+            st_diag = _validate_rfc3339(start_time)
+            logger.info("start_time diagnostics: %s", json.dumps(st_diag, indent=2))
+        if end_time:
+            et_diag = _validate_rfc3339(end_time)
+            logger.info("end_time diagnostics: %s", json.dumps(et_diag, indent=2))
+
         client = create_oauth_client()
         client.token = {"access_token": access_token, "token_type": "Bearer"}
 
@@ -100,11 +145,21 @@ class MeetingIntegrationService:
         event_start = {"dateTime": event_start_dt}
         event_end = {"dateTime": event_end_dt}
 
+        attendees = []
+        if user_email:
+            attendees.append({"email": user_email})
+        if guest_emails:
+            for email in guest_emails:
+                email = email.strip()
+                if email:
+                    attendees.append({"email": email})
+
         body = {
             "summary": title,
             "description": description or "",
             "start": event_start,
             "end": event_end,
+            "attendees": attendees,
             "conferenceData": {
                 "createRequest": {
                     "requestId": str(uuid.uuid4()),
@@ -114,8 +169,10 @@ class MeetingIntegrationService:
 
         url = "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1"
 
-        logger.info("Google Calendar API request URL: %s", url)
-        logger.info("Google Calendar API request payload: %s", json.dumps(body, indent=2, default=str))
+        logger.info("=== ACTUAL REQUEST ===")
+        logger.info("URL: %s", url)
+        logger.info("Headers (sensitive redacted): Authorization: Bearer %s...", access_token[:20])
+        logger.info("Payload: %s", json.dumps(body, indent=2, default=str))
 
         try:
             resp = await client.post(url, json=body)
@@ -125,8 +182,10 @@ class MeetingIntegrationService:
                 status_code=500,
             )
 
-        logger.info("Google Calendar API response status: %s", resp.status_code)
-        logger.info("Google Calendar API response body: %s", resp.text)
+        logger.info("=== ACTUAL RESPONSE ===")
+        logger.info("Status code: %s", resp.status_code)
+        logger.info("Response headers: %s", dict(resp.headers))
+        logger.info("Response body: %s", resp.text)
 
         if resp.status_code != 200:
             raise BaseAPIException(
@@ -135,6 +194,7 @@ class MeetingIntegrationService:
             )
 
         event_data = resp.json()
+        event_id = event_data.get("id", "")
         meet_url = event_data.get("hangoutLink") or (
             event_data.get("conferenceData", {}).get("entryPoints", [{}])[0].get("uri")
         )
@@ -145,4 +205,13 @@ class MeetingIntegrationService:
                 status_code=500,
             )
 
-        return meet_url
+        meet_code = None
+        match = re.search(r"meet\.google\.com/([a-z0-9-]+)", meet_url)
+        if match:
+            meet_code = match.group(1)
+
+        return {
+            "meet_url": meet_url,
+            "event_id": event_id,
+            "meet_code": meet_code,
+        }

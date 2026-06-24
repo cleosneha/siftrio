@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or ""
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM") or "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") or "1440")
+    FIREFLIES_API_KEY: str = os.getenv("FIREFLIES_API_KEY") or ""
+    FIREFLIES_WEBHOOK_SECRET: str = os.getenv("FIREFLIES_WEBHOOK_SECRET") or ""
 
     @property
     def database_url(self) -> str:

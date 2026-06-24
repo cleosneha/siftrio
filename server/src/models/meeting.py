@@ -18,6 +18,13 @@ class MeetingProvider(str, Enum):
     GOOGLE_MEET = "google_meet"
 
 
+class TranscriptStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class Meeting(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "meetings"
 
@@ -90,6 +97,36 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
 
     meeting_url: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    google_calendar_event_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    google_meet_url: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    google_meet_code: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    fireflies_meeting_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    transcript_status: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
+    guest_emails: Mapped[list[str] | None] = mapped_column(
+        ARRAY(Text),
         nullable=True,
     )
 

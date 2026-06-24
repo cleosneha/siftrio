@@ -7,7 +7,11 @@ from src.core.database import get_db
 from src.middlewares.auth import require_authenticated_user
 from src.repositories.meeting_repository import MeetingRepository
 from src.schemas.base_response import BaseResponse
-from src.schemas.meeting_schema import MeetingCreate, MeetingResponse
+from src.schemas.meeting_schema import (
+    MeetingCreate,
+    MeetingResponse,
+    TranscriptStatusResponse,
+)
 from src.services.meeting_service import MeetingService
 
 router = APIRouter(
@@ -25,6 +29,7 @@ async def create_meeting(
 ) -> BaseResponse:
     service = MeetingService(db)
     user_id = UUID(request.state.user.id) if request.state.user else None
+    user_email = request.state.user.email if request.state.user else None
     data = await service.create(
         client_id=body.client_id,
         project_id=body.project_id,
@@ -37,6 +42,8 @@ async def create_meeting(
         start_time=body.start_time,
         end_time=body.end_time,
         user_id=user_id,
+        user_email=user_email,
+        guest_emails=body.guest_emails,
     )
     return BaseResponse(message="Meeting created successfully", data=data)
 
@@ -59,6 +66,12 @@ async def get_meeting(meeting_id: str, db: AsyncSession = Depends(get_db)) -> Ba
         end_time=meeting.end_time.isoformat().replace("+00:00", "Z") if meeting.end_time else None,
         meeting_provider=meeting.meeting_provider.value,
         meeting_url=meeting.meeting_url,
+        google_calendar_event_id=meeting.google_calendar_event_id,
+        google_meet_url=meeting.google_meet_url,
+        google_meet_code=meeting.google_meet_code,
+        fireflies_meeting_id=meeting.fireflies_meeting_id,
+        transcript_status=meeting.transcript_status if meeting.transcript_status else None,
+        guest_emails=meeting.guest_emails or [],
         created_at=meeting.created_at.isoformat().replace("+00:00", "Z") if meeting.created_at else None,
         updated_at=meeting.updated_at.isoformat().replace("+00:00", "Z") if meeting.updated_at else None,
     ).model_dump()
@@ -97,12 +110,34 @@ async def list_meetings(
             end_time=m.end_time.isoformat().replace("+00:00", "Z") if m.end_time else None,
             meeting_provider=m.meeting_provider.value,
             meeting_url=m.meeting_url,
+            google_calendar_event_id=m.google_calendar_event_id,
+            google_meet_url=m.google_meet_url,
+            google_meet_code=m.google_meet_code,
+            fireflies_meeting_id=m.fireflies_meeting_id,
+            transcript_status=m.transcript_status if m.transcript_status else None,
+            guest_emails=m.guest_emails or [],
             created_at=m.created_at.isoformat().replace("+00:00", "Z") if m.created_at else None,
             updated_at=m.updated_at.isoformat().replace("+00:00", "Z") if m.updated_at else None,
         ).model_dump()
         for m in meetings
     ]
     return BaseResponse(data=data)
+
+
+@router.get("/{meeting_id}/transcript-status", response_model=BaseResponse)
+async def get_transcript_status(
+    meeting_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    meeting = await MeetingRepository(db).get_by_id(UUID(meeting_id))
+    if meeting is None:
+        return BaseResponse(success=False, message="Meeting not found", data=None)
+    return BaseResponse(
+        data=TranscriptStatusResponse(
+            transcript_status=meeting.transcript_status if meeting.transcript_status else None,
+            fireflies_meeting_id=meeting.fireflies_meeting_id,
+        ).model_dump()
+    )
 
 
 @router.delete("/{meeting_id}", response_model=BaseResponse)
