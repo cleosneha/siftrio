@@ -8,7 +8,7 @@ def create_oauth_client() -> AsyncOAuth2Client:
     return AsyncOAuth2Client(
         client_id=settings.GOOGLE_CLIENT_ID,
         client_secret=settings.GOOGLE_CLIENT_SECRET,
-        scope="openid email profile",
+        scope="openid email profile https://www.googleapis.com/auth/calendar.events",
         redirect_uri=f"{settings.BACKEND_URL}/api/auth/google/callback",
     )
 
