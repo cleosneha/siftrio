@@ -272,6 +272,68 @@ Future tables:
 
 ---
 
+## Avoid Unnecessary Indirection
+
+When modifying or generating code, prefer simplicity over abstraction.
+
+### Remove Pass-Through Functions
+
+Do not create or keep functions that only:
+
+- Call another function and immediately return the result.
+- Forward parameters without adding logic.
+- Wrap a single line of code without providing value.
+- Exist solely to move logic into another file.
+
+Example of what to avoid:
+
+```python
+async def get_projects():
+    return await project_service.get_projects()
+```
+
+when the route can directly call:
+
+```python
+await project_service.get_projects()
+```
+
+### Keep Abstractions Only When They Provide Value
+
+Retain a separate function, service, helper, or module only if it provides one or more of the following:
+
+- Business logic
+- Validation
+- Authorization
+- Error handling
+- Data transformation
+- External API integration
+- Shared reusable behavior
+- Meaningful domain separation
+
+### Refactoring Rules
+
+When editing existing code:
+
+1. Identify pass-through functions and inline them into the caller.
+2. Remove unnecessary helper layers.
+3. Reduce file hopping and indirection.
+4. Preserve existing functionality and API behavior.
+5. Prefer direct implementation when logic is simple and used only once.
+6. Do not introduce abstractions preemptively for hypothetical future use cases.
+
+### Decision Rule
+
+Before creating a new function, ask:
+
+> Does this function provide meaningful logic or reuse?
+
+If the answer is no, implement the logic directly at the call site.
+
+Optimize for maintainability, readability, and developer productivity rather than architectural purity.
+
+---
+
 ## AI Guidelines
 
 Agents should return structured outputs.

@@ -41,6 +41,10 @@ export interface Meeting {
   tags: string[];
   transcript: string | null;
   meeting_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  meeting_provider: "manual" | "google_meet";
+  meeting_url: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
