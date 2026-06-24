@@ -347,3 +347,7 @@ github_tool.py
 
 Ship fast.
 Refactor only when necessary.
+
+## STRICT NOTE:
+
+Don't run migrations yourself or create migration file on your own. The user will manually run all the migrations and upgrade head command.
