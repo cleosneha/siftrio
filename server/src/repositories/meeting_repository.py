@@ -1,9 +1,10 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.meeting import Meeting, MeetingType
+from src.models.meeting import Meeting, MeetingProvider, MeetingType
 
 
 class MeetingRepository:
@@ -17,7 +18,11 @@ class MeetingRepository:
         title: str,
         meeting_type: MeetingType,
         tags: list[str],
-        meeting_date: str | None = None,
+        meeting_date: datetime | None = None,
+        meeting_provider: MeetingProvider = MeetingProvider.MANUAL,
+        meeting_url: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> Meeting:
         meeting = Meeting(
             client_id=client_id,
@@ -26,6 +31,10 @@ class MeetingRepository:
             meeting_type=meeting_type,
             tags=tags,
             meeting_date=meeting_date,
+            meeting_provider=meeting_provider,
+            meeting_url=meeting_url,
+            start_time=start_time,
+            end_time=end_time,
         )
         self.db.add(meeting)
         await self.db.commit()
