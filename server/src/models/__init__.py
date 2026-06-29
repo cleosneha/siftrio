@@ -6,6 +6,13 @@ from src.models.meeting_chunk import MeetingChunk
 from src.models.meeting_analysis import MeetingAnalysis
 from src.models.user import User
 from src.models.user_integration import UserIntegration
+from src.models.knowledge_base import (
+    Requirement,
+    ActionItem,
+    Decision,
+    Risk,
+    Question,
+)
 
 __all__ = [
     "Workspace",
@@ -16,4 +23,9 @@ __all__ = [
     "MeetingAnalysis",
     "User",
     "UserIntegration",
+    "Requirement",
+    "ActionItem",
+    "Decision",
+    "Risk",
+    "Question",
 ]

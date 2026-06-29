@@ -1,0 +1,180 @@
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.controllers.knowledge_controller import KnowledgeController
+from src.core.database import get_db
+from src.middlewares.auth import require_authenticated_user
+from src.schemas.base_response import BaseResponse
+from src.schemas.knowledge_schema import (
+    ActionItemUpdate,
+    DecisionUpdate,
+    QuestionUpdate,
+    RequirementUpdate,
+    RiskUpdate,
+)
+
+router = APIRouter(
+    prefix="/knowledge",
+    tags=["knowledge"],
+    dependencies=[Depends(require_authenticated_user)],
+)
+
+
+@router.get("/requirements", response_model=BaseResponse)
+async def list_requirements(
+    project_id: str | None = Query(None),
+    meeting_id: str | None = Query(None),
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.list_requirements(project_id, meeting_id, status)
+
+
+@router.get("/requirements/{entity_id}", response_model=BaseResponse)
+async def get_requirement(
+    entity_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.get_requirement(entity_id)
+
+
+@router.patch("/requirements/{entity_id}", response_model=BaseResponse)
+async def update_requirement(
+    entity_id: str,
+    body: RequirementUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.update_requirement(
+        entity_id, body.model_dump(exclude_none=True)
+    )
+
+
+@router.get("/action-items", response_model=BaseResponse)
+async def list_action_items(
+    project_id: str | None = Query(None),
+    meeting_id: str | None = Query(None),
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.list_action_items(project_id, meeting_id, status)
+
+
+@router.get("/action-items/{entity_id}", response_model=BaseResponse)
+async def get_action_item(
+    entity_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.get_action_item(entity_id)
+
+
+@router.patch("/action-items/{entity_id}", response_model=BaseResponse)
+async def update_action_item(
+    entity_id: str,
+    body: ActionItemUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.update_action_item(
+        entity_id, body.model_dump(exclude_none=True)
+    )
+
+
+@router.get("/decisions", response_model=BaseResponse)
+async def list_decisions(
+    project_id: str | None = Query(None),
+    meeting_id: str | None = Query(None),
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.list_decisions(project_id, meeting_id, status)
+
+
+@router.get("/decisions/{entity_id}", response_model=BaseResponse)
+async def get_decision(
+    entity_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.get_decision(entity_id)
+
+
+@router.patch("/decisions/{entity_id}", response_model=BaseResponse)
+async def update_decision(
+    entity_id: str,
+    body: DecisionUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.update_decision(
+        entity_id, body.model_dump(exclude_none=True)
+    )
+
+
+@router.get("/risks", response_model=BaseResponse)
+async def list_risks(
+    project_id: str | None = Query(None),
+    meeting_id: str | None = Query(None),
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.list_risks(project_id, meeting_id, status)
+
+
+@router.get("/risks/{entity_id}", response_model=BaseResponse)
+async def get_risk(
+    entity_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.get_risk(entity_id)
+
+
+@router.patch("/risks/{entity_id}", response_model=BaseResponse)
+async def update_risk(
+    entity_id: str,
+    body: RiskUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.update_risk(
+        entity_id, body.model_dump(exclude_none=True)
+    )
+
+
+@router.get("/questions", response_model=BaseResponse)
+async def list_questions(
+    project_id: str | None = Query(None),
+    meeting_id: str | None = Query(None),
+    status: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.list_questions(project_id, meeting_id, status)
+
+
+@router.get("/questions/{entity_id}", response_model=BaseResponse)
+async def get_question(
+    entity_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.get_question(entity_id)
+
+
+@router.patch("/questions/{entity_id}", response_model=BaseResponse)
+async def update_question(
+    entity_id: str,
+    body: QuestionUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    controller = KnowledgeController(db)
+    return await controller.update_question(
+        entity_id, body.model_dump(exclude_none=True)
+    )
