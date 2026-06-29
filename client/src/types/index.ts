@@ -70,3 +70,40 @@ export interface MeetingAnalysis {
   future_meetings: string[];
   generated_at: string | null;
 }
+
+export interface KnowledgeBase {
+  id: string;
+  project_id: string;
+  meeting_id: string;
+  source_chunk_id: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+  meeting_title: string | null;
+}
+
+export interface Requirement extends KnowledgeBase {
+  priority: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+}
+
+export interface ActionItem extends KnowledgeBase {
+  assignee: string | null;
+  due_date: string | null;
+}
+
+export interface Decision extends KnowledgeBase {
+  decision_date: string | null;
+}
+
+export interface Risk extends KnowledgeBase {
+  severity: string | null;
+  mitigation: string | null;
+}
+
+export interface Question extends KnowledgeBase {
+  answer: string | null;
+}
