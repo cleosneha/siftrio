@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repositories.meeting_analysis_repository import MeetingAnalysisRepository
 from src.repositories.meeting_repository import MeetingRepository
-
+from src.services.knowledge_service import KnowledgeService
 
 from src.schemas.meeting_analysis_schema import MeetingAnalysisOutput
 
@@ -18,13 +18,18 @@ Return ONLY a valid JSON object with these exact fields:
 - summary: A brief 2-3 sentence summary of the meeting
 - goal: The main goal or purpose of the meeting
 - outcomes: List of key outcomes achieved
-- decisions: List of decisions made
-- action_items: List of action items with responsible person if mentioned
+- decisions: List of decisions made (as simple strings)
+- action_items: List of action items (as simple strings)
 - answered_questions: List of questions that were answered
 - unanswered_questions: List of questions left unanswered
-- risks: List of risks identified
+- risks: List of risks identified (as simple strings)
 - blockers: List of blockers or impediments
 - future_meetings: List of future meetings mentioned
+- requirements: List of objects with title, description (optional), priority (optional - low/medium/high/critical)
+- structured_action_items: List of objects with title, description (optional), assignee (optional), due_date (optional)
+- structured_decisions: List of objects with title, description (optional), decision_date (optional)
+- structured_risks: List of objects with title, description (optional), severity (optional - low/medium/high/critical), mitigation (optional)
+- structured_questions: List of objects with title, description (optional), answer (optional)
 
 If a field has no information, use an empty list [].
 
@@ -79,6 +84,16 @@ class MeetingAnalysisService:
         analysis.generated_at = now
         await self.repo.db.commit()
         await self.repo.db.refresh(analysis)
+
+        knowledge_service = KnowledgeService(self.repo.db)
+        await knowledge_service.extract_from_analysis(
+            meeting_id=meeting_id,
+            requirements=[r.model_dump() for r in result.requirements] if result.requirements else None,
+            action_items=[a.model_dump() for a in result.structured_action_items] if result.structured_action_items else None,
+            decisions=[d.model_dump() for d in result.structured_decisions] if result.structured_decisions else None,
+            risks=[r.model_dump() for r in result.structured_risks] if result.structured_risks else None,
+            questions=[q.model_dump() for q in result.structured_questions] if result.structured_questions else None,
+        )
 
         return self._to_dict(analysis)
 
