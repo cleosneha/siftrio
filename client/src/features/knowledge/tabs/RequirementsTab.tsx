@@ -34,7 +34,7 @@ export function RequirementsTab({ projectId }: { projectId: string }) {
           { label: "Rejected", value: "rejected" },
           { label: "Implemented", value: "implemented" },
         ],
-        extraBadge: (item) => item.priority ? { label: item.priority, variant: "outline" } : null,
+        extraBadge: (item) => item.priority ? { label: String(item.priority), variant: "outline" } : null,
         approvalActions: true,
         emptyLabel: "No requirements yet. Generate a meeting analysis to populate.",
       }}

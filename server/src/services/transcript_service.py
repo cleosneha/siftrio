@@ -46,11 +46,19 @@ class TranscriptService:
                 chunk_text=chunk_text,
                 embedding=embedding,
                 chunk_metadata={
+                    "chunk_index": i,
                     "chunk_size": len(chunk_text),
+                    "meeting_id": str(meeting.id),
                     "meeting_title": meeting.title,
-                    "project": meeting.project.name if meeting.project else "miscellaneous",
+                    "meeting_type": meeting.meeting_type.value,
+                    "meeting_date": meeting.meeting_date.isoformat() if meeting.meeting_date else None,
+                    "project_id": str(meeting.project_id) if meeting.project_id else None,
+                    "project_name": meeting.project.name if meeting.project else None,
+                    "client_id": str(meeting.client_id),
+                    "client_name": meeting.client.name if meeting.client else None,
+                    "workspace_id": str(meeting.client.workspace_id) if meeting.client else None,
+                    "workspace_name": meeting.client.workspace.name if meeting.client and meeting.client.workspace else None,
                     "created_at": meeting.created_at.isoformat() if meeting.created_at else None,
-                    "client": meeting.client.name if meeting.client else "miscellaneous",
                 },
             )
 

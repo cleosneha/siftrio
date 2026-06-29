@@ -25,7 +25,7 @@ export function QuestionsTab({ projectId }: { projectId: string }) {
           { label: "Pending", value: "pending" },
         ],
         extraBadge: (item) =>
-          item.status === "answered"
+          String(item.status) === "answered"
             ? { label: "Answered", variant: "default" as const }
             : { label: "Pending", variant: "outline" as const },
         emptyLabel: "No questions yet. Generate a meeting analysis to populate.",

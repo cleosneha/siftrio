@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useMemo } from "react";
 import { Search, Check, X, Pencil, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -35,25 +35,18 @@ interface StatusOption {
   value: string;
 }
 
-interface BaseItem {
-  id: string;
-  title: string;
-  description?: string | null;
-  status: string;
-  meeting_id?: string;
-  meeting_title?: string | null;
-  [key: string]: any;
-}
+type BaseItem = Record<string, unknown>;
 
 interface TabConfig {
   fields: FieldConfig[];
   statusOptions: StatusOption[];
-  extraBadge?: (item: BaseItem) => { label: string; variant: string } | null;
+  extraBadge?: (item: BaseItem) => { label: string; variant: BadgeVariant } | null;
   approvalActions?: boolean;
   emptyLabel: string;
 }
 
-const STATUS_VARIANTS: Record<string, string> = {
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+const STATUS_VARIANTS: Record<string, BadgeVariant> = {
   pending: "outline",
   approved: "default",
   rejected: "destructive",
@@ -78,7 +71,7 @@ export function KnowledgeTabBase({
   items: BaseItem[];
   config: TabConfig;
   label: string;
-  onUpdate: (id: string, data: any) => Promise<any>;
+  onUpdate: (id: string, data: Record<string, string | boolean>) => Promise<unknown>;
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -87,11 +80,14 @@ export function KnowledgeTabBase({
 
   const filtered = useMemo(() => {
     return items.filter((item) => {
+      const title = String(item.title ?? "");
+      const desc = String(item.description ?? "");
+      const status = String(item.status ?? "");
       const matchesSearch =
         !search ||
-        item.title?.toLowerCase().includes(search.toLowerCase()) ||
-        item.description?.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = !statusFilter || item.status === statusFilter;
+        title.toLowerCase().includes(search.toLowerCase()) ||
+        desc.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = !statusFilter || status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [items, search, statusFilter]);
@@ -100,20 +96,20 @@ export function KnowledgeTabBase({
     setEditingItem(item);
     const form: Record<string, string> = {};
     for (const field of config.fields) {
-      form[field.key] = item[field.key] ?? "";
+      form[field.key] = String(item[field.key] ?? "");
     }
-    form.status = item.status ?? "";
+    form.status = String(item.status ?? "");
     setEditForm(form);
   };
 
   const handleSave = async () => {
     if (!editingItem) return;
-    await onUpdate(editingItem.id, editForm);
+    await onUpdate(String(editingItem.id), editForm);
     setEditingItem(null);
   };
 
   const handleApproval = async (item: BaseItem, status: string) => {
-    await onUpdate(item.id, { status });
+    await onUpdate(String(item.id), { status });
   };
 
   return (
@@ -150,47 +146,47 @@ export function KnowledgeTabBase({
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((item) => (
-            <Card key={item.id} size="sm">
+          {filtered.map((item, idx) => (
+            <Card key={String(item.id ?? idx)} size="sm">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <CardTitle className="text-sm font-medium">
-                      {item.title}
+                      {String(item.title ?? "")}
                     </CardTitle>
-                    {item.description && (
+                    {item.description ? (
                       <CardDescription className="mt-1">
-                        {item.description}
+                        {String(item.description)}
                       </CardDescription>
-                    )}
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Badge
-                      variant={(STATUS_VARIANTS[item.status] ?? "outline") as any}
+                      variant={STATUS_VARIANTS[String(item.status)] ?? "outline"}
                     >
-                      {item.status?.replace("_", " ")}
+                      {String(item.status ?? "").replace("_", " ")}
                     </Badge>
-                    {config.extraBadge && config.extraBadge(item) && (
+                    {config.extraBadge && config.extraBadge(item) ? (
                       <Badge
-                        variant={(config.extraBadge(item)?.variant ?? "outline") as any}
+                        variant={config.extraBadge(item)?.variant ?? "outline"}
                       >
                         {config.extraBadge(item)?.label}
                       </Badge>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {item.meeting_title && (
+                  {item.meeting_title ? (
                     <Link
-                      href={`/meetings/${item.meeting_id}`}
+                      href={`/meetings/${String(item.meeting_id)}`}
                       className="flex items-center gap-1 hover:text-foreground"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      {item.meeting_title}
+                      {String(item.meeting_title)}
                     </Link>
-                  )}
+                  ) : null}
                   <Button
                     variant="ghost"
                     size="xs"
@@ -199,7 +195,7 @@ export function KnowledgeTabBase({
                     <Pencil className="h-3 w-3" />
                     Edit
                   </Button>
-                  {config.approvalActions && item.status === "pending" && (
+                  {config.approvalActions && String(item.status) === "pending" && (
                     <>
                       <Button
                         variant="ghost"

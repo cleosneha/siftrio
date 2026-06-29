@@ -27,7 +27,7 @@ export function ActionItemsTab({ projectId }: { projectId: string }) {
           { label: "Completed", value: "completed" },
           { label: "Cancelled", value: "cancelled" },
         ],
-        extraBadge: (item) => item.assignee ? { label: item.assignee, variant: "secondary" } : null,
+        extraBadge: (item) => item.assignee ? { label: String(item.assignee), variant: "secondary" } : null,
         emptyLabel: "No action items yet. Generate a meeting analysis to populate.",
       }}
     />

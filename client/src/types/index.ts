@@ -82,6 +82,7 @@ export interface KnowledgeBase {
   created_at: string | null;
   updated_at: string | null;
   meeting_title: string | null;
+  [key: string]: unknown;
 }
 
 export interface Requirement extends KnowledgeBase {

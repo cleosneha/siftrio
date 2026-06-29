@@ -34,7 +34,7 @@ export function RisksTab({ projectId }: { projectId: string }) {
           { label: "Mitigated", value: "mitigated" },
           { label: "Closed", value: "closed" },
         ],
-        extraBadge: (item) => item.severity ? { label: item.severity, variant: "outline" } : null,
+        extraBadge: (item) => item.severity ? { label: String(item.severity), variant: "outline" } : null,
         emptyLabel: "No risks yet. Generate a meeting analysis to populate.",
       }}
     />

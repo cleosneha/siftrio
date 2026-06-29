@@ -1,37 +1,34 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import { Menu, ArrowLeft, Plus, Upload } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useProject } from "@/hooks/useProjects";
-import { useMeetingsByProject, useUploadTranscript } from "@/hooks/useMeetings";
+import { useMeetingsByProject } from "@/hooks/useMeetings";
 import { useAppContext } from "@/lib/app-context";
 import { CreateMeetingModal } from "@/components/meeting/CreateMeetingModal";
 import { KnowledgeSection } from "@/features/knowledge/KnowledgeSection";
+import { MeetingsSidebar } from "@/features/meetings/MeetingsSidebar";
+import { useMeetingsDrawer } from "@/features/meetings/meetings-drawer-store";
 
 export default function ProjectPage() {
   const params = useParams();
   const projectId = params.projectId as string;
   const { setSidebarOpen } = useAppContext();
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const { setMeetings } = useMeetingsDrawer();
 
   const { data: projectData } = useProject(projectId);
   const { data: meetingsData } = useMeetingsByProject(projectId);
-  const uploadTranscript = useUploadTranscript();
 
   const project = projectData?.data;
-  const meetings = meetingsData?.data ?? [];
+
+  useEffect(() => {
+    setMeetings(meetingsData?.data ?? []);
+  }, [meetingsData?.data, setMeetings]);
 
   const statusVariant: Record<
     string,
@@ -40,15 +37,6 @@ export default function ProjectPage() {
     active: "default",
     completed: "secondary",
     archived: "outline",
-  };
-
-  const handleFileUpload = async (meetingId: string, file: File) => {
-    setUploadingId(meetingId);
-    try {
-      await uploadTranscript.mutateAsync({ meetingId, file });
-    } finally {
-      setUploadingId(null);
-    }
   };
 
   return (
@@ -92,92 +80,15 @@ export default function ProjectPage() {
         </div>
       </header>
 
-      <div className="flex-1 p-4 md:p-6">
-        <div className="mb-6">
-          <h2 className="mb-4 text-lg font-medium">
-            Meetings
-            {meetings.length > 0 && (
-              <span className="ml-2 text-sm text-muted-foreground">
-                ({meetings.length})
-              </span>
-            )}
-          </h2>
-          {meetings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-              <p className="mb-4 text-sm text-muted-foreground">
-                No meetings yet
-              </p>
-              <Button onClick={() => setShowCreateMeeting(true)}>
-                <Plus className="h-4 w-4" />
-                Create Meeting
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {meetings.map((meeting: {
-                id: string;
-                title: string;
-                meeting_date?: string | null;
-                transcript?: string | null;
-              }) => (
-                <Card key={meeting.id} className="transition-shadow hover:shadow-sm">
-                  <Link
-                    href={`/meetings/${meeting.id}`}
-                    className="block"
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-base">
-                        {meeting.title}
-                      </CardTitle>
-                      {meeting.meeting_date && (
-                        <CardDescription>
-                          {new Date(meeting.meeting_date).toLocaleDateString()}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                  </Link>
-                  <CardContent>
-                    {meeting.transcript ? (
-                      <p className="text-xs text-muted-foreground">
-                        Transcript uploaded
-                      </p>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={uploadingId === meeting.id}
-                          onClick={() => {
-                            const input = document.createElement("input");
-                            input.type = "file";
-                            input.accept = ".txt";
-                            input.onchange = async (e) => {
-                              const file = (e.target as HTMLInputElement)
-                                .files?.[0];
-                              if (file) {
-                                await handleFileUpload(meeting.id, file);
-                              }
-                            };
-                            input.click();
-                          }}
-                        >
-                          <Upload className="h-3.5 w-3.5" />
-                          {uploadingId === meeting.id
-                            ? "Uploading..."
-                            : "Upload Transcript"}
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <h2 className="mb-4 text-lg font-medium">Knowledge</h2>
-          <KnowledgeSection projectId={projectId} />
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <MeetingsSidebar />
+          </div>
+          <div className="mb-6">
+            <h2 className="mb-4 text-lg font-medium">Knowledge</h2>
+            <KnowledgeSection projectId={projectId} />
+          </div>
         </div>
       </div>
 

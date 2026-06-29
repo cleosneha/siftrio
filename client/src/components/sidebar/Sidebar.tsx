@@ -69,7 +69,7 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r md:block">
+      <aside className="relative z-50 hidden w-64 shrink-0 border-r md:block">
         {sidebarContent}
       </aside>
 
