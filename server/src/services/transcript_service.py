@@ -48,6 +48,9 @@ class TranscriptService:
                 chunk_metadata={
                     "chunk_size": len(chunk_text),
                     "meeting_title": meeting.title,
+                    "project": meeting.project.name if meeting.project else "miscellaneous",
+                    "created_at": meeting.created_at.isoformat() if meeting.created_at else None,
+                    "client": meeting.client.name if meeting.client else "miscellaneous",
                 },
             )
 
