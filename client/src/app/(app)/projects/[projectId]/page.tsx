@@ -17,6 +17,7 @@ import { useProject } from "@/hooks/useProjects";
 import { useMeetingsByProject, useUploadTranscript } from "@/hooks/useMeetings";
 import { useAppContext } from "@/lib/app-context";
 import { CreateMeetingModal } from "@/components/meeting/CreateMeetingModal";
+import { KnowledgeSection } from "@/features/knowledge/KnowledgeSection";
 
 export default function ProjectPage() {
   const params = useParams();
@@ -174,30 +175,9 @@ export default function ProjectPage() {
           )}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Knowledge Base</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Knowledge base is empty. Documents and insights will appear
-                here.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Memory Chat</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Chat with the project memory. Conversations will be available
-                here.
-              </CardDescription>
-            </CardContent>
-          </Card>
+        <div className="mb-6">
+          <h2 className="mb-4 text-lg font-medium">Knowledge</h2>
+          <KnowledgeSection projectId={projectId} />
         </div>
       </div>
 
