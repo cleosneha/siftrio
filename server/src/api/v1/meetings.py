@@ -55,26 +55,26 @@ async def get_meeting(meeting_id: str, db: AsyncSession = Depends(get_db)) -> Ba
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
     data = MeetingResponse(
-        id=str(meeting.id),
-        client_id=str(meeting.client_id),
-        project_id=str(meeting.project_id) if meeting.project_id else None,
+        id=meeting.id,
+        client_id=meeting.client_id,
+        project_id=meeting.project_id,
         title=meeting.title,
         meeting_type=meeting.meeting_type.value,
         tags=meeting.tags,
         transcript=meeting.transcript,
-        meeting_date=meeting.meeting_date.isoformat() if meeting.meeting_date else None,
-        start_time=meeting.start_time.isoformat().replace("+00:00", "Z") if meeting.start_time else None,
-        end_time=meeting.end_time.isoformat().replace("+00:00", "Z") if meeting.end_time else None,
+        meeting_date=meeting.meeting_date,
+        start_time=meeting.start_time,
+        end_time=meeting.end_time,
         meeting_provider=meeting.meeting_provider.value,
         meeting_url=meeting.meeting_url,
         google_calendar_event_id=meeting.google_calendar_event_id,
         google_meet_url=meeting.google_meet_url,
         google_meet_code=meeting.google_meet_code,
         fireflies_meeting_id=meeting.fireflies_meeting_id,
-        transcript_status=meeting.transcript_status if meeting.transcript_status else None,
+        transcript_status=meeting.transcript_status,
         guest_emails=meeting.guest_emails or [],
-        created_at=meeting.created_at.isoformat().replace("+00:00", "Z") if meeting.created_at else None,
-        updated_at=meeting.updated_at.isoformat().replace("+00:00", "Z") if meeting.updated_at else None,
+        created_at=meeting.created_at,
+        updated_at=meeting.updated_at,
     ).model_dump()
     return BaseResponse(data=data)
 
@@ -99,26 +99,26 @@ async def list_meetings(
 
     data = [
         MeetingResponse(
-            id=str(m.id),
-            client_id=str(m.client_id),
-            project_id=str(m.project_id) if m.project_id else None,
+            id=m.id,
+            client_id=m.client_id,
+            project_id=m.project_id,
             title=m.title,
             meeting_type=m.meeting_type.value,
             tags=m.tags,
             transcript=m.transcript,
-            meeting_date=m.meeting_date.isoformat() if m.meeting_date else None,
-            start_time=m.start_time.isoformat().replace("+00:00", "Z") if m.start_time else None,
-            end_time=m.end_time.isoformat().replace("+00:00", "Z") if m.end_time else None,
+            meeting_date=m.meeting_date,
+            start_time=m.start_time,
+            end_time=m.end_time,
             meeting_provider=m.meeting_provider.value,
             meeting_url=m.meeting_url,
             google_calendar_event_id=m.google_calendar_event_id,
             google_meet_url=m.google_meet_url,
             google_meet_code=m.google_meet_code,
             fireflies_meeting_id=m.fireflies_meeting_id,
-            transcript_status=m.transcript_status if m.transcript_status else None,
+            transcript_status=m.transcript_status,
             guest_emails=m.guest_emails or [],
-            created_at=m.created_at.isoformat().replace("+00:00", "Z") if m.created_at else None,
-            updated_at=m.updated_at.isoformat().replace("+00:00", "Z") if m.updated_at else None,
+            created_at=m.created_at,
+            updated_at=m.updated_at,
         ).model_dump()
         for m in meetings
     ]
@@ -176,4 +176,5 @@ async def retry_transcript(
 async def delete_meeting(meeting_id: str, db: AsyncSession = Depends(get_db)) -> BaseResponse:
     repo = MeetingRepository(db)
     await repo.delete(UUID(meeting_id))
+    await db.commit()
     return BaseResponse(message="Meeting deleted successfully")
