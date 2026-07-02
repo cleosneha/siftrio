@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ClientCreate(BaseModel):
@@ -11,6 +11,8 @@ class ClientCreate(BaseModel):
 
 
 class ClientResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     workspace_id: UUID
     name: str

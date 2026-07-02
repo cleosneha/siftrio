@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class MeetingCreate(BaseModel):
@@ -19,6 +19,8 @@ class MeetingCreate(BaseModel):
 
 
 class MeetingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+
     id: UUID
     client_id: UUID
     project_id: UUID | None = None

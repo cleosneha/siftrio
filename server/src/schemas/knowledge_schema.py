@@ -1,18 +1,21 @@
 from datetime import datetime
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class KnowledgeBaseResponse(BaseModel):
-    id: str
-    project_id: str
-    meeting_id: str
-    source_chunk_id: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    project_id: UUID
+    meeting_id: UUID
+    source_chunk_id: UUID | None = None
     title: str
     description: str | None = None
     status: str
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     meeting_title: str | None = None
 
@@ -35,8 +38,8 @@ class RequirementUpdate(BaseModel):
 
 class RequirementResponse(KnowledgeBaseResponse):
     priority: str | None = None
-    approved_by: str | None = None
-    approved_at: str | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
 
 
 class ActionItemCreate(BaseModel):
@@ -59,7 +62,7 @@ class ActionItemUpdate(BaseModel):
 
 class ActionItemResponse(KnowledgeBaseResponse):
     assignee: str | None = None
-    due_date: str | None = None
+    due_date: datetime | None = None
 
 
 class DecisionCreate(BaseModel):
@@ -79,7 +82,7 @@ class DecisionUpdate(BaseModel):
 
 
 class DecisionResponse(KnowledgeBaseResponse):
-    decision_date: str | None = None
+    decision_date: datetime | None = None
 
 
 class RiskCreate(BaseModel):

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MeetingAnalysisCreate(BaseModel):
@@ -18,6 +18,8 @@ class MeetingAnalysisCreate(BaseModel):
 
 
 class MeetingAnalysisResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     meeting_id: UUID
     summary: str | None = None
