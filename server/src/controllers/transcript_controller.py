@@ -39,7 +39,7 @@ class TranscriptController:
             analysis_service=analysis_service,
         )
 
-    async def upload(self, meeting_id: str, file: UploadFile) -> BaseResponse:
+    async def upload(self, meeting_id: UUID, file: UploadFile) -> BaseResponse:
         if not file.filename or not file.filename.endswith(".txt"):
             return BaseResponse(
                 success=False,
@@ -48,5 +48,5 @@ class TranscriptController:
             )
         content = await file.read()
         transcript_text = content.decode("utf-8")
-        data = await self.service.process_upload(UUID(meeting_id), transcript_text)
+        data = await self.service.process_upload(meeting_id, transcript_text)
         return BaseResponse(message="Transcript processed successfully", data=data)

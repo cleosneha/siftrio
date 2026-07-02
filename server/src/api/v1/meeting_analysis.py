@@ -7,7 +7,7 @@ from src.controllers.meeting_analysis_controller import MeetingAnalysisControlle
 from src.core.database import get_db
 from src.middlewares.auth import require_authenticated_user
 from src.schemas.base_response import BaseResponse
-from src.utils.uuid_validator import validate_uuid_path
+
 
 router = APIRouter(
     prefix="/meetings",
@@ -18,7 +18,7 @@ router = APIRouter(
 
 @router.get("/{meeting_id}/analysis", response_model=BaseResponse)
 async def get_meeting_analysis(
-    meeting_id: UUID = Depends(validate_uuid_path),
+    meeting_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = MeetingAnalysisController(db)
@@ -27,7 +27,7 @@ async def get_meeting_analysis(
 
 @router.post("/{meeting_id}/analysis/regenerate", response_model=BaseResponse)
 async def regenerate_meeting_analysis(
-    meeting_id: UUID = Depends(validate_uuid_path),
+    meeting_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = MeetingAnalysisController(db)

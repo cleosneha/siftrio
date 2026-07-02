@@ -12,7 +12,7 @@ from src.schemas.base_response import BaseResponse
 from src.schemas.client_schema import ClientCreate
 from src.services.authorization_service import AuthorizationService
 from src.services.client_service import ClientService
-from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
+from src.utils.uuid_validator import parse_optional_uuid
 
 router = APIRouter(
     prefix="/clients",
@@ -48,6 +48,6 @@ async def list_clients(
 
 
 @router.get("/{client_id}", response_model=BaseResponse)
-async def get_client(client_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def get_client(client_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
     controller = ClientController(db)
     return await controller.get_by_id(client_id)

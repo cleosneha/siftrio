@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +17,7 @@ router = APIRouter(
 
 @router.post("/{meeting_id}", response_model=BaseResponse)
 async def upload_transcript(
-    meeting_id: str,
+    meeting_id: UUID,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:

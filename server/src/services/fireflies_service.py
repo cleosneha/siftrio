@@ -212,8 +212,13 @@ class FirefliesService:
             transcript_status=TranscriptStatus.PROCESSING,
         )
 
-        transcript_text = self._build_transcript_text(transcript)
-        result = await self._transcript_service.process_upload(meeting.id, transcript_text)
+        try:
+            transcript_text = self._build_transcript_text(transcript)
+            result = await self._transcript_service.process_upload(meeting.id, transcript_text)
+        except Exception:
+            await self._repo.update(meeting.id, transcript_status=TranscriptStatus.FAILED)
+            await self._db.commit()
+            raise
 
         await self._repo.update(
             meeting.id,

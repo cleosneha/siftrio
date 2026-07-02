@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio.log import logger
 from uuid import UUID
 
 from sqlalchemy import select, func
@@ -16,6 +17,7 @@ class ClientRepository:
     async def create(
         self, workspace_id: UUID, name: str, description: str | None = None
     ) -> Client:
+        logger.debug(f"Creating client in workspace {workspace_id} with name '{name}'")
         client = Client(workspace_id=workspace_id, name=name, description=description)
         self._db.add(client)
         await self._db.flush()

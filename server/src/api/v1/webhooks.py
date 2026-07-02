@@ -74,8 +74,6 @@ async def fireflies_webhook(request: Request) -> dict:
         repo = MeetingRepository(db)
 
         meeting = await repo.find_by_fireflies_meeting_id(fireflies_meeting_id)
-        if not meeting:
-            meeting = await repo.find_by_google_event_id(fireflies_meeting_id)
 
         if meeting:
             logger.info("Pre-linked fireflies_meeting_id %s to meeting %s", fireflies_meeting_id, meeting.id)

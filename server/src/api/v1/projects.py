@@ -12,7 +12,7 @@ from src.schemas.base_response import BaseResponse
 from src.schemas.project_schema import ProjectCreate
 from src.services.authorization_service import AuthorizationService
 from src.services.project_service import ProjectService
-from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
+from src.utils.uuid_validator import parse_optional_uuid
 
 router = APIRouter(
     prefix="/projects",
@@ -48,6 +48,6 @@ async def list_projects(
 
 
 @router.get("/{project_id}", response_model=BaseResponse)
-async def get_project(project_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def get_project(project_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
     controller = ProjectController(db)
     return await controller.get_by_id(project_id)

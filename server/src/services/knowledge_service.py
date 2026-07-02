@@ -101,8 +101,6 @@ class KnowledgeService:
                     answer=item.get("answer"),
                 )
 
-        await self.db.commit()
-
     async def list_requirements(
         self,
         project_id: UUID | None = None,
@@ -184,6 +182,7 @@ class KnowledgeService:
         entity = await self.repo.update_requirement(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Requirement not found", status_code=404)
+        await self.db.commit()
         return self._validate(entity, RequirementResponse)
 
     async def update_action_item(
@@ -192,6 +191,7 @@ class KnowledgeService:
         entity = await self.repo.update_action_item(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
+        await self.db.commit()
         return self._validate(entity, ActionItemResponse)
 
     async def update_decision(
@@ -200,12 +200,14 @@ class KnowledgeService:
         entity = await self.repo.update_decision(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Decision not found", status_code=404)
+        await self.db.commit()
         return self._validate(entity, DecisionResponse)
 
     async def update_risk(self, entity_id: UUID, data: dict) -> dict | None:
         entity = await self.repo.update_risk(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Risk not found", status_code=404)
+        await self.db.commit()
         return self._validate(entity, RiskResponse)
 
     async def update_question(
@@ -214,6 +216,7 @@ class KnowledgeService:
         entity = await self.repo.update_question(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Question not found", status_code=404)
+        await self.db.commit()
         return self._validate(entity, QuestionResponse)
 
     def _validate(self, entity, response_cls) -> dict:

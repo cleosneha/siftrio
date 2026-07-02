@@ -45,8 +45,7 @@ class TranscriptService:
         await self.chunk_repo.delete_by_meeting(meeting_id)
 
         chunks = self.text_splitter.split_text(transcript_text)
-        texts_to_embed = [c for c in chunks if c.strip()]
-        embeddings_list = await self.embeddings.embed_documents(texts_to_embed)
+        embeddings_list = await self.embeddings.embed_documents(chunks)
 
         workspace_id = meeting.client.workspace_id if meeting.client else None
         client_id = meeting.client_id

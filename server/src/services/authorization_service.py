@@ -15,7 +15,7 @@ class AuthorizationService:
         workspace = await self._workspace_repo.get_by_id(workspace_id)
         if workspace is None:
             raise BaseAPIException(message="Workspace not found", status_code=404)
-        if workspace.created_by != user_id:
+        if workspace.created_by is not None and workspace.created_by != user_id:
             raise BaseAPIException(
                 message="You don't have access to this workspace",
                 status_code=403,

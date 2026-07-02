@@ -14,7 +14,7 @@ from src.schemas.knowledge_schema import (
     RequirementUpdate,
     RiskUpdate,
 )
-from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
+from src.utils.uuid_validator import parse_optional_uuid
 
 router = APIRouter(
     prefix="/knowledge",
@@ -42,7 +42,7 @@ async def list_requirements(
 
 @router.get("/requirements/{entity_id}", response_model=BaseResponse)
 async def get_requirement(
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -52,7 +52,7 @@ async def get_requirement(
 @router.patch("/requirements/{entity_id}", response_model=BaseResponse)
 async def update_requirement(
     body: RequirementUpdate,
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -80,7 +80,7 @@ async def list_action_items(
 
 @router.get("/action-items/{entity_id}", response_model=BaseResponse)
 async def get_action_item(
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -90,7 +90,7 @@ async def get_action_item(
 @router.patch("/action-items/{entity_id}", response_model=BaseResponse)
 async def update_action_item(
     body: ActionItemUpdate,
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -118,7 +118,7 @@ async def list_decisions(
 
 @router.get("/decisions/{entity_id}", response_model=BaseResponse)
 async def get_decision(
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -128,7 +128,7 @@ async def get_decision(
 @router.patch("/decisions/{entity_id}", response_model=BaseResponse)
 async def update_decision(
     body: DecisionUpdate,
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -156,7 +156,7 @@ async def list_risks(
 
 @router.get("/risks/{entity_id}", response_model=BaseResponse)
 async def get_risk(
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -166,7 +166,7 @@ async def get_risk(
 @router.patch("/risks/{entity_id}", response_model=BaseResponse)
 async def update_risk(
     body: RiskUpdate,
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -194,7 +194,7 @@ async def list_questions(
 
 @router.get("/questions/{entity_id}", response_model=BaseResponse)
 async def get_question(
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -204,7 +204,7 @@ async def get_question(
 @router.patch("/questions/{entity_id}", response_model=BaseResponse)
 async def update_question(
     body: QuestionUpdate,
-    entity_id: UUID = Depends(validate_uuid_path),
+    entity_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)

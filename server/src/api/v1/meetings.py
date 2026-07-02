@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import async_session_factory, get_db
-from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
+from src.utils.uuid_validator import parse_optional_uuid
 from src.middlewares.auth import require_authenticated_user
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.client_repository import ClientRepository
@@ -65,7 +65,7 @@ async def create_meeting(
 
 
 @router.get("/{meeting_id}", response_model=BaseResponse)
-async def get_meeting(meeting_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def get_meeting(meeting_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
@@ -102,7 +102,7 @@ async def list_meetings(
 
 @router.get("/{meeting_id}/transcript-status", response_model=BaseResponse)
 async def get_transcript_status(
-    meeting_id: UUID = Depends(validate_uuid_path),
+    meeting_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
@@ -118,7 +118,7 @@ async def get_transcript_status(
 
 @router.post("/{meeting_id}/retry-transcript", response_model=BaseResponse)
 async def retry_transcript(
-    meeting_id: UUID = Depends(validate_uuid_path),
+    meeting_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
@@ -149,7 +149,7 @@ async def retry_transcript(
 
 
 @router.delete("/{meeting_id}", response_model=BaseResponse)
-async def delete_meeting(meeting_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def delete_meeting(meeting_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
     repo = MeetingRepository(db)
     await repo.delete(meeting_id)
     await db.commit()

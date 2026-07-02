@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Cookie, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.auth_controller import AuthController
@@ -33,21 +33,29 @@ async def get_me(request: Request):
     return BaseResponse(data=request.state.user.model_dump())
 
 
-@router.post("/refresh", response_model=BaseResponse)
+@router.post("/refresh")
 async def refresh_token(
-    response: Response,
     refresh_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     if not refresh_token:
-        return BaseResponse(success=False, message="Refresh token not found")
+        return JSONResponse(
+            status_code=200,
+            content=BaseResponse(success=False, message="Refresh token not found").model_dump(),
+        )
 
     service = AuthService(AuthRepository(db))
     new_access_token = await service.refresh_access_token(refresh_token)
     if not new_access_token:
-        return BaseResponse(success=False, message="Invalid or expired refresh token")
+        return JSONResponse(
+            status_code=200,
+            content=BaseResponse(success=False, message="Invalid or expired refresh token").model_dump(),
+        )
 
-    response.set_cookie(
+    resp = JSONResponse(
+        content=BaseResponse(message="Token refreshed successfully").model_dump(),
+    )
+    resp.set_cookie(
         key="access_token",
         value=new_access_token,
         httponly=True,
@@ -56,11 +64,12 @@ async def refresh_token(
         max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
-    return BaseResponse(message="Token refreshed successfully")
+    return resp
 
 
-@router.post("/logout", response_model=BaseResponse)
-async def logout(response: Response):
-    response.delete_cookie(key="access_token", path="/")
-    response.delete_cookie(key="refresh_token", path="/api/auth/refresh")
-    return BaseResponse(message="Logged out successfully")
+@router.post("/logout")
+async def logout():
+    resp = JSONResponse(content=BaseResponse(message="Logged out successfully").model_dump())
+    resp.delete_cookie(key="access_token", path="/")
+    resp.delete_cookie(key="refresh_token", path="/api/auth/refresh")
+    return resp

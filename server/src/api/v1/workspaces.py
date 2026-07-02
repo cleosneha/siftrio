@@ -11,7 +11,7 @@ from src.middlewares.auth import require_authenticated_user
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.workspace_schema import WorkspaceCreate, WorkspaceResponse
-from src.utils.uuid_validator import validate_uuid_path
+
 
 router = APIRouter(
     prefix="/workspaces",
@@ -48,7 +48,7 @@ async def list_workspaces(
 
 @router.get("/{workspace_id}", response_model=BaseResponse)
 async def get_workspace(
-    workspace_id: UUID = Depends(validate_uuid_path),
+    workspace_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     repo = WorkspaceRepository(db)

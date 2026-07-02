@@ -9,6 +9,7 @@ from src.core.config import settings
 
 class AuthController:
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.service = AuthService(AuthRepository(db))
 
     async def login(self) -> RedirectResponse:
@@ -18,6 +19,7 @@ class AuthController:
     async def callback(self, code: str) -> RedirectResponse:
         try:
             user, access_token, refresh_token = await self.service.handle_google_callback(code)
+            await self.db.commit()
         except ValueError:
             return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=true")
 

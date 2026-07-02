@@ -101,9 +101,6 @@ class MeetingAnalysisService:
             questions=[q.model_dump() for q in result.structured_questions] if result.structured_questions else None,
         )
 
-        await self.db.commit()
-        await self.db.refresh(analysis)
-
         return MeetingAnalysisResponse.model_validate(analysis).model_dump()
 
     async def get_analysis(self, meeting_id: UUID) -> dict | None:
