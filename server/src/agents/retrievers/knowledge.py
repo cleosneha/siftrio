@@ -26,28 +26,27 @@ ENTITY_MODELS = [
 
 
 class KnowledgeRetriever:
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
     async def search(
         self,
+        db: AsyncSession,
         filters: dict | None = None,
     ) -> list[RetrievedKnowledge]:
         filters = filters or {}
-        meeting_id = filters.get("meeting_id")
-        project_id = filters.get("project_id")
-        client_id = filters.get("client_id")
-        workspace_id = filters.get("workspace_id")
+        workspace_ids = filters.get("workspace_ids") or []
+        client_ids = filters.get("client_ids") or []
+        project_ids = filters.get("project_ids") or []
+        meeting_ids = filters.get("meeting_ids") or []
 
         results: list[RetrievedKnowledge] = []
         for model, entity_type in ENTITY_MODELS:
             entities = await self._search_entity(
+                db,
                 model,
                 entity_type,
-                meeting_id=meeting_id,
-                project_id=project_id,
-                client_id=client_id,
-                workspace_id=workspace_id,
+                workspace_ids=workspace_ids,
+                client_ids=client_ids,
+                project_ids=project_ids,
+                meeting_ids=meeting_ids,
             )
             results.extend(entities)
 
@@ -56,33 +55,38 @@ class KnowledgeRetriever:
 
     async def _search_entity(
         self,
+        db: AsyncSession,
         model,
         entity_type: str,
-        meeting_id: str | None,
-        project_id: str | None,
-        client_id: str | None,
-        workspace_id: str | None,
+        workspace_ids: list[str] | None = None,
+        client_ids: list[str] | None = None,
+        project_ids: list[str] | None = None,
+        meeting_ids: list[str] | None = None,
     ) -> list[RetrievedKnowledge]:
         stmt = select(model).options(joinedload(model.meeting))
 
-        needs_project_join = bool(client_id or workspace_id)
+        workspace_ids = workspace_ids or []
+        client_ids = client_ids or []
+        project_ids = project_ids or []
+        meeting_ids = meeting_ids or []
 
+        needs_project_join = bool(workspace_ids or client_ids or project_ids)
         if needs_project_join:
             stmt = stmt.join(model.project, isouter=False)
-            if client_id:
-                stmt = stmt.where(Project.client_id == UUID(client_id))
-            if workspace_id:
-                stmt = stmt.join(Project.client).where(
-                    Client.workspace_id == UUID(workspace_id)
-                )
-        elif project_id:
-            stmt = stmt.where(model.project_id == UUID(project_id))
+            if workspace_ids or client_ids:
+                stmt = stmt.join(Project.client)
+            if workspace_ids:
+                stmt = stmt.where(Client.workspace_id.in_([UUID(wid) for wid in workspace_ids]))
+            if client_ids:
+                stmt = stmt.where(Client.id.in_([UUID(cid) for cid in client_ids]))
 
-        if meeting_id:
-            stmt = stmt.where(model.meeting_id == UUID(meeting_id))
+        if meeting_ids:
+            stmt = stmt.where(model.meeting_id.in_([UUID(mid) for mid in meeting_ids]))
+        if project_ids:
+            stmt = stmt.where(model.project_id.in_([UUID(pid) for pid in project_ids]))
 
         stmt = stmt.order_by(model.created_at.desc())
-        result = await self.db.execute(stmt)
+        result = await db.execute(stmt)
         entities = list(result.unique().scalars().all())
 
         return [
