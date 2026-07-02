@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,7 @@ from src.schemas.knowledge_schema import (
     RequirementUpdate,
     RiskUpdate,
 )
+from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
 
 router = APIRouter(
     prefix="/knowledge",
@@ -25,15 +28,21 @@ async def list_requirements(
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
-    return await controller.list_requirements(project_id, meeting_id, status)
+    return await controller.list_requirements(
+        parse_optional_uuid(project_id, "project_id") if project_id else None,
+        parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
+        status, limit=limit, offset=offset,
+    )
 
 
 @router.get("/requirements/{entity_id}", response_model=BaseResponse)
 async def get_requirement(
-    entity_id: str,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -42,8 +51,8 @@ async def get_requirement(
 
 @router.patch("/requirements/{entity_id}", response_model=BaseResponse)
 async def update_requirement(
-    entity_id: str,
     body: RequirementUpdate,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -57,15 +66,21 @@ async def list_action_items(
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
-    return await controller.list_action_items(project_id, meeting_id, status)
+    return await controller.list_action_items(
+        parse_optional_uuid(project_id, "project_id") if project_id else None,
+        parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
+        status, limit=limit, offset=offset,
+    )
 
 
 @router.get("/action-items/{entity_id}", response_model=BaseResponse)
 async def get_action_item(
-    entity_id: str,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -74,8 +89,8 @@ async def get_action_item(
 
 @router.patch("/action-items/{entity_id}", response_model=BaseResponse)
 async def update_action_item(
-    entity_id: str,
     body: ActionItemUpdate,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -89,15 +104,21 @@ async def list_decisions(
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
-    return await controller.list_decisions(project_id, meeting_id, status)
+    return await controller.list_decisions(
+        parse_optional_uuid(project_id, "project_id") if project_id else None,
+        parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
+        status, limit=limit, offset=offset,
+    )
 
 
 @router.get("/decisions/{entity_id}", response_model=BaseResponse)
 async def get_decision(
-    entity_id: str,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -106,8 +127,8 @@ async def get_decision(
 
 @router.patch("/decisions/{entity_id}", response_model=BaseResponse)
 async def update_decision(
-    entity_id: str,
     body: DecisionUpdate,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -121,15 +142,21 @@ async def list_risks(
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
-    return await controller.list_risks(project_id, meeting_id, status)
+    return await controller.list_risks(
+        parse_optional_uuid(project_id, "project_id") if project_id else None,
+        parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
+        status, limit=limit, offset=offset,
+    )
 
 
 @router.get("/risks/{entity_id}", response_model=BaseResponse)
 async def get_risk(
-    entity_id: str,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -138,8 +165,8 @@ async def get_risk(
 
 @router.patch("/risks/{entity_id}", response_model=BaseResponse)
 async def update_risk(
-    entity_id: str,
     body: RiskUpdate,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -153,15 +180,21 @@ async def list_questions(
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
-    return await controller.list_questions(project_id, meeting_id, status)
+    return await controller.list_questions(
+        parse_optional_uuid(project_id, "project_id") if project_id else None,
+        parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
+        status, limit=limit, offset=offset,
+    )
 
 
 @router.get("/questions/{entity_id}", response_model=BaseResponse)
 async def get_question(
-    entity_id: str,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)
@@ -170,8 +203,8 @@ async def get_question(
 
 @router.patch("/questions/{entity_id}", response_model=BaseResponse)
 async def update_question(
-    entity_id: str,
     body: QuestionUpdate,
+    entity_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     controller = KnowledgeController(db)

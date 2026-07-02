@@ -3,6 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.auth_controller import AuthController
+from src.core.config import settings
 from src.core.database import get_db
 from src.middlewares.auth import require_authenticated_user
 from src.repositories.auth_repository import AuthRepository
@@ -50,9 +51,9 @@ async def refresh_token(
         key="access_token",
         value=new_access_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=15 * 60,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+        max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
     return BaseResponse(message="Token refreshed successfully")

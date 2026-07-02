@@ -4,9 +4,10 @@ import logging
 from fastapi import APIRouter, Request
 
 from src.core.database import async_session_factory
+from src.core.embeddings import embedder
 from src.repositories.meeting_repository import MeetingRepository
 from src.services.fireflies_service import (
-    process_fireflies_transcript,
+    FirefliesService,
     verify_webhook_signature,
 )
 
@@ -81,7 +82,8 @@ async def fireflies_webhook(request: Request) -> dict:
             await repo.update(meeting.id, fireflies_meeting_id=fireflies_meeting_id)
 
         try:
-            result = await process_fireflies_transcript(db, fireflies_meeting_id)
+            fireflies_service = FirefliesService(db, MeetingRepository(db), embedder)
+            result = await fireflies_service.process_transcript(fireflies_meeting_id)
             logger.info(
                 "Fireflies transcript processed for meeting %s: %s chunks",
                 result["meeting_id"],

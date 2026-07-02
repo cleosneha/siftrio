@@ -1,18 +1,25 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import async_session_factory, get_db
+from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
 from src.middlewares.auth import require_authenticated_user
+from src.repositories.auth_repository import AuthRepository
+from src.repositories.client_repository import ClientRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.repositories.project_repository import ProjectRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.meeting_schema import (
     MeetingCreate,
     MeetingResponse,
     TranscriptStatusResponse,
 )
-from src.services.fireflies_service import process_fireflies_transcript
+from src.core.embeddings import embedder
+from src.services.auth_service import AuthService
+from src.services.fireflies_service import FirefliesService
+from src.services.meeting_integration_service import MeetingIntegrationService
 from src.services.meeting_service import MeetingService
 
 router = APIRouter(
@@ -28,7 +35,15 @@ async def create_meeting(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
-    service = MeetingService(db)
+    auth_service = AuthService(AuthRepository(db))
+    integration_service = MeetingIntegrationService(db, auth_service=auth_service)
+    service = MeetingService(
+        db=db,
+        repo=MeetingRepository(db),
+        client_repo=ClientRepository(db),
+        project_repo=ProjectRepository(db),
+        integration_service=integration_service,
+    )
     user_id = UUID(request.state.user.id) if request.state.user else None
     user_email = request.state.user.email if request.state.user else None
     data = await service.create(
@@ -50,87 +65,47 @@ async def create_meeting(
 
 
 @router.get("/{meeting_id}", response_model=BaseResponse)
-async def get_meeting(meeting_id: str, db: AsyncSession = Depends(get_db)) -> BaseResponse:
-    meeting = await MeetingRepository(db).get_by_id(UUID(meeting_id))
+async def get_meeting(meeting_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
+    meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
-    data = MeetingResponse(
-        id=meeting.id,
-        client_id=meeting.client_id,
-        project_id=meeting.project_id,
-        title=meeting.title,
-        meeting_type=meeting.meeting_type.value,
-        tags=meeting.tags,
-        transcript=meeting.transcript,
-        meeting_date=meeting.meeting_date,
-        start_time=meeting.start_time,
-        end_time=meeting.end_time,
-        meeting_provider=meeting.meeting_provider.value,
-        meeting_url=meeting.meeting_url,
-        google_calendar_event_id=meeting.google_calendar_event_id,
-        google_meet_url=meeting.google_meet_url,
-        google_meet_code=meeting.google_meet_code,
-        fireflies_meeting_id=meeting.fireflies_meeting_id,
-        transcript_status=meeting.transcript_status,
-        guest_emails=meeting.guest_emails or [],
-        created_at=meeting.created_at,
-        updated_at=meeting.updated_at,
-    ).model_dump()
+    data = MeetingResponse.model_validate(meeting).model_dump()
     return BaseResponse(data=data)
 
 
 @router.get("", response_model=BaseResponse)
 async def list_meetings(
-    client_id: str | None = None,
-    project_id: str | None = None,
+    client_id: str | None = Query(None),
+    project_id: str | None = Query(None),
     miscellaneous: bool = False,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     repo = MeetingRepository(db)
 
-    if project_id:
-        meetings = await repo.list_by_project(UUID(project_id))
-    elif miscellaneous and client_id:
-        meetings = await repo.list_miscellaneous_by_client(UUID(client_id))
-    elif client_id:
-        meetings = await repo.list_by_client(UUID(client_id))
+    cl_id = parse_optional_uuid(client_id, "client_id") if client_id else None
+    pr_id = parse_optional_uuid(project_id, "project_id") if project_id else None
+
+    if pr_id:
+        meetings = await repo.list_by_project(pr_id, limit=limit, offset=offset)
+    elif miscellaneous and cl_id:
+        meetings = await repo.list_miscellaneous_by_client(cl_id, limit=limit, offset=offset)
+    elif cl_id:
+        meetings = await repo.list_by_client(cl_id, limit=limit, offset=offset)
     else:
         return BaseResponse(data=[])
 
-    data = [
-        MeetingResponse(
-            id=m.id,
-            client_id=m.client_id,
-            project_id=m.project_id,
-            title=m.title,
-            meeting_type=m.meeting_type.value,
-            tags=m.tags,
-            transcript=m.transcript,
-            meeting_date=m.meeting_date,
-            start_time=m.start_time,
-            end_time=m.end_time,
-            meeting_provider=m.meeting_provider.value,
-            meeting_url=m.meeting_url,
-            google_calendar_event_id=m.google_calendar_event_id,
-            google_meet_url=m.google_meet_url,
-            google_meet_code=m.google_meet_code,
-            fireflies_meeting_id=m.fireflies_meeting_id,
-            transcript_status=m.transcript_status,
-            guest_emails=m.guest_emails or [],
-            created_at=m.created_at,
-            updated_at=m.updated_at,
-        ).model_dump()
-        for m in meetings
-    ]
+    data = [MeetingResponse.model_validate(m).model_dump() for m in meetings]
     return BaseResponse(data=data)
 
 
 @router.get("/{meeting_id}/transcript-status", response_model=BaseResponse)
 async def get_transcript_status(
-    meeting_id: str,
+    meeting_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
-    meeting = await MeetingRepository(db).get_by_id(UUID(meeting_id))
+    meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
     return BaseResponse(
@@ -143,10 +118,10 @@ async def get_transcript_status(
 
 @router.post("/{meeting_id}/retry-transcript", response_model=BaseResponse)
 async def retry_transcript(
-    meeting_id: str,
+    meeting_id: UUID = Depends(validate_uuid_path),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
-    meeting = await MeetingRepository(db).get_by_id(UUID(meeting_id))
+    meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
 
@@ -159,7 +134,8 @@ async def retry_transcript(
 
     try:
         async with async_session_factory() as session:
-            result = await process_fireflies_transcript(session, meeting.fireflies_meeting_id)
+            fireflies_service = FirefliesService(session, MeetingRepository(session), embedder)
+            result = await fireflies_service.process_transcript(meeting.fireflies_meeting_id)
         return BaseResponse(
             message="Transcript retrieved and processed successfully",
             data=result,
@@ -173,8 +149,8 @@ async def retry_transcript(
 
 
 @router.delete("/{meeting_id}", response_model=BaseResponse)
-async def delete_meeting(meeting_id: str, db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def delete_meeting(meeting_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
     repo = MeetingRepository(db)
-    await repo.delete(UUID(meeting_id))
+    await repo.delete(meeting_id)
     await db.commit()
     return BaseResponse(message="Meeting deleted successfully")

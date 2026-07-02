@@ -1,14 +1,18 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.project_controller import ProjectController
 from src.core.database import get_db
 from src.middlewares.auth import require_authenticated_user
+from src.repositories.client_repository import ClientRepository
+from src.repositories.project_repository import ProjectRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.project_schema import ProjectCreate
+from src.services.authorization_service import AuthorizationService
 from src.services.project_service import ProjectService
+from src.utils.uuid_validator import parse_optional_uuid, validate_uuid_path
 
 router = APIRouter(
     prefix="/projects",
@@ -18,24 +22,32 @@ router = APIRouter(
 
 
 @router.post("", response_model=BaseResponse)
-async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)) -> BaseResponse:
-    service = ProjectService(db)
-    data = await service.create(body.client_id, body.name, body.description)
+async def create_project(
+    body: ProjectCreate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id) if request.state.user else None
+    authz = AuthorizationService(db)
+    service = ProjectService(db, ProjectRepository(db), ClientRepository(db), authorization_service=authz)
+    data = await service.create(body.client_id, body.name, body.description, user_id=user_id)
     return BaseResponse(message="Project created successfully", data=data)
 
 
 @router.get("", response_model=BaseResponse)
 async def list_projects(
     client_id: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
-    service = ProjectService(db)
-    cl_id = UUID(client_id) if client_id else None
-    data = await service.list(cl_id)
+    service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
+    cl_id = parse_optional_uuid(client_id, "client_id") if client_id else None
+    data = await service.list(cl_id, limit=limit, offset=offset)
     return BaseResponse(data=data)
 
 
 @router.get("/{project_id}", response_model=BaseResponse)
-async def get_project(project_id: str, db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def get_project(project_id: UUID = Depends(validate_uuid_path), db: AsyncSession = Depends(get_db)) -> BaseResponse:
     controller = ProjectController(db)
     return await controller.get_by_id(project_id)
