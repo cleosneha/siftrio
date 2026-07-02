@@ -47,7 +47,7 @@ class MeetingRepository:
             transcript_status=transcript_status,
         )
         self.db.add(meeting)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(meeting)
         return meeting
 
@@ -57,7 +57,7 @@ class MeetingRepository:
             return None
         for key, value in kwargs.items():
             setattr(meeting, key, value)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(meeting)
         return meeting
 
@@ -122,4 +122,3 @@ class MeetingRepository:
         meeting = await self.get_by_id(meeting_id)
         if meeting:
             await self.db.delete(meeting)
-            await self.db.commit()

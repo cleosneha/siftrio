@@ -32,7 +32,7 @@ class MeetingChunkRepository:
             project_id=project_id,
         )
         self.db.add(chunk)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(chunk)
         return chunk
 
@@ -51,4 +51,3 @@ class MeetingChunkRepository:
         chunks = list(result.scalars().all())
         for chunk in chunks:
             await self.db.delete(chunk)
-        await self.db.commit()

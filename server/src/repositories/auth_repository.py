@@ -43,7 +43,7 @@ class AuthRepository:
             google_id=google_id,
         )
         self.db.add(user)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(user)
         return user
 
@@ -56,7 +56,6 @@ class AuthRepository:
         user = result.scalar_one_or_none()
         if user:
             user.last_login_at = datetime.now(timezone.utc)
-            await self.db.commit()
 
     async def get_integration(self, user_id: UUID, provider: str) -> UserIntegration | None:
         result = await self.db.execute(
@@ -94,6 +93,6 @@ class AuthRepository:
             )
             self.db.add(integration)
 
-        await self.db.commit()
+        await self.db.flush()
         result = await self.get_integration(user_id, provider)
         return result

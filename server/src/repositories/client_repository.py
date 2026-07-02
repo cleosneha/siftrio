@@ -2,7 +2,6 @@ from uuid import UUID
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.models.client import Client
 from src.models.project import Project
@@ -17,7 +16,7 @@ class ClientRepository:
     ) -> Client:
         client = Client(workspace_id=workspace_id, name=name, description=description)
         self.db.add(client)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(client)
         return client
 

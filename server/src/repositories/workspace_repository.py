@@ -10,10 +10,15 @@ class WorkspaceRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def create(self, name: str, description: str | None = None) -> Workspace:
-        workspace = Workspace(name=name, description=description)
+    async def create(
+        self,
+        name: str,
+        description: str | None = None,
+        created_by: UUID | None = None,
+    ) -> Workspace:
+        workspace = Workspace(name=name, description=description, created_by=created_by)
         self.db.add(workspace)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(workspace)
         return workspace
 

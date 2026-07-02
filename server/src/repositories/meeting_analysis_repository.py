@@ -38,7 +38,7 @@ class MeetingAnalysisRepository:
             future_meetings=future_meetings or [],
         )
         self.db.add(analysis)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(analysis)
         return analysis
 
@@ -75,7 +75,7 @@ class MeetingAnalysisRepository:
             existing.blockers = blockers or []
             existing.future_meetings = future_meetings or []
             existing.generated_at = None
-            await self.db.commit()
+            await self.db.flush()
             await self.db.refresh(existing)
             return existing
         return await self.create(

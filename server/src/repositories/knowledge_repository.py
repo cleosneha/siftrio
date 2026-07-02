@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -36,7 +37,7 @@ class KnowledgeRepository:
             status="pending",
         )
         self.db.add(entity)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
@@ -50,6 +51,7 @@ class KnowledgeRepository:
         assignee: str | None = None,
         due_date: str | None = None,
     ) -> ActionItem:
+        parsed_due = datetime.fromisoformat(due_date) if due_date else None
         entity = ActionItem(
             project_id=project_id,
             meeting_id=meeting_id,
@@ -57,11 +59,11 @@ class KnowledgeRepository:
             title=title,
             description=description,
             assignee=assignee,
-            due_date=due_date,
+            due_date=parsed_due,
             status="pending",
         )
         self.db.add(entity)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
@@ -74,17 +76,18 @@ class KnowledgeRepository:
         description: str | None = None,
         decision_date: str | None = None,
     ) -> Decision:
+        parsed_date = datetime.fromisoformat(decision_date) if decision_date else None
         entity = Decision(
             project_id=project_id,
             meeting_id=meeting_id,
             source_chunk_id=source_chunk_id,
             title=title,
             description=description,
-            decision_date=decision_date,
+            decision_date=parsed_date,
             status="active",
         )
         self.db.add(entity)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
@@ -109,7 +112,7 @@ class KnowledgeRepository:
             status="open",
         )
         self.db.add(entity)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
@@ -133,7 +136,7 @@ class KnowledgeRepository:
             status=status,
         )
         self.db.add(entity)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
@@ -251,7 +254,7 @@ class KnowledgeRepository:
         for key, value in kwargs.items():
             if value is not None:
                 setattr(entity, key, value)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(entity)
         return entity
 
@@ -277,4 +280,3 @@ class KnowledgeRepository:
         entities = result.scalars().all()
         for entity in entities:
             await self.db.delete(entity)
-        await self.db.commit()
