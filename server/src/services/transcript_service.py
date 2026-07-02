@@ -3,6 +3,7 @@ from uuid import UUID
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.core.embeddings import EmbeddingService
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
@@ -13,18 +14,21 @@ class TranscriptService:
     def __init__(
         self,
         db: AsyncSession,
+        meeting_repo: MeetingRepository,
+        chunk_repo: MeetingChunkRepository,
         embeddings: EmbeddingService,
+        analysis_service: MeetingAnalysisService,
     ) -> None:
         self.db = db
-        self.meeting_repo = MeetingRepository(db)
-        self.chunk_repo = MeetingChunkRepository(db)
+        self.meeting_repo = meeting_repo
+        self.chunk_repo = chunk_repo
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=settings.CHUNK_SIZE,
+            chunk_overlap=settings.CHUNK_OVERLAP,
             length_function=len,
         )
         self.embeddings = embeddings
-        self.analysis_service = MeetingAnalysisService(db)
+        self.analysis_service = analysis_service
 
     async def process_upload(
         self,

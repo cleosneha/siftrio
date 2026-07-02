@@ -7,8 +7,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.exceptions.base import BaseAPIException
-from src.repositories.auth_repository import AuthRepository
 from src.services.auth_service import AuthService
 from src.tools.google_oauth import create_oauth_client
 
@@ -38,8 +38,9 @@ def _validate_rfc3339(ts: str) -> dict:
 
 
 class MeetingIntegrationService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, auth_service: AuthService) -> None:
         self.db = db
+        self.auth_service = auth_service
 
     async def create_google_meet(
         self,
@@ -51,8 +52,7 @@ class MeetingIntegrationService:
         guest_emails: list[str] | None = None,
         user_email: str | None = None,
     ) -> dict:
-        auth_service = AuthService(AuthRepository(self.db))
-        access_token = await auth_service.get_valid_google_access_token(user_id)
+        access_token = await self.auth_service.get_valid_google_access_token(user_id)
 
         if not access_token:
             raise BaseAPIException(
@@ -134,7 +134,7 @@ class MeetingIntegrationService:
             },
         }
 
-        url = "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1"
+        url = settings.GOOGLE_CALENDAR_API_URL
 
         logger.info("=== ACTUAL REQUEST ===")
         logger.info("URL: %s", url)

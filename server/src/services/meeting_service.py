@@ -8,16 +8,24 @@ from src.models.meeting import MeetingProvider, MeetingType
 from src.repositories.client_repository import ClientRepository
 from src.repositories.meeting_repository import MeetingRepository
 from src.repositories.project_repository import ProjectRepository
+from src.schemas.meeting_schema import MeetingResponse
 from src.services.meeting_integration_service import MeetingIntegrationService
 
 
 class MeetingService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(
+        self,
+        db: AsyncSession,
+        repo: MeetingRepository,
+        client_repo: ClientRepository,
+        project_repo: ProjectRepository,
+        integration_service: MeetingIntegrationService,
+    ) -> None:
         self.db = db
-        self.repo = MeetingRepository(db)
-        self.client_repo = ClientRepository(db)
-        self.project_repo = ProjectRepository(db)
-        self.integration_service = MeetingIntegrationService(db)
+        self.repo = repo
+        self.client_repo = client_repo
+        self.project_repo = project_repo
+        self.integration_service = integration_service
 
     async def create(
         self,
@@ -91,7 +99,7 @@ class MeetingService:
             google_calendar_event_id = result["event_id"]
             google_meet_url = result["meet_url"]
             google_meet_code = result["meet_code"]
-            transcript_status = "pending"
+            transcript_status = TranscriptStatus.PENDING
 
         meeting = await self.repo.create(
             client_id=cl_id,
@@ -113,25 +121,4 @@ class MeetingService:
 
         await self.db.commit()
 
-        return {
-            "id": str(meeting.id),
-            "client_id": str(meeting.client_id),
-            "project_id": str(meeting.project_id) if meeting.project_id else None,
-            "title": meeting.title,
-            "meeting_type": meeting.meeting_type.value,
-            "tags": meeting.tags,
-            "transcript": meeting.transcript,
-            "meeting_date": meeting.meeting_date.isoformat() if meeting.meeting_date else None,
-            "start_time": meeting.start_time.isoformat().replace("+00:00", "Z") if meeting.start_time else None,
-            "end_time": meeting.end_time.isoformat().replace("+00:00", "Z") if meeting.end_time else None,
-            "meeting_provider": meeting.meeting_provider.value,
-            "meeting_url": meeting.meeting_url,
-            "google_calendar_event_id": meeting.google_calendar_event_id,
-            "google_meet_url": meeting.google_meet_url,
-            "google_meet_code": meeting.google_meet_code,
-            "fireflies_meeting_id": meeting.fireflies_meeting_id,
-            "transcript_status": meeting.transcript_status if meeting.transcript_status else None,
-            "guest_emails": meeting.guest_emails or [],
-            "created_at": meeting.created_at.isoformat().replace("+00:00", "Z") if meeting.created_at else None,
-            "updated_at": meeting.updated_at.isoformat().replace("+00:00", "Z") if meeting.updated_at else None,
-        }
+        return MeetingResponse.model_validate(meeting).model_dump()

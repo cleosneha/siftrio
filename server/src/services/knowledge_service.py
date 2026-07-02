@@ -6,14 +6,27 @@ from src.exceptions.base import BaseAPIException
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.schemas.knowledge_schema import (
+    ActionItemResponse,
+    DecisionResponse,
+    QuestionResponse,
+    RequirementResponse,
+    RiskResponse,
+)
 
 
 class KnowledgeService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(
+        self,
+        db: AsyncSession,
+        repo: KnowledgeRepository,
+        meeting_repo: MeetingRepository,
+        chunk_repo: MeetingChunkRepository,
+    ) -> None:
         self.db = db
-        self.repo = KnowledgeRepository(db)
-        self.meeting_repo = MeetingRepository(db)
-        self.chunk_repo = MeetingChunkRepository(db)
+        self.repo = repo
+        self.meeting_repo = meeting_repo
+        self.chunk_repo = chunk_repo
 
     async def extract_from_analysis(
         self,
@@ -95,65 +108,75 @@ class KnowledgeService:
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict]:
-        entities = await self.repo.list_requirements(project_id, meeting_id, status)
-        return [self._to_dict(r, "priority") for r in entities]
+        entities = await self.repo.list_requirements(project_id, meeting_id, status, limit=limit, offset=offset)
+        return [self._validate(r, RequirementResponse) for r in entities]
 
     async def list_action_items(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict]:
-        entities = await self.repo.list_action_items(project_id, meeting_id, status)
-        return [self._to_dict(r, "assignee", "due_date") for r in entities]
+        entities = await self.repo.list_action_items(project_id, meeting_id, status, limit=limit, offset=offset)
+        return [self._validate(r, ActionItemResponse) for r in entities]
 
     async def list_decisions(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict]:
-        entities = await self.repo.list_decisions(project_id, meeting_id, status)
-        return [self._to_dict(r, "decision_date") for r in entities]
+        entities = await self.repo.list_decisions(project_id, meeting_id, status, limit=limit, offset=offset)
+        return [self._validate(r, DecisionResponse) for r in entities]
 
     async def list_risks(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict]:
-        entities = await self.repo.list_risks(project_id, meeting_id, status)
-        return [self._to_dict(r, "severity", "mitigation") for r in entities]
+        entities = await self.repo.list_risks(project_id, meeting_id, status, limit=limit, offset=offset)
+        return [self._validate(r, RiskResponse) for r in entities]
 
     async def list_questions(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict]:
-        entities = await self.repo.list_questions(project_id, meeting_id, status)
-        return [self._to_dict(r, "answer") for r in entities]
+        entities = await self.repo.list_questions(project_id, meeting_id, status, limit=limit, offset=offset)
+        return [self._validate(r, QuestionResponse) for r in entities]
 
     async def get_requirement(self, entity_id: UUID) -> dict | None:
         entity = await self.repo.get_requirement(entity_id)
-        return self._to_dict(entity, "priority") if entity else None
+        return self._validate(entity, RequirementResponse) if entity else None
 
     async def get_action_item(self, entity_id: UUID) -> dict | None:
         entity = await self.repo.get_action_item(entity_id)
-        return self._to_dict(entity, "assignee", "due_date") if entity else None
+        return self._validate(entity, ActionItemResponse) if entity else None
 
     async def get_decision(self, entity_id: UUID) -> dict | None:
         entity = await self.repo.get_decision(entity_id)
-        return self._to_dict(entity, "decision_date") if entity else None
+        return self._validate(entity, DecisionResponse) if entity else None
 
     async def get_risk(self, entity_id: UUID) -> dict | None:
         entity = await self.repo.get_risk(entity_id)
-        return self._to_dict(entity, "severity", "mitigation") if entity else None
+        return self._validate(entity, RiskResponse) if entity else None
 
     async def get_question(self, entity_id: UUID) -> dict | None:
         entity = await self.repo.get_question(entity_id)
-        return self._to_dict(entity, "answer") if entity else None
+        return self._validate(entity, QuestionResponse) if entity else None
 
     async def update_requirement(
         self, entity_id: UUID, data: dict
@@ -161,7 +184,7 @@ class KnowledgeService:
         entity = await self.repo.update_requirement(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Requirement not found", status_code=404)
-        return self._to_dict(entity, "priority")
+        return self._validate(entity, RequirementResponse)
 
     async def update_action_item(
         self, entity_id: UUID, data: dict
@@ -169,7 +192,7 @@ class KnowledgeService:
         entity = await self.repo.update_action_item(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
-        return self._to_dict(entity, "assignee", "due_date")
+        return self._validate(entity, ActionItemResponse)
 
     async def update_decision(
         self, entity_id: UUID, data: dict
@@ -177,13 +200,13 @@ class KnowledgeService:
         entity = await self.repo.update_decision(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Decision not found", status_code=404)
-        return self._to_dict(entity, "decision_date")
+        return self._validate(entity, DecisionResponse)
 
     async def update_risk(self, entity_id: UUID, data: dict) -> dict | None:
         entity = await self.repo.update_risk(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Risk not found", status_code=404)
-        return self._to_dict(entity, "severity", "mitigation")
+        return self._validate(entity, RiskResponse)
 
     async def update_question(
         self, entity_id: UUID, data: dict
@@ -191,27 +214,9 @@ class KnowledgeService:
         entity = await self.repo.update_question(entity_id, **data)
         if entity is None:
             raise BaseAPIException(message="Question not found", status_code=404)
-        return self._to_dict(entity, "answer")
+        return self._validate(entity, QuestionResponse)
 
-    def _to_dict(self, entity, *extra_fields) -> dict:
-        result = {
-            "id": str(entity.id),
-            "project_id": str(entity.project_id),
-            "meeting_id": str(entity.meeting_id),
-            "source_chunk_id": str(entity.source_chunk_id) if entity.source_chunk_id else None,
-            "title": entity.title,
-            "description": entity.description,
-            "status": entity.status,
-            "created_at": entity.created_at.isoformat().replace("+00:00", "Z") if entity.created_at else None,
-            "updated_at": entity.updated_at.isoformat().replace("+00:00", "Z") if entity.updated_at else None,
-            "meeting_title": entity.meeting.title if entity.meeting else None,
-        }
-        for field in extra_fields:
-            val = getattr(entity, field, None)
-            if isinstance(val, str):
-                result[field] = val
-            elif val is not None:
-                result[field] = str(val)
-            else:
-                result[field] = None
-        return result
+    def _validate(self, entity, response_cls) -> dict:
+        data = response_cls.model_validate(entity).model_dump()
+        data["meeting_title"] = entity.meeting.title if entity.meeting else None
+        return data

@@ -5,17 +5,21 @@ import logging
 import re
 
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.core.embeddings import embedder
+from src.core.embeddings import EmbeddingService
 from src.exceptions.base import BaseAPIException
+from src.repositories.knowledge_repository import KnowledgeRepository
+from src.repositories.meeting_analysis_repository import MeetingAnalysisRepository
+from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.services.knowledge_service import KnowledgeService
+from src.services.meeting_analysis_service import MeetingAnalysisService
 from src.services.transcript_service import TranscriptService
-from src.models.meeting import MeetingProvider, MeetingType, TranscriptStatus
+from src.models.meeting import TranscriptStatus
 
 logger = logging.getLogger(__name__)
-
-FIREFLIES_GRAPHQL_URL = "https://api.fireflies.ai/graphql"
 
 
 def verify_webhook_signature(payload: bytes, signature: str) -> bool:
@@ -45,167 +49,181 @@ def verify_webhook_signature(payload: bytes, signature: str) -> bool:
     return hmac.compare_digest(expected, raw_sig)
 
 
-async def fetch_fireflies_transcript(meeting_id: str) -> dict | None:
-    api_key = settings.FIREFLIES_API_KEY
-    if not api_key:
-        logger.warning("FIREFLIES_API_KEY not configured")
-        return None
+class FirefliesService:
+    def __init__(
+        self,
+        db: AsyncSession,
+        meeting_repo: MeetingRepository,
+        embeddings: EmbeddingService,
+    ) -> None:
+        self._db = db
+        self._repo = meeting_repo
+        self._transcript_service = TranscriptService(
+            db=db,
+            meeting_repo=meeting_repo,
+            chunk_repo=MeetingChunkRepository(db),
+            embeddings=embeddings,
+            analysis_service=MeetingAnalysisService(
+                db=db,
+                repo=MeetingAnalysisRepository(db),
+                meeting_repo=meeting_repo,
+                knowledge_service=KnowledgeService(
+                    db=db,
+                    repo=KnowledgeRepository(db),
+                    meeting_repo=meeting_repo,
+                    chunk_repo=MeetingChunkRepository(db),
+                ),
+            ),
+        )
 
-    query = """
-    query Transcript($meetingId: String!) {
-      transcript(id: $meetingId) {
-        id
-        title
-        date
-        calendar_id
-        meeting_link
-        transcript_url
-        duration
-        sentences {
-          index
-          speaker_name
-          text
-          start_time
-          end_time
+    async def fetch_transcript(self, meeting_id: str) -> dict | None:
+        api_key = settings.FIREFLIES_API_KEY
+        if not api_key:
+            logger.warning("FIREFLIES_API_KEY not configured")
+            return None
+
+        query = """
+        query Transcript($meetingId: String!) {
+          transcript(id: $meetingId) {
+            id
+            title
+            date
+            calendar_id
+            meeting_link
+            transcript_url
+            duration
+            sentences {
+              index
+              speaker_name
+              text
+              start_time
+              end_time
+            }
+            summary {
+              keywords
+              action_items
+              overview
+              short_summary
+            }
+          }
         }
-        summary {
-          keywords
-          action_items
-          overview
-          short_summary
+        """
+
+        variables = {"meetingId": meeting_id}
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
         }
-      }
-    }
-    """
 
-    variables = {"meetingId": meeting_id}
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                FIREFLIES_GRAPHQL_URL,
-                json={"query": query, "variables": variables},
-                headers=headers,
-                timeout=30,
-            )
-        if resp.status_code != 200:
-            logger.error("Fireflies GraphQL error: %s %s", resp.status_code, resp.text)
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    settings.FIREFLIES_GRAPHQL_URL,
+                    json={"query": query, "variables": variables},
+                    headers=headers,
+                    timeout=30,
+                )
+            if resp.status_code != 200:
+                logger.error("Fireflies GraphQL error: %s %s", resp.status_code, resp.text)
+                return None
+            result = resp.json()
+            if "errors" in result:
+                logger.error("Fireflies GraphQL errors: %s", result["errors"])
+                return None
+            transcript = result.get("data", {}).get("transcript")
+            if not transcript:
+                logger.warning("No transcript found for meetingId: %s", meeting_id)
+                return None
+            return transcript
+        except Exception as e:
+            logger.error("Failed to fetch Fireflies transcript: %s", e)
             return None
-        result = resp.json()
-        if "errors" in result:
-            logger.error("Fireflies GraphQL errors: %s", result["errors"])
-            return None
-        transcript = result.get("data", {}).get("transcript")
-        if not transcript:
-            logger.warning("No transcript found for meetingId: %s", meeting_id)
-            return None
-        return transcript
-    except Exception as e:
-        logger.error("Failed to fetch Fireflies transcript: %s", e)
-        return None
 
+    def _build_transcript_text(self, transcript: dict) -> str:
+        sentences = transcript.get("sentences") or []
+        lines = []
+        for s in sentences:
+            speaker = s.get("speaker_name", "Speaker")
+            text = s.get("text", "")
+            lines.append(f"{speaker}: {text}")
+        return "\n".join(lines) if lines else transcript.get("title", "")
 
-def _build_transcript_text(transcript: dict) -> str:
-    sentences = transcript.get("sentences") or []
-    lines = []
-    for s in sentences:
-        speaker = s.get("speaker_name", "Speaker")
-        text = s.get("text", "")
-        lines.append(f"{speaker}: {text}")
-    return "\n".join(lines) if lines else transcript.get("title", "")
+    async def _find_meeting(self, transcript: dict, fireflies_meeting_id: str):
+        match_log = {"fireflies_meeting_id": fireflies_meeting_id}
 
-
-async def _find_meeting(repo: MeetingRepository, transcript: dict, fireflies_meeting_id: str):
-    """Try to match a transcript to a meeting using multiple strategies."""
-    match_log = {"fireflies_meeting_id": fireflies_meeting_id}
-
-    calendar_id = transcript.get("calendar_id")
-    if calendar_id:
-        meeting = await repo.find_by_google_event_id(calendar_id)
-        if meeting:
-            logger.info("Matched meeting %s by calendar_id: %s", meeting.id, calendar_id)
-            return meeting
-        match_log["calendar_id"] = calendar_id
-
-    meeting_link = transcript.get("meeting_link")
-    if meeting_link:
-        normalized = meeting_link.rstrip("/")
-        meeting = await repo.find_by_google_meet_url(normalized)
-        if meeting:
-            logger.info("Matched meeting %s by meeting_link: %s", meeting.id, normalized)
-            return meeting
-        meet_code = _extract_meet_code(meeting_link)
-        if meet_code:
-            meeting = await repo.find_by_google_meet_code(meet_code)
+        calendar_id = transcript.get("calendar_id")
+        if calendar_id:
+            meeting = await self._repo.find_by_google_event_id(calendar_id)
             if meeting:
-                logger.info("Matched meeting %s by meet_code extracted from link: %s", meeting.id, meet_code)
+                logger.info("Matched meeting %s by calendar_id: %s", meeting.id, calendar_id)
                 return meeting
-        match_log["meeting_link"] = meeting_link
+            match_log["calendar_id"] = calendar_id
 
-    meeting = await repo.find_by_fireflies_meeting_id(fireflies_meeting_id)
-    if meeting:
-        logger.info("Matched meeting %s by fireflies_meeting_id: %s", meeting.id, fireflies_meeting_id)
-        return meeting
-    match_log["stored_fireflies_id"] = None
+        meeting_link = transcript.get("meeting_link")
+        if meeting_link:
+            normalized = meeting_link.rstrip("/")
+            meeting = await self._repo.find_by_google_meet_url(normalized)
+            if meeting:
+                logger.info("Matched meeting %s by meeting_link: %s", meeting.id, normalized)
+                return meeting
+            meet_code = self._extract_meet_code(meeting_link)
+            if meet_code:
+                meeting = await self._repo.find_by_google_meet_code(meet_code)
+                if meeting:
+                    logger.info("Matched meeting %s by meet_code extracted from link: %s", meeting.id, meet_code)
+                    return meeting
+            match_log["meeting_link"] = meeting_link
 
-    logger.warning("Meeting matching failed. Match context: %s", json.dumps(match_log))
-    return None
+        meeting = await self._repo.find_by_fireflies_meeting_id(fireflies_meeting_id)
+        if meeting:
+            logger.info("Matched meeting %s by fireflies_meeting_id: %s", meeting.id, fireflies_meeting_id)
+            return meeting
+        match_log["stored_fireflies_id"] = None
 
+        logger.warning("Meeting matching failed. Match context: %s", json.dumps(match_log))
+        return None
 
-def _extract_meet_code(url: str) -> str | None:
-    """Extract the Google Meet code from a meet.google.com URL."""
-    match = re.search(r"meet\.google\.com/([a-z0-9-]+)", url, re.IGNORECASE)
-    if match:
-        return match.group(1)
-    return None
+    @staticmethod
+    def _extract_meet_code(url: str) -> str | None:
+        match = re.search(r"meet\.google\.com/([a-z0-9-]+)", url, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        return None
 
+    async def process_transcript(self, fireflies_meeting_id: str) -> dict:
+        transcript = await self.fetch_transcript(fireflies_meeting_id)
+        if not transcript:
+            raise BaseAPIException(
+                message="Failed to retrieve transcript from Fireflies",
+                status_code=500,
+            )
 
-async def process_fireflies_transcript(
-    db_session,
-    fireflies_meeting_id: str,
-) -> dict:
-    repo = MeetingRepository(db_session)
+        meeting = await self._find_meeting(transcript, fireflies_meeting_id)
 
-    transcript = await fetch_fireflies_transcript(fireflies_meeting_id)
-    if not transcript:
-        raise BaseAPIException(
-            message="Failed to retrieve transcript from Fireflies",
-            status_code=500,
+        if not meeting:
+            raise BaseAPIException(
+                message="No matching meeting found for Fireflies transcript",
+                status_code=404,
+            )
+
+        await self._repo.update(
+            meeting.id,
+            fireflies_meeting_id=fireflies_meeting_id,
+            transcript_status=TranscriptStatus.PROCESSING,
         )
 
-    meeting = await _find_meeting(repo, transcript, fireflies_meeting_id)
+        transcript_text = self._build_transcript_text(transcript)
+        result = await self._transcript_service.process_upload(meeting.id, transcript_text)
 
-    if not meeting:
-        raise BaseAPIException(
-            message="No matching meeting found for Fireflies transcript",
-            status_code=404,
+        await self._repo.update(
+            meeting.id,
+            transcript_status=TranscriptStatus.COMPLETED,
         )
 
-    await repo.update(
-        meeting.id,
-        fireflies_meeting_id=fireflies_meeting_id,
-        transcript_status=TranscriptStatus.PROCESSING.value,
-    )
+        await self._db.commit()
 
-    transcript_text = _build_transcript_text(transcript)
-
-    transcript_service = TranscriptService(db_session, embeddings=embedder)
-    result = await transcript_service.process_upload(meeting.id, transcript_text)
-
-    await repo.update(
-        meeting.id,
-        transcript_status=TranscriptStatus.COMPLETED.value,
-    )
-
-    await db_session.commit()
-
-    return {
-        "meeting_id": str(meeting.id),
-        "chunk_count": result["chunk_count"],
-        "title": meeting.title,
-    }
+        return {
+            "meeting_id": str(meeting.id),
+            "chunk_count": result["chunk_count"],
+            "title": meeting.title,
+        }

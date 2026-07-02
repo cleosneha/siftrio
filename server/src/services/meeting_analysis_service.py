@@ -4,11 +4,11 @@ from uuid import UUID
 from langchain_mistralai import ChatMistralAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.repositories.meeting_analysis_repository import MeetingAnalysisRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.schemas.meeting_analysis_schema import MeetingAnalysisOutput, MeetingAnalysisResponse
 from src.services.knowledge_service import KnowledgeService
-
-from src.schemas.meeting_analysis_schema import MeetingAnalysisOutput
 
 
 ANALYSIS_PROMPT = """You are an AI meeting analyst. Analyze the following meeting transcript and extract structured information.
@@ -35,12 +35,19 @@ Transcript:
 
 
 class MeetingAnalysisService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(
+        self,
+        db: AsyncSession,
+        repo: MeetingAnalysisRepository,
+        meeting_repo: MeetingRepository,
+        knowledge_service: KnowledgeService,
+    ) -> None:
         self.db = db
-        self.repo = MeetingAnalysisRepository(db)
-        self.meeting_repo = MeetingRepository(db)
+        self.repo = repo
+        self.meeting_repo = meeting_repo
+        self.knowledge_service = knowledge_service
         self.llm = ChatMistralAI(
-            model="mistral-small-latest",
+            model=settings.MISTRAL_LLM_MODEL,
             temperature=0.1,
         ).with_structured_output(MeetingAnalysisOutput)
 
@@ -85,8 +92,7 @@ class MeetingAnalysisService:
         analysis.generated_at = now
         await self.db.flush()
 
-        knowledge_service = KnowledgeService(self.db)
-        await knowledge_service.extract_from_analysis(
+        await self.knowledge_service.extract_from_analysis(
             meeting_id=meeting_id,
             requirements=[r.model_dump() for r in result.requirements] if result.requirements else None,
             action_items=[a.model_dump() for a in result.structured_action_items] if result.structured_action_items else None,
@@ -98,27 +104,10 @@ class MeetingAnalysisService:
         await self.db.commit()
         await self.db.refresh(analysis)
 
-        return self._to_dict(analysis)
+        return MeetingAnalysisResponse.model_validate(analysis).model_dump()
 
     async def get_analysis(self, meeting_id: UUID) -> dict | None:
         analysis = await self.repo.get_by_meeting(meeting_id)
         if analysis is None:
             return None
-        return self._to_dict(analysis)
-
-    def _to_dict(self, analysis) -> dict:
-        return {
-            "id": str(analysis.id),
-            "meeting_id": str(analysis.meeting_id),
-            "summary": analysis.summary,
-            "goal": analysis.goal,
-            "outcomes": analysis.outcomes or [],
-            "decisions": analysis.decisions or [],
-            "action_items": analysis.action_items or [],
-            "answered_questions": analysis.answered_questions or [],
-            "unanswered_questions": analysis.unanswered_questions or [],
-            "risks": analysis.risks or [],
-            "blockers": analysis.blockers or [],
-            "future_meetings": analysis.future_meetings or [],
-            "generated_at": analysis.generated_at.isoformat() if analysis.generated_at else None,
-        }
+        return MeetingAnalysisResponse.model_validate(analysis).model_dump()

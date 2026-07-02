@@ -116,44 +116,33 @@ class AuthService:
         return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
     @staticmethod
-    def validate_jwt(token: str) -> dict | None:
+    def _decode_token(token: str) -> dict | None:
         try:
-            payload = jwt.decode(
+            return jwt.decode(
                 token,
                 settings.JWT_SECRET_KEY,
                 algorithms=[settings.JWT_ALGORITHM],
             )
-            return payload
         except jwt.PyJWTError:
             return None
+
+    @staticmethod
+    def validate_jwt(token: str) -> dict | None:
+        return AuthService._decode_token(token)
 
     @staticmethod
     def validate_access_token(token: str) -> dict | None:
-        try:
-            payload = jwt.decode(
-                token,
-                settings.JWT_SECRET_KEY,
-                algorithms=[settings.JWT_ALGORITHM],
-            )
-            if payload.get("type") != "access":
-                return None
+        payload = AuthService._decode_token(token)
+        if payload and payload.get("type") == "access":
             return payload
-        except jwt.PyJWTError:
-            return None
+        return None
 
     @staticmethod
     def validate_refresh_token(token: str) -> dict | None:
-        try:
-            payload = jwt.decode(
-                token,
-                settings.JWT_SECRET_KEY,
-                algorithms=[settings.JWT_ALGORITHM],
-            )
-            if payload.get("type") != "refresh":
-                return None
+        payload = AuthService._decode_token(token)
+        if payload and payload.get("type") == "refresh":
             return payload
-        except jwt.PyJWTError:
-            return None
+        return None
 
     async def refresh_access_token(self, refresh_token_str: str) -> str | None:
         payload = self.validate_refresh_token(refresh_token_str)
