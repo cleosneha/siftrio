@@ -8,7 +8,7 @@ from src.models.meeting_analysis import MeetingAnalysis
 
 class MeetingAnalysisRepository:
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+        self._db = db
 
     async def create(
         self,
@@ -37,13 +37,13 @@ class MeetingAnalysisRepository:
             blockers=blockers or [],
             future_meetings=future_meetings or [],
         )
-        self.db.add(analysis)
-        await self.db.flush()
-        await self.db.refresh(analysis)
+        self._db.add(analysis)
+        await self._db.flush()
+        await self._db.refresh(analysis)
         return analysis
 
     async def get_by_meeting(self, meeting_id: UUID) -> MeetingAnalysis | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(MeetingAnalysis).where(MeetingAnalysis.meeting_id == meeting_id)
         )
         return result.scalar_one_or_none()
@@ -75,8 +75,8 @@ class MeetingAnalysisRepository:
             existing.blockers = blockers or []
             existing.future_meetings = future_meetings or []
             existing.generated_at = None
-            await self.db.flush()
-            await self.db.refresh(existing)
+            await self._db.flush()
+            await self._db.refresh(existing)
             return existing
         return await self.create(
             meeting_id=meeting_id,

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -16,7 +16,7 @@ from src.models.knowledge_base import (
 
 class KnowledgeRepository:
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+        self._db = db
 
     async def create_requirement(
         self,
@@ -36,9 +36,9 @@ class KnowledgeRepository:
             priority=priority,
             status="pending",
         )
-        self.db.add(entity)
-        await self.db.flush()
-        await self.db.refresh(entity)
+        self._db.add(entity)
+        await self._db.flush()
+        await self._db.refresh(entity)
         return entity
 
     async def create_action_item(
@@ -62,9 +62,9 @@ class KnowledgeRepository:
             due_date=parsed_due,
             status="pending",
         )
-        self.db.add(entity)
-        await self.db.flush()
-        await self.db.refresh(entity)
+        self._db.add(entity)
+        await self._db.flush()
+        await self._db.refresh(entity)
         return entity
 
     async def create_decision(
@@ -86,9 +86,9 @@ class KnowledgeRepository:
             decision_date=parsed_date,
             status="active",
         )
-        self.db.add(entity)
-        await self.db.flush()
-        await self.db.refresh(entity)
+        self._db.add(entity)
+        await self._db.flush()
+        await self._db.refresh(entity)
         return entity
 
     async def create_risk(
@@ -111,9 +111,9 @@ class KnowledgeRepository:
             mitigation=mitigation,
             status="open",
         )
-        self.db.add(entity)
-        await self.db.flush()
-        await self.db.refresh(entity)
+        self._db.add(entity)
+        await self._db.flush()
+        await self._db.refresh(entity)
         return entity
 
     async def create_question(
@@ -135,9 +135,9 @@ class KnowledgeRepository:
             answer=answer,
             status=status,
         )
-        self.db.add(entity)
-        await self.db.flush()
-        await self.db.refresh(entity)
+        self._db.add(entity)
+        await self._db.flush()
+        await self._db.refresh(entity)
         return entity
 
     async def list_requirements(
@@ -145,40 +145,50 @@ class KnowledgeRepository:
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[Requirement]:
-        return await self._list(Requirement, project_id, meeting_id, status)
+        return await self._list(Requirement, project_id, meeting_id, status, limit=limit, offset=offset)
 
     async def list_action_items(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[ActionItem]:
-        return await self._list(ActionItem, project_id, meeting_id, status)
+        return await self._list(ActionItem, project_id, meeting_id, status, limit=limit, offset=offset)
 
     async def list_decisions(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[Decision]:
-        return await self._list(Decision, project_id, meeting_id, status)
+        return await self._list(Decision, project_id, meeting_id, status, limit=limit, offset=offset)
 
     async def list_risks(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[Risk]:
-        return await self._list(Risk, project_id, meeting_id, status)
+        return await self._list(Risk, project_id, meeting_id, status, limit=limit, offset=offset)
 
     async def list_questions(
         self,
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[Question]:
-        return await self._list(Question, project_id, meeting_id, status)
+        return await self._list(Question, project_id, meeting_id, status, limit=limit, offset=offset)
 
     async def _list(
         self,
@@ -186,6 +196,8 @@ class KnowledgeRepository:
         project_id: UUID | None = None,
         meeting_id: UUID | None = None,
         status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
     ):
         query = select(model).options(
             joinedload(model.meeting),
@@ -197,8 +209,8 @@ class KnowledgeRepository:
             query = query.where(model.meeting_id == meeting_id)
         if status is not None:
             query = query.where(model.status == status)
-        query = query.order_by(model.created_at.desc())
-        result = await self.db.execute(query)
+        query = query.order_by(model.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
         return list(result.unique().scalars().all())
 
     async def get_requirement(self, entity_id: UUID) -> Requirement | None:
@@ -217,7 +229,7 @@ class KnowledgeRepository:
         return await self._get(Question, entity_id)
 
     async def _get(self, model, entity_id: UUID):
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(model)
             .options(joinedload(model.meeting), joinedload(model.project))
             .where(model.id == entity_id)
@@ -248,14 +260,14 @@ class KnowledgeRepository:
         return await self._update(Question, entity_id, kwargs)
 
     async def _update(self, model, entity_id: UUID, kwargs: dict):
-        entity = await self.db.get(model, entity_id)
+        entity = await self._db.get(model, entity_id)
         if entity is None:
             return None
         for key, value in kwargs.items():
             if value is not None:
                 setattr(entity, key, value)
-        await self.db.flush()
-        await self.db.refresh(entity)
+        await self._db.flush()
+        await self._db.refresh(entity)
         return entity
 
     async def delete_requirements_by_meeting(self, meeting_id: UUID) -> None:
@@ -274,9 +286,6 @@ class KnowledgeRepository:
         await self._delete_by_meeting(Question, meeting_id)
 
     async def _delete_by_meeting(self, model, meeting_id: UUID) -> None:
-        result = await self.db.execute(
-            select(model).where(model.meeting_id == meeting_id)
+        await self._db.execute(
+            delete(model).where(model.meeting_id == meeting_id)
         )
-        entities = result.scalars().all()
-        for entity in entities:
-            await self.db.delete(entity)

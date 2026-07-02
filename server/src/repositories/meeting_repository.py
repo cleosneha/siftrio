@@ -9,7 +9,7 @@ from src.models.meeting import Meeting, MeetingProvider, MeetingType, Transcript
 
 class MeetingRepository:
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+        self._db = db
 
     async def create(
         self,
@@ -27,7 +27,7 @@ class MeetingRepository:
         google_calendar_event_id: str | None = None,
         google_meet_url: str | None = None,
         google_meet_code: str | None = None,
-        transcript_status: str | None = None,
+        transcript_status: TranscriptStatus | None = None,
     ) -> Meeting:
         meeting = Meeting(
             client_id=client_id,
@@ -46,9 +46,9 @@ class MeetingRepository:
             google_meet_code=google_meet_code,
             transcript_status=transcript_status,
         )
-        self.db.add(meeting)
-        await self.db.flush()
-        await self.db.refresh(meeting)
+        self._db.add(meeting)
+        await self._db.flush()
+        await self._db.refresh(meeting)
         return meeting
 
     async def update(self, meeting_id: UUID, **kwargs) -> Meeting | None:
@@ -57,68 +57,71 @@ class MeetingRepository:
             return None
         for key, value in kwargs.items():
             setattr(meeting, key, value)
-        await self.db.flush()
-        await self.db.refresh(meeting)
+        await self._db.flush()
+        await self._db.refresh(meeting)
         return meeting
 
     async def get_by_id(self, meeting_id: UUID) -> Meeting | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(Meeting).where(Meeting.id == meeting_id)
         )
         return result.scalar_one_or_none()
 
     async def find_by_google_event_id(self, event_id: str) -> Meeting | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(Meeting).where(Meeting.google_calendar_event_id == event_id)
         )
         return result.scalar_one_or_none()
 
     async def find_by_google_meet_url(self, meet_url: str) -> Meeting | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(Meeting).where(Meeting.google_meet_url == meet_url)
         )
         return result.scalar_one_or_none()
 
     async def find_by_google_meet_code(self, meet_code: str) -> Meeting | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(Meeting).where(Meeting.google_meet_code == meet_code)
         )
         return result.scalar_one_or_none()
 
     async def find_by_fireflies_meeting_id(self, fireflies_id: str) -> Meeting | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(Meeting).where(Meeting.fireflies_meeting_id == fireflies_id)
         )
         return result.scalar_one_or_none()
 
-    async def list_by_client(self, client_id: UUID) -> list[Meeting]:
-        result = await self.db.execute(
+    async def list_by_client(self, client_id: UUID, limit: int = 50, offset: int = 0) -> list[Meeting]:
+        result = await self._db.execute(
             select(Meeting)
             .where(Meeting.client_id == client_id)
             .order_by(Meeting.created_at.desc())
+            .limit(limit).offset(offset)
         )
         return list(result.scalars().all())
 
-    async def list_by_project(self, project_id: UUID) -> list[Meeting]:
-        result = await self.db.execute(
+    async def list_by_project(self, project_id: UUID, limit: int = 50, offset: int = 0) -> list[Meeting]:
+        result = await self._db.execute(
             select(Meeting)
             .where(Meeting.project_id == project_id)
             .order_by(Meeting.created_at.desc())
+            .limit(limit).offset(offset)
         )
         return list(result.scalars().all())
 
-    async def list_miscellaneous_by_client(self, client_id: UUID) -> list[Meeting]:
-        result = await self.db.execute(
+    async def list_miscellaneous_by_client(self, client_id: UUID, limit: int = 50, offset: int = 0) -> list[Meeting]:
+        result = await self._db.execute(
             select(Meeting)
             .where(
                 Meeting.client_id == client_id,
                 Meeting.meeting_type == MeetingType.MISCELLANEOUS,
             )
             .order_by(Meeting.created_at.desc())
+            .limit(limit).offset(offset)
         )
         return list(result.scalars().all())
 
     async def delete(self, meeting_id: UUID) -> None:
         meeting = await self.get_by_id(meeting_id)
         if meeting:
-            await self.db.delete(meeting)
+            await self._db.delete(meeting)

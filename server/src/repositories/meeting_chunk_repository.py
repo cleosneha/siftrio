@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.meeting_chunk import MeetingChunk
@@ -8,7 +8,7 @@ from src.models.meeting_chunk import MeetingChunk
 
 class MeetingChunkRepository:
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+        self._db = db
 
     async def create(
         self,
@@ -31,13 +31,13 @@ class MeetingChunkRepository:
             client_id=client_id,
             project_id=project_id,
         )
-        self.db.add(chunk)
-        await self.db.flush()
-        await self.db.refresh(chunk)
+        self._db.add(chunk)
+        await self._db.flush()
+        await self._db.refresh(chunk)
         return chunk
 
     async def list_by_meeting(self, meeting_id: UUID) -> list[MeetingChunk]:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(MeetingChunk)
             .where(MeetingChunk.meeting_id == meeting_id)
             .order_by(MeetingChunk.chunk_index)
@@ -45,9 +45,6 @@ class MeetingChunkRepository:
         return list(result.scalars().all())
 
     async def delete_by_meeting(self, meeting_id: UUID) -> None:
-        result = await self.db.execute(
-            select(MeetingChunk).where(MeetingChunk.meeting_id == meeting_id)
+        await self._db.execute(
+            delete(MeetingChunk).where(MeetingChunk.meeting_id == meeting_id)
         )
-        chunks = list(result.scalars().all())
-        for chunk in chunks:
-            await self.db.delete(chunk)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from uuid import UUID
 
 from sqlalchemy import select, func
@@ -9,33 +11,49 @@ from src.models.project import Project
 
 class ClientRepository:
     def __init__(self, db: AsyncSession) -> None:
-        self.db = db
+        self._db = db
 
     async def create(
         self, workspace_id: UUID, name: str, description: str | None = None
     ) -> Client:
         client = Client(workspace_id=workspace_id, name=name, description=description)
-        self.db.add(client)
-        await self.db.flush()
-        await self.db.refresh(client)
+        self._db.add(client)
+        await self._db.flush()
+        await self._db.refresh(client)
         return client
 
     async def get_by_id(self, client_id: UUID) -> Client | None:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(Client).where(Client.id == client_id)
         )
         return result.scalar_one_or_none()
 
-    async def list(self, workspace_id: UUID | None = None) -> list[Client]:
+    async def list(self, workspace_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Client]:
         query = select(Client)
         if workspace_id is not None:
             query = query.where(Client.workspace_id == workspace_id)
-        query = query.order_by(Client.created_at.desc())
-        result = await self.db.execute(query)
+        query = query.order_by(Client.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
         return list(result.scalars().all())
 
+    async def list_with_project_counts(
+        self, workspace_id: UUID | None = None, limit: int = 50, offset: int = 0
+    ) -> list[tuple[Client, int]]:
+        subq = (
+            select(func.count(Project.id))
+            .where(Project.client_id == Client.id)
+            .correlate(Client)
+            .scalar_subquery()
+        )
+        query = select(Client, subq.label("project_count"))
+        if workspace_id is not None:
+            query = query.where(Client.workspace_id == workspace_id)
+        query = query.order_by(Client.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
+        return [(client, count) for client, count in result.all()]
+
     async def get_project_count(self, client_id: UUID) -> int:
-        result = await self.db.execute(
+        result = await self._db.execute(
             select(func.count(Project.id)).where(Project.client_id == client_id)
         )
         return result.scalar() or 0
