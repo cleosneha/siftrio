@@ -28,6 +28,16 @@ async def generate_response(
 ) -> dict[str, object]:
     question = state["question"]
     context = state["context"] or ""
+    retrieval_scope = state.get("retrieval_scope")
+
+    if retrieval_scope and retrieval_scope.ambiguous_entities:
+        parts = []
+        for entity_type, candidates in retrieval_scope.ambiguous_entities.items():
+            names = ", ".join(c.name for c in candidates)
+            parts.append(f"multiple {entity_type}s ({names})")
+        note = f"[Note: The query matched {' and '.join(parts)}. Do not guess which one the user means.]\n\n"
+        context = note + context
+
     prompt = ANSWER_PROMPT.format(context=context, question=question)
 
     response = await llm.invoke([HumanMessage(content=prompt)])
