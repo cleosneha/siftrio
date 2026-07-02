@@ -15,14 +15,26 @@ class Settings(BaseSettings):
     POSTGRES_PORT: str = os.getenv("POSTGRES_PORT") or "5432"
     POSTGRES_DB: str = os.getenv("POSTGRES_DB") or "ai_project_memory"
     MISTRAL_API_KEY: str = os.getenv("MISTRAL_API_KEY") or ""
+    MISTRAL_LLM_MODEL: str = os.getenv("MISTRAL_LLM_MODEL") or "mistral-small-latest"
+    MISTRAL_EMBED_MODEL: str = os.getenv("MISTRAL_EMBED_MODEL") or "mistral-embed"
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID") or ""
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET") or ""
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or ""
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM") or "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") or "15")
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS") or "30")
+    CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE") or "1000")
+    CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP") or "200")
     FIREFLIES_API_KEY: str = os.getenv("FIREFLIES_API_KEY") or ""
     FIREFLIES_WEBHOOK_SECRET: str = os.getenv("FIREFLIES_WEBHOOK_SECRET") or ""
+    FIREFLIES_GRAPHQL_URL: str = os.getenv("FIREFLIES_GRAPHQL_URL") or "https://api.fireflies.ai/graphql"
+    GOOGLE_CALENDAR_API_URL: str = os.getenv("GOOGLE_CALENDAR_API_URL") or "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1"
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "False").lower() == "true"
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE") or "lax"
+    CORS_ORIGINS: list[str] = [
+        o.strip()
+        for o in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173").split(",")
+    ]
 
     @property
     def database_url(self) -> str:
