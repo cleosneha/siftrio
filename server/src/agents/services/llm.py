@@ -3,11 +3,13 @@ from langchain_core.messages import BaseMessage
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel
 
+from src.core.config import settings
+
 
 class LLMService:
     def __init__(
         self,
-        model: str = "mistral-small-latest",
+        model: str = settings.MISTRAL_LLM_MODEL,
         temperature: float = 0.1,
     ) -> None:
         self._model = ChatMistralAI(model=model, temperature=temperature)
