@@ -121,8 +121,8 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
         nullable=True,
     )
 
-    transcript_status: Mapped[str | None] = mapped_column(
-        String(50),
+    transcript_status: Mapped[TranscriptStatus | None] = mapped_column(
+        SQLEnum(TranscriptStatus),
         nullable=True,
     )
 

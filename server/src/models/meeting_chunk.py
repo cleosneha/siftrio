@@ -59,6 +59,12 @@ class MeetingChunk(UUIDMixin, TimestampMixin, Base):
         back_populates="chunks",
     )
 
+    workspace = relationship("Workspace")
+
+    client = relationship("Client")
+
+    project = relationship("Project")
+
     __table_args__ = (
         Index("idx_chunk_meeting_id", "meeting_id"),
         Index("idx_chunk_workspace_id", "workspace_id"),

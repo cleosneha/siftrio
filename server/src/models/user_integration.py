@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,4 +45,8 @@ class UserIntegration(UUIDMixin, TimestampMixin, Base):
     user = relationship(
         "User",
         back_populates="integrations",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "provider", name="uq_user_integration_user_provider"),
     )

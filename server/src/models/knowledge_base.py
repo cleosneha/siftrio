@@ -2,11 +2,11 @@ from datetime import datetime
 from enum import Enum
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
-from src.models.base import Base, TimestampMixin, UUIDMixin
+from src.models.base import Base
 
 
 class RequirementStatus(str, Enum):
@@ -111,6 +111,10 @@ class AIEntityBase:
     def project(cls):
         return relationship("Project")
 
+    @declared_attr
+    def source_chunk(cls):
+        return relationship("MeetingChunk")
+
 
 class Requirement(AIEntityBase, Base):
     __tablename__ = "requirements"
@@ -130,6 +134,8 @@ class Requirement(AIEntityBase, Base):
         DateTime(timezone=True),
         nullable=True,
     )
+
+    approver = relationship("User", foreign_keys=[approved_by])
 
 
 class ActionItem(AIEntityBase, Base):
@@ -160,8 +166,8 @@ class Decision(AIEntityBase, Base):
 class Risk(AIEntityBase, Base):
     __tablename__ = "risks"
 
-    severity: Mapped[str | None] = mapped_column(
-        String(50),
+    severity: Mapped[RiskSeverity | None] = mapped_column(
+        SQLEnum(RiskSeverity),
         nullable=True,
         index=True,
     )
