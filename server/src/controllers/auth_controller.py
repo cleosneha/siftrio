@@ -26,18 +26,18 @@ class AuthController:
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
-            max_age=15 * 60,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+            max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             path="/",
         )
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,
-            samesite="lax",
-            max_age=30 * 24 * 60 * 60,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+            max_age=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/api/auth/refresh",
         )
         return response
