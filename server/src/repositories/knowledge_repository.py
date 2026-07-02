@@ -260,7 +260,12 @@ class KnowledgeRepository:
         return await self._update(Question, entity_id, kwargs)
 
     async def _update(self, model, entity_id: UUID, kwargs: dict):
-        entity = await self._db.get(model, entity_id)
+        result = await self._db.execute(
+            select(model)
+            .options(joinedload(model.meeting), joinedload(model.project))
+            .where(model.id == entity_id)
+        )
+        entity = result.unique().scalar_one_or_none()
         if entity is None:
             return None
         for key, value in kwargs.items():

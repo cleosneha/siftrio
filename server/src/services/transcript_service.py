@@ -1,10 +1,14 @@
 from uuid import UUID
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.core.config import settings
 from src.core.embeddings import EmbeddingService
+from src.models.client import Client
+from src.models.meeting import Meeting
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
 from src.services.meeting_analysis_service import MeetingAnalysisService
@@ -35,9 +39,18 @@ class TranscriptService:
         meeting_id: UUID,
         transcript_text: str,
     ) -> dict:
-        meeting = await self.meeting_repo.get_by_id(meeting_id)
+        result = await self.db.execute(
+            select(Meeting)
+            .options(selectinload(Meeting.client).selectinload(Client.workspace))
+            .options(selectinload(Meeting.project))
+            .where(Meeting.id == meeting_id)
+        )
+        meeting = result.scalar_one_or_none()
         if meeting is None:
             raise ValueError("Meeting not found")
+
+        client = meeting.client
+        project = meeting.project
 
         meeting.transcript = transcript_text
         await self.db.flush()
@@ -47,7 +60,7 @@ class TranscriptService:
         chunks = self.text_splitter.split_text(transcript_text)
         embeddings_list = await self.embeddings.embed_documents(chunks)
 
-        workspace_id = meeting.client.workspace_id if meeting.client else None
+        workspace_id = client.workspace_id if client else None
         client_id = meeting.client_id
         project_id = meeting.project_id
 
@@ -65,9 +78,9 @@ class TranscriptService:
                     "meeting_title": meeting.title,
                     "meeting_type": meeting.meeting_type.value,
                     "meeting_date": meeting.meeting_date.isoformat() if meeting.meeting_date else None,
-                    "project_name": meeting.project.name if meeting.project else None,
-                    "client_name": meeting.client.name if meeting.client else None,
-                    "workspace_name": meeting.client.workspace.name if meeting.client and meeting.client.workspace else None,
+                    "project_name": project.name if project else None,
+                    "client_name": client.name if client else None,
+                    "workspace_name": client.workspace.name if client and client.workspace else None,
                     "created_at": meeting.created_at.isoformat() if meeting.created_at else None,
                 },
             )
