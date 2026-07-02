@@ -35,3 +35,8 @@ class BaseAPIException(Exception):
     @property
     def status_code(self) -> int:
         return self._data.status_code
+
+
+class AuthorizationError(BaseAPIException):
+    def __init__(self, message: str = "You are not authorized to access this resource") -> None:
+        super().__init__(message=message, status_code=403)
