@@ -7,6 +7,7 @@ import re
 import httpx
 
 from src.core.config import settings
+from src.core.embeddings import embedder
 from src.exceptions.base import BaseAPIException
 from src.repositories.meeting_repository import MeetingRepository
 from src.services.transcript_service import TranscriptService
@@ -193,7 +194,7 @@ async def process_fireflies_transcript(
 
     transcript_text = _build_transcript_text(transcript)
 
-    transcript_service = TranscriptService(db_session)
+    transcript_service = TranscriptService(db_session, embeddings=embedder)
     result = await transcript_service.process_upload(meeting.id, transcript_text)
 
     await repo.update(

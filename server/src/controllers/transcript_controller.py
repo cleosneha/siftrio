@@ -4,13 +4,14 @@ from fastapi import Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
+from src.core.embeddings import embedder
 from src.schemas.base_response import BaseResponse
 from src.services.transcript_service import TranscriptService
 
 
 class TranscriptController:
     def __init__(self, db: AsyncSession) -> None:
-        self.service = TranscriptService(db)
+        self.service = TranscriptService(db, embeddings=embedder)
 
     async def upload(self, meeting_id: str, file: UploadFile) -> BaseResponse:
         if not file.filename or not file.filename.endswith(".txt"):

@@ -4,11 +4,16 @@ from src.agents.schemas import ParsedQuery, RetrievedContext
 from src.agents.retrievers.knowledge import KnowledgeRetriever
 from src.agents.retrievers.meetings import MeetingRetriever
 from src.agents.retrievers.vector import VectorRetriever
+from src.core.embeddings import EmbeddingService, embedder
 
 
 class HybridRetriever:
-    def __init__(self, db: AsyncSession) -> None:
-        self._vector = VectorRetriever(db)
+    def __init__(
+        self,
+        db: AsyncSession,
+        embeddings: EmbeddingService = embedder,
+    ) -> None:
+        self._vector = VectorRetriever(db, embeddings=embeddings)
         self._meetings = MeetingRetriever(db)
         self._knowledge = KnowledgeRetriever(db)
 

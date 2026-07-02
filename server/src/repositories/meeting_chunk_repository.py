@@ -17,6 +17,9 @@ class MeetingChunkRepository:
         chunk_text: str,
         embedding: list[float],
         chunk_metadata: dict | None = None,
+        workspace_id: UUID | None = None,
+        client_id: UUID | None = None,
+        project_id: UUID | None = None,
     ) -> MeetingChunk:
         chunk = MeetingChunk(
             meeting_id=meeting_id,
@@ -24,6 +27,9 @@ class MeetingChunkRepository:
             chunk_text=chunk_text,
             embedding=embedding,
             chunk_metadata=chunk_metadata,
+            workspace_id=workspace_id,
+            client_id=client_id,
+            project_id=project_id,
         )
         self.db.add(chunk)
         await self.db.commit()

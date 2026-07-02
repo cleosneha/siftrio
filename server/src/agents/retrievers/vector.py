@@ -1,8 +1,10 @@
-from langchain_mistralai import MistralAIEmbeddings
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.schemas import RetrievedChunk
+from src.core.embeddings import EmbeddingService
 from src.models.meeting_chunk import MeetingChunk
 
 
@@ -10,28 +12,27 @@ class VectorRetriever:
     def __init__(
         self,
         db: AsyncSession,
+        embeddings: EmbeddingService,
         top_k: int = 10,
     ) -> None:
         self.db = db
+        self.embeddings = embeddings
         self.top_k = top_k
-        self.embeddings = MistralAIEmbeddings(model="mistral-embed")
 
     async def search(
         self,
         query: str,
         filters: dict | None = None,
     ) -> list[RetrievedChunk]:
-        query_embedding = await self.embeddings.aembed_query(query)
+        query_embedding = await self.embeddings.embed_query(query)
 
         distance = MeetingChunk.embedding.cosine_distance(query_embedding)
-        stmt = (
-            select(MeetingChunk, distance.label("distance"))
-            .order_by(distance)
-            .limit(self.top_k)
-        )
+        stmt = select(MeetingChunk, distance.label("distance"))
 
         if filters:
             stmt = self._apply_filters(stmt, filters)
+
+        stmt = stmt.order_by(distance).limit(self.top_k)
 
         result = await self.db.execute(stmt)
         rows = result.all()
@@ -48,16 +49,15 @@ class VectorRetriever:
             for chunk, dist in rows
         ]
 
-    def _apply_filters(self, stmt, filters: dict):
-        meta = MeetingChunk.chunk_metadata
-
+    @staticmethod
+    def _apply_filters(stmt, filters: dict):
         if filters.get("workspace_id"):
-            stmt = stmt.where(meta["workspace_id"].astext == str(filters["workspace_id"]))
+            stmt = stmt.where(MeetingChunk.workspace_id == UUID(filters["workspace_id"]))
         if filters.get("client_id"):
-            stmt = stmt.where(meta["client_id"].astext == str(filters["client_id"]))
+            stmt = stmt.where(MeetingChunk.client_id == UUID(filters["client_id"]))
         if filters.get("project_id"):
-            stmt = stmt.where(meta["project_id"].astext == str(filters["project_id"]))
+            stmt = stmt.where(MeetingChunk.project_id == UUID(filters["project_id"]))
         if filters.get("meeting_id"):
-            stmt = stmt.where(meta["meeting_id"].astext == str(filters["meeting_id"]))
+            stmt = stmt.where(MeetingChunk.meeting_id == UUID(filters["meeting_id"]))
 
         return stmt
