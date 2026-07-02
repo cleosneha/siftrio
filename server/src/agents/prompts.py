@@ -14,11 +14,13 @@ The user may ask about:
 
 Extract:
 - intent: classify as "query", "summarize", "compare", or "list"
-- workspace_id, client_id, project_id, meeting_id: UUIDs if the user explicitly mentions a name or ID
+- workspace_name, client_name, project_name, meeting_name: the human-readable names of entities mentioned
 - keywords: important nouns, names, topics, or domain terms
 - date_range: if the user specifies a timeframe (e.g. "last month", "Q1 2025", "between Jan and March")
 
-Be conservative. Only populate fields the user explicitly or clearly implies. Do not guess UUIDs.
+Be conservative. Only populate fields the user explicitly or clearly implies.
+
+IMPORTANT: Only extract human-readable names. Do NOT generate or guess IDs, UUIDs, or database keys.
 
 User question: {question}
 
