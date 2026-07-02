@@ -18,7 +18,7 @@ class ProjectRepository:
     ) -> Project:
         project = Project(client_id=client_id, name=name, description=description)
         self.db.add(project)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(project)
         return project
 
