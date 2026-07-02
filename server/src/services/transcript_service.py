@@ -15,6 +15,7 @@ class TranscriptService:
         db: AsyncSession,
         embeddings: EmbeddingService,
     ) -> None:
+        self.db = db
         self.meeting_repo = MeetingRepository(db)
         self.chunk_repo = MeetingChunkRepository(db)
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -35,7 +36,7 @@ class TranscriptService:
             raise ValueError("Meeting not found")
 
         meeting.transcript = transcript_text
-        await self.meeting_repo.db.commit()
+        await self.db.flush()
 
         await self.chunk_repo.delete_by_meeting(meeting_id)
 
@@ -69,6 +70,8 @@ class TranscriptService:
             )
 
         await self.analysis_service.generate_analysis(meeting_id)
+
+        await self.db.commit()
 
         return {
             "meeting_id": str(meeting.id),

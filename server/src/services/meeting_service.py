@@ -13,6 +13,7 @@ from src.services.meeting_integration_service import MeetingIntegrationService
 
 class MeetingService:
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.repo = MeetingRepository(db)
         self.client_repo = ClientRepository(db)
         self.project_repo = ProjectRepository(db)
@@ -109,6 +110,8 @@ class MeetingService:
             google_meet_code=google_meet_code,
             transcript_status=transcript_status,
         )
+
+        await self.db.commit()
 
         return {
             "id": str(meeting.id),

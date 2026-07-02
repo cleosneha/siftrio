@@ -10,6 +10,7 @@ from src.repositories.meeting_repository import MeetingRepository
 
 class KnowledgeService:
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.repo = KnowledgeRepository(db)
         self.meeting_repo = MeetingRepository(db)
         self.chunk_repo = MeetingChunkRepository(db)
@@ -86,6 +87,8 @@ class KnowledgeService:
                     description=item.get("description"),
                     answer=item.get("answer"),
                 )
+
+        await self.db.commit()
 
     async def list_requirements(
         self,

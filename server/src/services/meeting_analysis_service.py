@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from langchain_mistralai import ChatMistralAI
-from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repositories.meeting_analysis_repository import MeetingAnalysisRepository
@@ -18,11 +17,6 @@ Return ONLY a valid JSON object with these exact fields:
 - summary: A brief 2-3 sentence summary of the meeting
 - goal: The main goal or purpose of the meeting
 - outcomes: List of key outcomes achieved
-- decisions: List of decisions made (as simple strings)
-- action_items: List of action items (as simple strings)
-- answered_questions: List of questions that were answered
-- unanswered_questions: List of questions left unanswered
-- risks: List of risks identified (as simple strings)
 - blockers: List of blockers or impediments
 - future_meetings: List of future meetings mentioned
 - requirements: List of objects with title, description (optional), priority (optional - low/medium/high/critical)
@@ -42,6 +36,7 @@ Transcript:
 
 class MeetingAnalysisService:
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.repo = MeetingAnalysisRepository(db)
         self.meeting_repo = MeetingRepository(db)
         self.llm = ChatMistralAI(
@@ -66,26 +61,31 @@ class MeetingAnalysisService:
             )
         )
 
+        decisions_str = [d.title for d in result.structured_decisions]
+        action_items_str = [a.title for a in result.structured_action_items]
+        risks_str = [r.title for r in result.structured_risks]
+        answered = [q.title for q in result.structured_questions if q.answer]
+        unanswered = [q.title for q in result.structured_questions if not q.answer]
+
         analysis = await self.repo.upsert(
             meeting_id=meeting_id,
             summary=result.summary,
             goal=result.goal,
             outcomes=result.outcomes,
-            decisions=result.decisions,
-            action_items=result.action_items,
-            answered_questions=result.answered_questions,
-            unanswered_questions=result.unanswered_questions,
-            risks=result.risks,
+            decisions=decisions_str,
+            action_items=action_items_str,
+            answered_questions=answered,
+            unanswered_questions=unanswered,
+            risks=risks_str,
             blockers=result.blockers,
             future_meetings=result.future_meetings,
         )
 
         now = datetime.now(timezone.utc)
         analysis.generated_at = now
-        await self.repo.db.commit()
-        await self.repo.db.refresh(analysis)
+        await self.db.flush()
 
-        knowledge_service = KnowledgeService(self.repo.db)
+        knowledge_service = KnowledgeService(self.db)
         await knowledge_service.extract_from_analysis(
             meeting_id=meeting_id,
             requirements=[r.model_dump() for r in result.requirements] if result.requirements else None,
@@ -94,6 +94,9 @@ class MeetingAnalysisService:
             risks=[r.model_dump() for r in result.structured_risks] if result.structured_risks else None,
             questions=[q.model_dump() for q in result.structured_questions] if result.structured_questions else None,
         )
+
+        await self.db.commit()
+        await self.db.refresh(analysis)
 
         return self._to_dict(analysis)
 

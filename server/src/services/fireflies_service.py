@@ -202,6 +202,8 @@ async def process_fireflies_transcript(
         transcript_status=TranscriptStatus.COMPLETED.value,
     )
 
+    await db_session.commit()
+
     return {
         "meeting_id": str(meeting.id),
         "chunk_count": result["chunk_count"],

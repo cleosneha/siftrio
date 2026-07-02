@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from fastapi import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
@@ -9,6 +10,7 @@ from src.repositories.workspace_repository import WorkspaceRepository
 
 class ClientService:
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.repo = ClientRepository(db)
         self.workspace_repo = WorkspaceRepository(db)
 
@@ -24,6 +26,7 @@ class ClientService:
             )
 
         client = await self.repo.create(ws_id, name, description)
+        await self.db.commit()
         return {
             "id": str(client.id),
             "workspace_id": str(client.workspace_id),
@@ -38,6 +41,7 @@ class ClientService:
         client = await self.repo.get_by_id(client_id)
         if client is None:
             return None
+        logger.info(f"Retrieved client: {client}")
         project_count = await self.repo.get_project_count(client_id)
         return {
             "id": str(client.id),
