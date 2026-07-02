@@ -1,37 +1,36 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+import logging
+from time import perf_counter
+from typing import Any
 
-from src.agents.graph import build_chat_graph
-from src.agents.retrievers.hybrid import HybridRetriever
+from src.agents.graph import compiled_graph
 from src.agents.schemas import Citation
-from src.agents.services.context_builder import ContextBuilderService
-from src.agents.services.llm import LLMService
-from src.agents.services.query_parser import QueryParserService
 from src.agents.state import ChatState
-from src.core.embeddings import embedder
+from src.exceptions.base import AuthorizationError, BaseAPIException
+from src.schemas.assistant_schema import AssistantCitationResponse
+
+logger = logging.getLogger(__name__)
 
 
 class ChatService:
     def __init__(
         self,
-        db: AsyncSession,
-        llm: LLMService | None = None,
+        db,
+        user_context: dict[str, Any] | None = None,
     ) -> None:
-        self._llm = llm or LLMService()
-        self._query_parser = QueryParserService(self._llm)
-        self._retriever = HybridRetriever(db, embeddings=embedder)
-        self._context_builder = ContextBuilderService()
-        self._graph = build_chat_graph(
-            self._query_parser,
-            self._retriever,
-            self._context_builder,
-            self._llm,
-        )
+        self._db = db
+        self._user_context = user_context or {}
 
     async def chat(self, question: str) -> dict[str, object]:
+        question = question.strip()
+        if not question:
+            raise BaseAPIException(message="Question cannot be empty", status_code=400)
+
         initial_state: ChatState = {
             "question": question,
+            "db": self._db,
+            "user_context": self._user_context,
             "parsed_query": None,
-            "filters": None,
+            "retrieval_scope": None,
             "retrieved_chunks": [],
             "meeting_analysis": [],
             "knowledge_entities": [],
@@ -40,14 +39,122 @@ class ChatService:
             "citations": [],
         }
 
-        result = await self._graph.ainvoke(initial_state)
-        citations = result.get("citations", [])
-        serialized_citations = [
-            citation.model_dump() if isinstance(citation, Citation) else citation
-            for citation in citations
-        ]
+        start = perf_counter()
 
-        return {
-            "answer": result.get("answer") or "",
+        try:
+            result = await compiled_graph.ainvoke(initial_state)
+        except AuthorizationError as exc:
+            raise BaseAPIException(message=str(exc), status_code=403)
+        except Exception as exc:
+            logger.error("Assistant query failed: %s", exc, exc_info=True)
+            raise BaseAPIException(
+                message="Unable to process assistant request",
+                status_code=500,
+            ) from exc
+
+        elapsed = perf_counter() - start
+
+        parsed_query = result.get("parsed_query")
+        retrieval_scope = result.get("retrieval_scope")
+        retrieved_chunks = result.get("retrieved_chunks", [])
+        meeting_analysis = result.get("meeting_analysis", [])
+        knowledge_entities = result.get("knowledge_entities", [])
+        context = result.get("context") or ""
+
+        logger.info("Assistant incoming question: %s", question)
+        logger.info(
+            "Assistant parsed query: %s",
+            parsed_query.model_dump() if parsed_query else None,
+        )
+        logger.info(
+            "Assistant retrieval scope: %s",
+            retrieval_scope.model_dump() if retrieval_scope else None,
+        )
+        logger.info("Assistant retrieved transcript chunks: %s", len(retrieved_chunks))
+        logger.info("Assistant retrieved meetings: %s", len(meeting_analysis))
+        logger.info("Assistant retrieved knowledge entities: %s", len(knowledge_entities))
+        logger.info("Assistant context length: %s chars", len(context))
+        logger.info("Assistant query completed in: %.2fs", elapsed)
+
+        answer = result.get("answer", "")
+
+        if not context.strip() or (not retrieved_chunks and not meeting_analysis and not knowledge_entities):
+            answer = "I couldn't find relevant context for that question."
+
+        serialized_citations = self._format_citations(
+            result.get("citations", []),
+            result,
+        )
+
+        response: dict[str, object] = {
+            "answer": answer,
             "citations": serialized_citations,
         }
+        if retrieval_scope and retrieval_scope.ambiguous_entities:
+            response["ambiguous_entities"] = {
+                k: [c.model_dump() for c in v]
+                for k, v in retrieval_scope.ambiguous_entities.items()
+            }
+
+        return response
+
+    @staticmethod
+    def _format_citations(
+        citations: list[Citation | dict[str, Any]],
+        result: dict[str, Any],
+    ) -> list[dict[str, object | None]]:
+        chunks = result.get("retrieved_chunks", [])
+        meetings = {meeting.meeting_id: meeting for meeting in result.get("meeting_analysis", [])}
+        knowledge = {item.entity_id: item for item in result.get("knowledge_entities", [])}
+
+        formatted: list[dict[str, object | None]] = []
+        for citation in citations:
+            if isinstance(citation, Citation):
+                source_type = citation.source_type
+                source_id = citation.source_id
+            else:
+                source_type = citation.get("source_type")
+                source_id = citation.get("source_id")
+
+            if source_type == "chunk":
+                source = next((chunk for chunk in chunks if chunk.chunk_id == source_id), None)
+                if source is None:
+                    continue
+                meeting = meetings.get(source.meeting_id)
+                formatted.append(
+                    AssistantCitationResponse(
+                        meeting_id=source.meeting_id,
+                        meeting_title=(
+                            meeting.title if meeting else source.metadata.get("meeting_title") or ""
+                        ),
+                        meeting_date=meeting.meeting_date if meeting else None,
+                        chunk_index=source.chunk_index,
+                    ).model_dump()
+                )
+            elif source_type == "meeting":
+                meeting = meetings.get(source_id)
+                if meeting is None:
+                    continue
+                formatted.append(
+                    AssistantCitationResponse(
+                        meeting_id=meeting.meeting_id,
+                        meeting_title=meeting.title,
+                        meeting_date=meeting.meeting_date,
+                        chunk_index=None,
+                    ).model_dump()
+                )
+            elif source_type == "knowledge":
+                item = knowledge.get(source_id)
+                if item is None:
+                    continue
+                meeting = meetings.get(item.meeting_id)
+                formatted.append(
+                    AssistantCitationResponse(
+                        meeting_id=item.meeting_id,
+                        meeting_title=item.meeting_title or (meeting.title if meeting else ""),
+                        meeting_date=meeting.meeting_date if meeting else None,
+                        chunk_index=None,
+                    ).model_dump()
+                )
+
+        return formatted
