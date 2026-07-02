@@ -3,16 +3,14 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Layers } from "lucide-react";
+import { Plus, Layers, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useAppContext } from "@/lib/app-context";
+import { cn } from "@/lib/utils";
 import { SidebarWorkspace } from "./SidebarWorkspace";
 import type { Workspace } from "@/types";
 
@@ -25,6 +23,7 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
   const { sidebarOpen, setSidebarOpen } = useAppContext();
   const { data: workspacesData } = useWorkspaces();
   const workspaces: Workspace[] = workspacesData?.data ?? [];
+  const isAssistantActive = pathname === "/assistant";
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -34,11 +33,29 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
     <div className="flex h-full flex-col">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 font-medium">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-medium"
+          >
             <Layers className="h-5 w-5" />
             <span className="text-base">Siftrio</span>
           </Link>
         </div>
+      </div>
+
+      <Separator />
+
+      <div className="px-3 py-2">
+        <Link
+          href="/assistant"
+          className={cn(
+            "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+            isAssistantActive && "bg-accent font-medium text-accent-foreground",
+          )}
+        >
+          <Bot className="h-4 w-4" />
+          <span>AI Assistant</span>
+        </Link>
       </div>
 
       <Separator />
