@@ -1,3 +1,6 @@
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -8,10 +11,10 @@ class ClientCreate(BaseModel):
 
 
 class ClientResponse(BaseModel):
-    id: str
-    workspace_id: str
+    id: UUID
+    workspace_id: UUID
     name: str
     description: str | None = None
     project_count: int = 0
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

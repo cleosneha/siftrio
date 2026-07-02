@@ -1,3 +1,6 @@
+from datetime import datetime
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -16,16 +19,16 @@ class MeetingCreate(BaseModel):
 
 
 class MeetingResponse(BaseModel):
-    id: str
-    client_id: str
-    project_id: str | None = None
+    id: UUID
+    client_id: UUID
+    project_id: UUID | None = None
     title: str
     meeting_type: str = "project"
     tags: list[str] = []
     transcript: str | None = None
-    meeting_date: str | None = None
-    start_time: str | None = None
-    end_time: str | None = None
+    meeting_date: datetime | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     meeting_provider: str = "manual"
     meeting_url: str | None = None
     google_calendar_event_id: str | None = None
@@ -34,8 +37,8 @@ class MeetingResponse(BaseModel):
     fireflies_meeting_id: str | None = None
     transcript_status: str | None = None
     guest_emails: list[str] = []
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class TranscriptStatusResponse(BaseModel):
