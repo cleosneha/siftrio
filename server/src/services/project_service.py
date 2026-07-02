@@ -9,6 +9,7 @@ from src.repositories.project_repository import ProjectRepository
 
 class ProjectService:
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.repo = ProjectRepository(db)
         self.client_repo = ClientRepository(db)
 
@@ -24,6 +25,7 @@ class ProjectService:
             )
 
         project = await self.repo.create(cl_id, name, description)
+        await self.db.commit()
         return {
             "id": str(project.id),
             "client_id": str(project.client_id),
