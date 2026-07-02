@@ -10,18 +10,23 @@ from src.agents.retrievers.hybrid import HybridRetriever
 from src.agents.services.context_builder import ContextBuilderService
 from src.agents.services.llm import LLMService
 from src.agents.services.query_parser import QueryParserService
+from src.agents.services.scope_builder import ScopeBuilderService
 from src.agents.state import ChatState
 
 
-def build_chat_graph(
-    query_parser: QueryParserService,
-    retriever: HybridRetriever,
-    context_builder: ContextBuilderService,
-    llm: LLMService,
-):
+def _build_graph():
+    llm = LLMService()
+    query_parser = QueryParserService(llm)
+    retriever = HybridRetriever()
+    context_builder = ContextBuilderService()
+    scope_builder = ScopeBuilderService()
+
     workflow = StateGraph(ChatState)
 
-    workflow.add_node("parse_query", partial(parse_query, query_parser=query_parser))
+    workflow.add_node(
+        "parse_query",
+        partial(parse_query, query_parser=query_parser, scope_builder=scope_builder),
+    )
     workflow.add_node("retrieve_context", partial(retrieve_context, retriever=retriever))
     workflow.add_node("build_context", partial(build_context, context_builder=context_builder))
     workflow.add_node("generate_response", partial(generate_response, llm=llm))
@@ -33,3 +38,6 @@ def build_chat_graph(
     workflow.add_edge("generate_response", END)
 
     return workflow.compile()
+
+
+compiled_graph = _build_graph()
