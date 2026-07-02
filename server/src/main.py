@@ -30,13 +30,7 @@ def create_app() -> FastAPI:
 
 
 def register_middlewares(app: FastAPI) -> None:
-    origins = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        settings.FRONTEND_URL,
-    ]
+    origins = list(set(settings.CORS_ORIGINS + [settings.FRONTEND_URL]))
 
     app.add_middleware(
         CORSMiddleware,
