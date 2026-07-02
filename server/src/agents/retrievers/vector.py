@@ -11,16 +11,15 @@ from src.models.meeting_chunk import MeetingChunk
 class VectorRetriever:
     def __init__(
         self,
-        db: AsyncSession,
         embeddings: EmbeddingService,
         top_k: int = 10,
     ) -> None:
-        self.db = db
         self.embeddings = embeddings
         self.top_k = top_k
 
     async def search(
         self,
+        db: AsyncSession,
         query: str,
         filters: dict | None = None,
     ) -> list[RetrievedChunk]:
@@ -34,7 +33,7 @@ class VectorRetriever:
 
         stmt = stmt.order_by(distance).limit(self.top_k)
 
-        result = await self.db.execute(stmt)
+        result = await db.execute(stmt)
         rows = result.all()
 
         return [
@@ -51,13 +50,14 @@ class VectorRetriever:
 
     @staticmethod
     def _apply_filters(stmt, filters: dict):
-        if filters.get("workspace_id"):
-            stmt = stmt.where(MeetingChunk.workspace_id == UUID(filters["workspace_id"]))
-        if filters.get("client_id"):
-            stmt = stmt.where(MeetingChunk.client_id == UUID(filters["client_id"]))
-        if filters.get("project_id"):
-            stmt = stmt.where(MeetingChunk.project_id == UUID(filters["project_id"]))
-        if filters.get("meeting_id"):
-            stmt = stmt.where(MeetingChunk.meeting_id == UUID(filters["meeting_id"]))
+        workspace_ids = filters.get("workspace_ids") or []
+        if workspace_ids:
+            stmt = stmt.where(MeetingChunk.workspace_id.in_([UUID(wid) for wid in workspace_ids]))
+        if filters.get("client_ids"):
+            stmt = stmt.where(MeetingChunk.client_id.in_([UUID(cid) for cid in filters["client_ids"]]))
+        if filters.get("project_ids"):
+            stmt = stmt.where(MeetingChunk.project_id.in_([UUID(pid) for pid in filters["project_ids"]]))
+        if filters.get("meeting_ids"):
+            stmt = stmt.where(MeetingChunk.meeting_id.in_([UUID(mid) for mid in filters["meeting_ids"]]))
 
         return stmt

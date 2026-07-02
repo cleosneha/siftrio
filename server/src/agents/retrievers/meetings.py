@@ -9,11 +9,9 @@ from src.models.meeting import Meeting
 
 
 class MeetingRetriever:
-    def __init__(self, db: AsyncSession) -> None:
-        self.db = db
-
     async def get_by_ids(
         self,
+        db: AsyncSession,
         meeting_ids: list[str],
     ) -> list[RetrievedMeeting]:
         if not meeting_ids:
@@ -26,7 +24,7 @@ class MeetingRetriever:
             .options(joinedload(Meeting.analysis))
             .where(Meeting.id.in_(uuids))
         )
-        result = await self.db.execute(stmt)
+        result = await db.execute(stmt)
         meetings = list(result.unique().scalars().all())
 
         return [
