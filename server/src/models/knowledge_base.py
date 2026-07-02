@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -131,12 +131,6 @@ class Requirement(AIEntityBase, Base):
         nullable=True,
     )
 
-    __table_args__ = (
-        Index("idx_requirement_project_id", "project_id"),
-        Index("idx_requirement_meeting_id", "meeting_id"),
-        Index("idx_requirement_status", "status"),
-    )
-
 
 class ActionItem(AIEntityBase, Base):
     __tablename__ = "action_items"
@@ -153,12 +147,6 @@ class ActionItem(AIEntityBase, Base):
         index=True,
     )
 
-    __table_args__ = (
-        Index("idx_action_item_project_id", "project_id"),
-        Index("idx_action_item_meeting_id", "meeting_id"),
-        Index("idx_action_item_status", "status"),
-    )
-
 
 class Decision(AIEntityBase, Base):
     __tablename__ = "decisions"
@@ -166,12 +154,6 @@ class Decision(AIEntityBase, Base):
     decision_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-    )
-
-    __table_args__ = (
-        Index("idx_decision_project_id", "project_id"),
-        Index("idx_decision_meeting_id", "meeting_id"),
-        Index("idx_decision_status", "status"),
     )
 
 
@@ -189,12 +171,6 @@ class Risk(AIEntityBase, Base):
         nullable=True,
     )
 
-    __table_args__ = (
-        Index("idx_risk_project_id", "project_id"),
-        Index("idx_risk_meeting_id", "meeting_id"),
-        Index("idx_risk_status", "status"),
-    )
-
 
 class Question(AIEntityBase, Base):
     __tablename__ = "questions"
@@ -202,10 +178,4 @@ class Question(AIEntityBase, Base):
     answer: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-    )
-
-    __table_args__ = (
-        Index("idx_question_project_id", "project_id"),
-        Index("idx_question_meeting_id", "meeting_id"),
-        Index("idx_question_status", "status"),
     )

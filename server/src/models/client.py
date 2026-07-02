@@ -12,6 +12,7 @@ class Client(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
 
     creator = relationship(

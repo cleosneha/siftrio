@@ -32,6 +32,7 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
 
     creator = relationship(
@@ -154,12 +155,10 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
     )
 
     __table_args__ = (
-        Index(
-            "idx_meeting_client_id",
-            "client_id",
-        ),
-        Index(
-            "idx_meeting_project_id",
-            "project_id",
-        ),
+        Index("idx_meeting_client_id", "client_id"),
+        Index("idx_meeting_project_id", "project_id"),
+        Index("idx_meeting_meeting_date", "meeting_date"),
+        Index("idx_meeting_google_calendar_event_id", "google_calendar_event_id"),
+        Index("idx_meeting_google_meet_code", "google_meet_code"),
+        Index("idx_meeting_fireflies_meeting_id", "fireflies_meeting_id"),
     )
