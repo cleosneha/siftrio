@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
-from src.models.meeting import MeetingProvider, MeetingType
+from src.models.meeting import MeetingProvider, MeetingType, TranscriptStatus
 from src.repositories.client_repository import ClientRepository
 from src.repositories.meeting_repository import MeetingRepository
 from src.repositories.project_repository import ProjectRepository
