@@ -6,11 +6,12 @@ async def retrieve_context(
     state: ChatState,
     retriever: HybridRetriever,
 ) -> dict[str, object]:
-    parsed_query = state["parsed_query"]
-    if parsed_query is None:
-        raise ValueError("parsed_query must be set before retrieving context")
+    db = state["db"]
+    retrieval_scope = state.get("retrieval_scope")
+    if retrieval_scope is None:
+        raise ValueError("retrieval_scope must be set before retrieving context")
 
-    retrieved_context = await retriever.retrieve(parsed_query)
+    retrieved_context = await retriever.retrieve(db, retrieval_scope)
     return {
         "retrieved_chunks": retrieved_context.chunks,
         "meeting_analysis": retrieved_context.meetings,
