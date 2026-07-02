@@ -1,17 +1,61 @@
+from uuid import UUID
+
 from pydantic import BaseModel, Field
+
+
+class EntityCandidate(BaseModel):
+    id: UUID = Field(description="UUID of the entity")
+    name: str = Field(description="Human-readable name of the entity")
 
 
 class ParsedQuery(BaseModel):
     original_question: str = Field(description="The user's original question verbatim")
     intent: str = Field(description="The primary intent: query, summarize, compare, or list")
-    workspace_id: str | None = Field(default=None, description="Target workspace UUID if mentioned")
-    client_id: str | None = Field(default=None, description="Target client UUID if mentioned")
-    project_id: str | None = Field(default=None, description="Target project UUID if mentioned")
-    meeting_id: str | None = Field(default=None, description="Target meeting UUID if mentioned")
+    workspace_name: str | None = Field(default=None, description="Workspace name if mentioned")
+    client_name: str | None = Field(default=None, description="Client name if mentioned")
+    project_name: str | None = Field(default=None, description="Project name if mentioned")
+    meeting_name: str | None = Field(default=None, description="Meeting name if mentioned")
     keywords: list[str] = Field(default_factory=list, description="Extracted keywords and key phrases")
     date_range: dict | None = Field(
         default=None,
         description="Date filter with start and end ISO strings, e.g. {'start': '2025-01-01', 'end': '2025-06-30'}",
+    )
+
+
+class ResolvedEntities(BaseModel):
+    workspace_id: UUID | None = Field(default=None, description="Resolved workspace ID")
+    client_id: UUID | None = Field(default=None, description="Resolved client ID")
+    project_id: UUID | None = Field(default=None, description="Resolved project ID")
+    meeting_id: UUID | None = Field(default=None, description="Resolved meeting ID")
+    workspace_candidates: list[EntityCandidate] = Field(
+        default_factory=list,
+        description="Ambiguous workspace matches",
+    )
+    client_candidates: list[EntityCandidate] = Field(
+        default_factory=list,
+        description="Ambiguous client matches",
+    )
+    project_candidates: list[EntityCandidate] = Field(
+        default_factory=list,
+        description="Ambiguous project matches",
+    )
+    meeting_candidates: list[EntityCandidate] = Field(
+        default_factory=list,
+        description="Ambiguous meeting matches",
+    )
+
+
+class RetrievalScope(BaseModel):
+    query_text: str = Field(description="Original user question for embedding and search")
+    workspace_ids: list[str] = Field(default_factory=list, description="Authorized workspaces to search")
+    client_ids: list[str] = Field(default_factory=list, description="Clients to filter by")
+    project_ids: list[str] = Field(default_factory=list, description="Projects to filter by")
+    meeting_ids: list[str] = Field(default_factory=list, description="Meetings to filter by")
+    keywords: list[str] = Field(default_factory=list, description="Search keywords")
+    date_range: dict | None = Field(default=None, description="Date range filter")
+    ambiguous_entities: dict[str, list[EntityCandidate]] = Field(
+        default_factory=dict,
+        description="Ambiguous entities requiring clarification",
     )
 
 
