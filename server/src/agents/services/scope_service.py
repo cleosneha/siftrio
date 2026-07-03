@@ -64,12 +64,24 @@ class ScopeService:
         if resolved.meeting_candidates:
             ambiguous["meeting"] = resolved.meeting_candidates
 
+        client_ids: list[str] = []
+        if resolved.client_id and not resolved.client_candidates:
+            client_ids = [str(resolved.client_id)]
+
+        project_ids: list[str] = []
+        if resolved.project_id and not resolved.project_candidates:
+            project_ids = [str(resolved.project_id)]
+
+        meeting_ids: list[str] = []
+        if resolved.meeting_id and not resolved.meeting_candidates:
+            meeting_ids = [str(resolved.meeting_id)]
+
         return RetrievalScope(
             query_text=parsed_query.original_question,
             workspace_ids=workspace_ids,
-            client_ids=[str(resolved.client_id)] if resolved.client_id and not resolved.client_candidates else [],
-            project_ids=[str(resolved.project_id)] if resolved.project_id and not resolved.project_candidates else [],
-            meeting_ids=[str(resolved.meeting_id)] if resolved.meeting_id and not resolved.meeting_candidates else [],
+            client_ids=client_ids,
+            project_ids=project_ids,
+            meeting_ids=meeting_ids,
             keywords=parsed_query.keywords,
             date_range=parsed_query.date_range,
             ambiguous_entities=ambiguous,

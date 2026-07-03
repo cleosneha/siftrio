@@ -1,6 +1,9 @@
+import json
 import logging
 from time import perf_counter
-from typing import Any
+from typing import Any, AsyncGenerator
+
+from langchain_core.messages import AIMessageChunk
 
 from src.agents.graph import compiled_graph
 from src.agents.schemas import Citation
@@ -19,8 +22,13 @@ class ChatService:
     ) -> None:
         self._db = db
         self._user_context = user_context or {}
+        self._graph = compiled_graph
 
-    async def chat(self, question: str) -> dict[str, object]:
+    async def chat(
+        self,
+        question: str,
+        conversation_history: list[dict[str, str]] | None = None,
+    ) -> dict[str, object]:
         question = question.strip()
         if not question:
             raise BaseAPIException(message="Question cannot be empty", status_code=400)
@@ -37,12 +45,13 @@ class ChatService:
             "context": None,
             "answer": None,
             "citations": [],
+            "conversation_history": conversation_history or [],
         }
 
         start = perf_counter()
 
         try:
-            result = await compiled_graph.ainvoke(initial_state)
+            result = await self._graph.ainvoke(initial_state)
         except AuthorizationError as exc:
             raise BaseAPIException(message=str(exc), status_code=403)
         except Exception as exc:
@@ -97,6 +106,54 @@ class ChatService:
             }
 
         return response
+
+    async def chat_stream(
+        self,
+        question: str,
+        conversation_history: list[dict[str, str]] | None = None,
+    ) -> AsyncGenerator[str, None]:
+        question = question.strip()
+        if not question:
+            yield json.dumps({"error": "Question cannot be empty"}) + "\n"
+            return
+
+        initial_state: ChatState = {
+            "question": question,
+            "db": self._db,
+            "user_context": self._user_context,
+            "parsed_query": None,
+            "retrieval_scope": None,
+            "retrieved_chunks": [],
+            "meeting_analysis": [],
+            "knowledge_entities": [],
+            "context": None,
+            "answer": None,
+            "citations": [],
+            "conversation_history": conversation_history or [],
+        }
+
+        try:
+            async for event in self._graph.astream_events(initial_state, version="v2"):
+                kind = event.get("event")
+                if kind == "on_chat_model_stream":
+                    chunk = event.get("data", {}).get("chunk")
+                    if isinstance(chunk, AIMessageChunk):
+                        token = chunk.content or ""
+                        if token:
+                            yield f"data: {json.dumps({'token': token})}\n\n"
+                elif kind == "on_chain_end":
+                    name = event.get("name", "")
+                    if name == "generate_response":
+                        output = event.get("data", {}).get("output", {})
+                        yield f"data: {json.dumps({'done': True, 'citations': self._format_citations(
+                            output.get('citations', []),
+                            output,
+                        )})}\n\n"
+        except AuthorizationError as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+        except Exception as exc:
+            logger.error("Assistant stream failed: %s", exc, exc_info=True)
+            yield f"data: {json.dumps({'error': 'Unable to process assistant request'})}\n\n"
 
     @staticmethod
     def _format_citations(

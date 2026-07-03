@@ -101,6 +101,31 @@ class EntityResolverService:
                         EntityCandidate(id=p.id, name=p.name) for p in matches
                     ]
 
+        for name in parsed_query.ambiguous_names:
+            client_matches = await self._resolve_client(db, name, accessible_workspace_ids)
+            project_matches = await self._resolve_project(db, name, accessible_workspace_ids)
+            meeting_matches = await self._resolve_meeting(db, name, accessible_workspace_ids)
+
+            if len(client_matches) == 1 and len(project_matches) == 0 and len(meeting_matches) == 0:
+                result.client_id = client_matches[0].id
+            elif len(client_matches) == 0 and len(project_matches) == 1 and len(meeting_matches) == 0:
+                result.project_id = project_matches[0].id
+            elif len(client_matches) == 0 and len(project_matches) == 0 and len(meeting_matches) == 1:
+                result.meeting_id = meeting_matches[0].id
+            else:
+                if client_matches:
+                    result.client_candidates.extend(
+                        EntityCandidate(id=c.id, name=c.name) for c in client_matches
+                    )
+                if project_matches:
+                    result.project_candidates.extend(
+                        EntityCandidate(id=p.id, name=p.name) for p in project_matches
+                    )
+                if meeting_matches:
+                    result.meeting_candidates.extend(
+                        EntityCandidate(id=m.id, name=m.title) for m in meeting_matches
+                    )
+
         return result
 
     async def _resolve_workspace(

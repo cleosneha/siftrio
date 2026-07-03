@@ -12,7 +12,7 @@ class LLMService:
         model: str = settings.MISTRAL_LLM_MODEL,
         temperature: float = 0.1,
     ) -> None:
-        self._model = ChatMistralAI(model=model, temperature=temperature)
+        self._model = ChatMistralAI(model=model, temperature=temperature, streaming=True)
 
     @property
     def model(self) -> ChatMistralAI:
