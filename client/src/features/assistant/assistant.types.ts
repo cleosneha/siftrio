@@ -8,4 +8,18 @@ export interface AssistantCitation {
 export interface AssistantQueryResponse {
   answer: string;
   citations: AssistantCitation[];
+  ambiguous_entities?: Record<string, { id: string; name: string }[]> | null;
+}
+
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations?: AssistantCitation[];
+  ambiguous_entities?: Record<string, { id: string; name: string }[]> | null;
+}
+
+export interface ConversationTurn {
+  role: "user" | "assistant";
+  content: string;
 }
