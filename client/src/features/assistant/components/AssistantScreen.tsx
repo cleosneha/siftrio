@@ -76,8 +76,8 @@ function formatCitationDate(date: string | null) {
   return parsed.toLocaleDateString();
 }
 
-export function AssistantScreen() {
-  const { messages, isLoading, sendMessage, clearMessages } = useAssistant();
+export function AssistantScreen({ threadId }: { threadId: string }) {
+  const { messages, isLoading, sendMessage, clearMessages } = useAssistant(threadId);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 

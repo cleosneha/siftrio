@@ -1,12 +1,21 @@
 "use client";
 
+import { useRef } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/lib/app-context";
 import { AssistantScreen } from "@/features/assistant/components/AssistantScreen";
 
+function generateId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 export default function AssistantPage() {
   const { setSidebarOpen } = useAppContext();
+  const threadId = useRef(generateId());
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -23,7 +32,7 @@ export default function AssistantPage() {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <AssistantScreen />
+        <AssistantScreen threadId={threadId.current} />
       </div>
     </div>
   );
