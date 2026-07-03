@@ -24,3 +24,4 @@ class ChatState(TypedDict):
     context: str | None
     answer: str | None
     citations: list[Citation]
+    conversation_history: list[dict[str, str]]

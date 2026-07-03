@@ -15,6 +15,10 @@ class ParsedQuery(BaseModel):
     client_name: str | None = Field(default=None, description="Client name if mentioned")
     project_name: str | None = Field(default=None, description="Project name if mentioned")
     meeting_name: str | None = Field(default=None, description="Meeting name if mentioned")
+    ambiguous_names: list[str] = Field(
+        default_factory=list,
+        description="Entity names where the type (client/project/meeting) is uncertain",
+    )
     keywords: list[str] = Field(default_factory=list, description="Extracted keywords and key phrases")
     date_range: dict | None = Field(
         default=None,
@@ -72,7 +76,9 @@ class RetrievedChunk(BaseModel):
     meeting_id: str = Field(description="UUID of the parent meeting")
     chunk_index: int = Field(description="Position of the chunk within the meeting")
     chunk_text: str = Field(description="The chunk text content")
-    score: float = Field(description="Similarity score from vector search")
+    score: float = Field(description="Combined relevance score after reranking")
+    vector_score: float | None = Field(default=None, description="Similarity score from vector search")
+    keyword_score: float | None = Field(default=None, description="Score from keyword/full-text search")
     metadata: dict = Field(default_factory=dict, description="Chunk metadata including workspace, project, client names")
 
 
