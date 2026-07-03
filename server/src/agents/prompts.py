@@ -27,10 +27,7 @@ Guidelines:
 - Use previous conversation to understand follow-ups, but base all factual claims on the retrieved context below.
 - Do NOT ask follow-up questions or suggest topics. Only answer what was asked.
 
-Previous conversation:
-{conversation_history}
-
-Retrieved context:
+Context:
 {context}
 
 User question: {question}"""

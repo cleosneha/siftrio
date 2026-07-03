@@ -82,7 +82,6 @@ async def generate_response(
 ) -> dict[str, object]:
     question = state["question"]
     context = state["context"] or ""
-    history = state.get("conversation_history", [])
 
     if state.get("retrieval_scope") and state["retrieval_scope"].ambiguous_entities:
         parts = []
@@ -92,16 +91,7 @@ async def generate_response(
         note = f"[Note: The query matched {' and '.join(parts)}. The same name may appear as both a client and a project.]\n\n"
         context = note + context
 
-    conversation_text = ""
-    if history:
-        lines = []
-        for msg in history[-5:]:
-            role = "User" if msg.get("role") == "user" else "Assistant"
-            lines.append(f"{role}: {msg.get('content', '')}")
-        conversation_text = "\n".join(lines)
-
     prompt = ANSWER_PROMPT.format(
-        conversation_history=conversation_text or "(no previous conversation)",
         context=context,
         question=question,
     )

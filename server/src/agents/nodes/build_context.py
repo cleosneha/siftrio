@@ -3,11 +3,12 @@ from src.agents.services.context_builder import ContextBuilderService
 from src.agents.state import ChatState
 
 
-def _format_history(history: list[dict[str, str]]) -> str:
-    if not history:
+def _format_messages(messages: list[dict[str, str]], max_pairs: int = 4) -> str:
+    if not messages:
         return "(no previous conversation)"
+    recent = messages[-(max_pairs * 2):]
     lines = []
-    for msg in history:
+    for msg in recent:
         role = msg.get("role", "user")
         content = msg.get("content", "")
         label = "User" if role == "user" else "Assistant"
@@ -24,7 +25,18 @@ async def build_context(
         meetings=state["meeting_analysis"],
         knowledge=state["knowledge_entities"],
     )
-    history = _format_history(state.get("conversation_history", []))
-    context = context_builder.build(retrieved_context)
-    context = f"Conversation History:\n{history}\n\nRetrieved Knowledge:\n{context}"
+    messages = state.get("messages", [])
+    summary = state.get("conversation_summary", "")
+
+    recent = _format_messages(messages)
+
+    parts = []
+    if summary:
+        parts.append(f"Conversation Summary:\n{summary}")
+    if recent and recent != "(no previous conversation)":
+        parts.append(f"Recent Conversation:\n{recent}")
+
+    parts.append(f"Retrieved Knowledge:\n{context_builder.build(retrieved_context)}")
+
+    context = "\n\n".join(parts)
     return {"context": context}

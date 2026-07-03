@@ -1,5 +1,6 @@
 from functools import partial
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.nodes.build_context import build_context
@@ -37,7 +38,7 @@ def _build_graph():
     workflow.add_edge("build_context", "generate_response")
     workflow.add_edge("generate_response", END)
 
-    return workflow.compile()
+    return workflow.compile(checkpointer=MemorySaver())
 
 
 compiled_graph = _build_graph()

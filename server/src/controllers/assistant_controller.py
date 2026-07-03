@@ -16,8 +16,7 @@ class AssistantController:
         if not question:
             raise BaseAPIException(message="Question cannot be empty", status_code=400)
 
-        history = [m.model_dump() for m in body.conversation_history]
-        result = await self.service.chat(question, conversation_history=history)
+        result = await self.service.chat(question, thread_id=body.thread_id)
         return AssistantQueryResponse(**result)
 
     async def query_stream(
@@ -29,6 +28,5 @@ class AssistantController:
             yield "data: {\"error\": \"Question cannot be empty\"}\n\n"
             return
 
-        history = [m.model_dump() for m in body.conversation_history]
-        async for chunk in self.service.chat_stream(question, conversation_history=history):
+        async for chunk in self.service.chat_stream(question, thread_id=body.thread_id):
             yield chunk

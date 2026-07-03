@@ -1,4 +1,4 @@
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,4 +24,5 @@ class ChatState(TypedDict):
     context: str | None
     answer: str | None
     citations: list[Citation]
-    conversation_history: list[dict[str, str]]
+    messages: NotRequired[list[dict[str, str]]]
+    conversation_summary: NotRequired[str]
