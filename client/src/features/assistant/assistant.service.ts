@@ -1,16 +1,16 @@
 import { api } from "@/lib/api";
-import type { AssistantQueryResponse, ConversationTurn } from "./assistant.types";
+import type { AssistantQueryResponse } from "./assistant.types";
 
 export const assistantService = {
-  async query(question: string, conversationHistory: ConversationTurn[] = []) {
+  async query(question: string, threadId: string) {
     const res = await api.post<AssistantQueryResponse>("/assistant/query", {
       question,
-      conversation_history: conversationHistory,
+      thread_id: threadId,
     });
     return res.data;
   },
 
-  async *queryStream(question: string, conversationHistory: ConversationTurn[] = []) {
+  async *queryStream(question: string, threadId: string) {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/assistant/query/stream`,
       {
@@ -18,7 +18,7 @@ export const assistantService = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question,
-          conversation_history: conversationHistory,
+          thread_id: threadId,
         }),
         credentials: "include",
       },

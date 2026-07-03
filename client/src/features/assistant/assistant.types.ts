@@ -18,8 +18,3 @@ export interface Message {
   citations?: AssistantCitation[];
   ambiguous_entities?: Record<string, { id: string; name: string }[]> | null;
 }
-
-export interface ConversationTurn {
-  role: "user" | "assistant";
-  content: string;
-}

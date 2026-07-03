@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { assistantService } from "./assistant.service";
-import type { Message, ConversationTurn } from "./assistant.types";
+import type { Message } from "./assistant.types";
 
 let msgIdCounter = 0;
 function nextId() {
@@ -10,14 +10,9 @@ function nextId() {
   return `msg-${Date.now()}-${msgIdCounter}`;
 }
 
-export function useAssistant() {
+export function useAssistant(threadId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const messagesRef = useRef<Message[]>([]);
-
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
 
   const sendMessage = useCallback(async (content: string) => {
     const trimmed = content.trim();
@@ -30,13 +25,10 @@ export function useAssistant() {
     setIsLoading(true);
 
     try {
-      const currentMessages = messagesRef.current;
-      const history = buildHistory(currentMessages, trimmed);
-
       let fullAnswer = "";
       let hasStreamedData = false;
 
-      for await (const event of assistantService.queryStream(trimmed, history)) {
+      for await (const event of assistantService.queryStream(trimmed, threadId)) {
         hasStreamedData = true;
         if (event.token) {
           fullAnswer += event.token;
@@ -75,8 +67,8 @@ export function useAssistant() {
         }
       }
 
-      if (!hasStreamedData && assistantService.query) {
-        const res = await assistantService.query(trimmed, history);
+      if (!hasStreamedData) {
+        const res = await assistantService.query(trimmed, threadId);
         setMessages((prev) => {
           const next = [...prev];
           const last = next[next.length - 1];
@@ -107,7 +99,7 @@ export function useAssistant() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [threadId]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -115,17 +107,4 @@ export function useAssistant() {
   }, []);
 
   return { messages, isLoading, sendMessage, clearMessages };
-}
-
-function buildHistory(
-  currentMessages: Message[],
-  currentQuestion: string,
-): ConversationTurn[] {
-  const turns: ConversationTurn[] = [];
-  for (const m of currentMessages) {
-    if (!m.content || m.content.startsWith("Error:")) continue;
-    if (m.role === "user" && m.content === currentQuestion) continue;
-    turns.push({ role: m.role, content: m.content });
-  }
-  return turns.slice(-6);
 }
