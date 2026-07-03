@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -13,6 +13,7 @@ from src.models.knowledge_base import (
     Requirement,
     Risk,
 )
+from src.models.meeting import Meeting
 from src.models.project import Project
 
 
@@ -36,6 +37,8 @@ class KnowledgeRetriever:
         client_ids = filters.get("client_ids") or []
         project_ids = filters.get("project_ids") or []
         meeting_ids = filters.get("meeting_ids") or []
+        keywords = filters.get("keywords") or []
+        date_range = filters.get("date_range")
 
         results: list[RetrievedKnowledge] = []
         for model, entity_type in ENTITY_MODELS:
@@ -47,6 +50,8 @@ class KnowledgeRetriever:
                 client_ids=client_ids,
                 project_ids=project_ids,
                 meeting_ids=meeting_ids,
+                keywords=keywords,
+                date_range=date_range,
             )
             results.extend(entities)
 
@@ -62,6 +67,8 @@ class KnowledgeRetriever:
         client_ids: list[str] | None = None,
         project_ids: list[str] | None = None,
         meeting_ids: list[str] | None = None,
+        keywords: list[str] | None = None,
+        date_range: dict | None = None,
     ) -> list[RetrievedKnowledge]:
         stmt = select(model).options(joinedload(model.meeting))
 
@@ -69,6 +76,7 @@ class KnowledgeRetriever:
         client_ids = client_ids or []
         project_ids = project_ids or []
         meeting_ids = meeting_ids or []
+        keywords = keywords or []
 
         needs_project_join = bool(workspace_ids or client_ids or project_ids)
         if needs_project_join:
@@ -84,6 +92,22 @@ class KnowledgeRetriever:
             stmt = stmt.where(model.meeting_id.in_([UUID(mid) for mid in meeting_ids]))
         if project_ids:
             stmt = stmt.where(model.project_id.in_([UUID(pid) for pid in project_ids]))
+
+        if keywords:
+            search_terms = " & ".join(keywords)
+            ts_query = func.plainto_tsquery("english", search_terms)
+            ts_vector = func.to_tsvector(
+                "english",
+                func.coalesce(model.title, "") + " " + func.coalesce(model.description, ""),
+            )
+            stmt = stmt.where(ts_vector.op("@@")(ts_query))
+
+        if date_range:
+            stmt = stmt.join(Meeting, model.meeting_id == Meeting.id, isouter=True)
+            if date_range.get("start"):
+                stmt = stmt.where(Meeting.meeting_date >= date_range["start"])
+            if date_range.get("end"):
+                stmt = stmt.where(Meeting.meeting_date <= date_range["end"])
 
         stmt = stmt.order_by(model.created_at.desc())
         result = await db.execute(stmt)
