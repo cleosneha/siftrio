@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.assistant_controller import AssistantController
@@ -21,3 +22,16 @@ async def query_assistant(
 ) -> AssistantQueryResponse:
     controller = AssistantController(db, user_context=request.state.user.model_dump())
     return await controller.query(body)
+
+
+@router.post("/query/stream")
+async def query_assistant_stream(
+    body: AssistantQueryRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    controller = AssistantController(db, user_context=request.state.user.model_dump())
+    return StreamingResponse(
+        controller.query_stream(body),
+        media_type="text/event-stream",
+    )
