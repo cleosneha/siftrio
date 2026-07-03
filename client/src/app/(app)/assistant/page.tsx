@@ -9,7 +9,7 @@ export default function AssistantPage() {
   const { setSidebarOpen } = useAppContext();
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex items-center gap-3 border-b px-4 py-3 md:px-6">
         <Button
           variant="ghost"
@@ -22,7 +22,9 @@ export default function AssistantPage() {
         <h1 className="text-xl font-semibold">AI Assistant</h1>
       </header>
 
-      <AssistantScreen />
-    </>
+      <div className="flex min-h-0 flex-1">
+        <AssistantScreen />
+      </div>
+    </div>
   );
 }
