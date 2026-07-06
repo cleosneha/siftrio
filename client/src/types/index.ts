@@ -32,6 +32,21 @@ export interface Project {
   updated_at: string | null;
 }
 
+export interface SuggestedMeeting {
+  id: string;
+  meeting_id: string;
+  client_id: string;
+  project_id: string | null;
+  title: string;
+  description: string | null;
+  suggested_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  confidence: number;
+  reason: string;
+  status: "pending" | "scheduled" | "dismissed";
+}
+
 export interface Meeting {
   id: string;
   client_id: string;

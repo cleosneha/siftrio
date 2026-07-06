@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { ApiResponse, Meeting, MeetingAnalysis } from "@/types";
+import type { ApiResponse, Meeting, MeetingAnalysis, SuggestedMeeting } from "@/types";
 
 export const meetingService = {
   async create(data: {
@@ -82,6 +82,38 @@ export const meetingService = {
       transcript_status: string | null;
       fireflies_meeting_id: string | null;
     }>>(`/meetings/${meetingId}/transcript-status`);
+    return res.data;
+  },
+
+  async getSuggestions(meetingId: string) {
+    const res = await api.get<ApiResponse<SuggestedMeeting[]>>(
+      `/meetings/${meetingId}/suggestions`,
+    );
+    return res.data;
+  },
+
+  async scheduleSuggestion(
+    meetingId: string,
+    suggestionId: string,
+    overrides?: {
+      title?: string;
+      description?: string;
+      meeting_date?: string;
+      start_time?: string;
+      end_time?: string;
+    },
+  ) {
+    const res = await api.post<ApiResponse<SuggestedMeeting>>(
+      `/meetings/${meetingId}/suggestions/${suggestionId}/schedule`,
+      overrides || {},
+    );
+    return res.data;
+  },
+
+  async dismissSuggestion(meetingId: string, suggestionId: string) {
+    const res = await api.post<ApiResponse<SuggestedMeeting>>(
+      `/meetings/${meetingId}/suggestions/${suggestionId}/dismiss`,
+    );
     return res.data;
   },
 };

@@ -123,6 +123,64 @@ export function useTranscriptStatus(meetingId?: string) {
   });
 }
 
+export function useMeetingSuggestions(meetingId?: string) {
+  return useQuery({
+    queryKey: ["meeting-suggestions", meetingId],
+    queryFn: () => meetingService.getSuggestions(meetingId!),
+    enabled: !!meetingId,
+  });
+}
+
+export function useScheduleSuggestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      meetingId,
+      suggestionId,
+      overrides,
+    }: {
+      meetingId: string;
+      suggestionId: string;
+      overrides?: {
+        title?: string;
+        description?: string;
+        meeting_date?: string;
+        start_time?: string;
+        end_time?: string;
+      };
+    }) => meetingService.scheduleSuggestion(meetingId, suggestionId, overrides),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["meeting-suggestions"] });
+      toast.success("Suggestion scheduled");
+    },
+    onError: () => {
+      toast.error("Failed to schedule suggestion");
+    },
+  });
+}
+
+export function useDismissSuggestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      meetingId,
+      suggestionId,
+    }: {
+      meetingId: string;
+      suggestionId: string;
+    }) => meetingService.dismissSuggestion(meetingId, suggestionId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["meeting-suggestions"] });
+      toast.success("Suggestion dismissed");
+    },
+    onError: () => {
+      toast.error("Failed to dismiss suggestion");
+    },
+  });
+}
+
 export function useRegenerateAnalysis() {
   const queryClient = useQueryClient();
 
