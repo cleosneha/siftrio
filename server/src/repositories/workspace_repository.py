@@ -28,8 +28,14 @@ class WorkspaceRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list(self, limit: int = 50, offset: int = 0) -> list[Workspace]:
+    async def list_by_user_id(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[Workspace]:
+        from src.models.workspace_member import WorkspaceMember
         result = await self._db.execute(
-            select(Workspace).order_by(Workspace.created_at.desc()).limit(limit).offset(offset)
+            select(Workspace)
+            .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
+            .where(WorkspaceMember.user_id == user_id)
+            .order_by(Workspace.created_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
         return list(result.scalars().all())

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from uuid import UUID
 
 from sqlalchemy import select
@@ -30,6 +32,20 @@ class ProjectRepository:
 
     async def list(self, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Project]:
         query = select(Project)
+        if client_id is not None:
+            query = query.where(Project.client_id == client_id)
+        query = query.order_by(Project.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
+        return list(result.scalars().all())
+
+    async def list_by_user_id(self, user_id: UUID, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Project]:
+        from src.models.project_member import ProjectMember
+        query = (
+            select(Project)
+            .join(ProjectMember, ProjectMember.project_id == Project.id)
+            .where(ProjectMember.user_id == user_id)
+            .distinct()
+        )
         if client_id is not None:
             query = query.where(Project.client_id == client_id)
         query = query.order_by(Project.created_at.desc()).limit(limit).offset(offset)
