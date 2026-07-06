@@ -35,6 +35,14 @@ async def create_meeting(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    from src.services.membership_service import MembershipService
+    user_id = UUID(request.state.user.id) if request.state.user else None
+    membership = MembershipService(db)
+    if body.project_id:
+        await membership.assert_project_access(UUID(body.project_id), user_id)
+    elif body.client_id:
+        await membership.assert_client_access(UUID(body.client_id), user_id)
+
     auth_service = AuthService(AuthRepository(db))
     integration_service = MeetingIntegrationService(db, auth_service=auth_service)
     service = MeetingService(
@@ -44,7 +52,6 @@ async def create_meeting(
         project_repo=ProjectRepository(db),
         integration_service=integration_service,
     )
-    user_id = UUID(request.state.user.id) if request.state.user else None
     user_email = request.state.user.email if request.state.user else None
     data = await service.create(
         client_id=body.client_id,
@@ -65,16 +72,24 @@ async def create_meeting(
 
 
 @router.get("/{meeting_id}", response_model=BaseResponse)
-async def get_meeting(meeting_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def get_meeting(
+    meeting_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_meeting_access(meeting, user_id)
     data = MeetingResponse.model_validate(meeting).model_dump()
     return BaseResponse(data=data)
 
 
 @router.get("", response_model=BaseResponse)
 async def list_meetings(
+    request: Request,
     client_id: str | None = Query(None),
     project_id: str | None = Query(None),
     miscellaneous: bool = False,
@@ -83,15 +98,21 @@ async def list_meetings(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     repo = MeetingRepository(db)
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    membership = MembershipService(db)
 
     cl_id = parse_optional_uuid(client_id, "client_id") if client_id else None
     pr_id = parse_optional_uuid(project_id, "project_id") if project_id else None
 
     if pr_id:
+        await membership.assert_project_access(pr_id, user_id)
         meetings = await repo.list_by_project(pr_id, limit=limit, offset=offset)
     elif miscellaneous and cl_id:
+        await membership.assert_client_access(cl_id, user_id)
         meetings = await repo.list_miscellaneous_by_client(cl_id, limit=limit, offset=offset)
     elif cl_id:
+        await membership.assert_client_access(cl_id, user_id)
         meetings = await repo.list_by_client(cl_id, limit=limit, offset=offset)
     else:
         return BaseResponse(data=[])
@@ -103,11 +124,15 @@ async def list_meetings(
 @router.get("/{meeting_id}/transcript-status", response_model=BaseResponse)
 async def get_transcript_status(
     meeting_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_meeting_access(meeting, user_id)
     return BaseResponse(
         data=TranscriptStatusResponse(
             transcript_status=meeting.transcript_status if meeting.transcript_status else None,
@@ -119,11 +144,15 @@ async def get_transcript_status(
 @router.post("/{meeting_id}/retry-transcript", response_model=BaseResponse)
 async def retry_transcript(
     meeting_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_meeting_access(meeting, user_id)
 
     if not meeting.fireflies_meeting_id:
         return BaseResponse(
@@ -149,7 +178,17 @@ async def retry_transcript(
 
 
 @router.delete("/{meeting_id}", response_model=BaseResponse)
-async def delete_meeting(meeting_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def delete_meeting(
+    meeting_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    meeting = await MeetingRepository(db).get_by_id(meeting_id)
+    if meeting is None:
+        return BaseResponse(success=False, message="Meeting not found", data=None)
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_meeting_access(meeting, user_id)
     repo = MeetingRepository(db)
     await repo.delete(meeting_id)
     await db.commit()

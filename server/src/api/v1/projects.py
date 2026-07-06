@@ -36,18 +36,27 @@ async def create_project(
 
 @router.get("", response_model=BaseResponse)
 async def list_projects(
+    request: Request,
     client_id: str | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
+    user_id = UUID(request.state.user.id)
     cl_id = parse_optional_uuid(client_id, "client_id") if client_id else None
-    data = await service.list(cl_id, limit=limit, offset=offset)
+    data = await service.list(cl_id, user_id=user_id, limit=limit, offset=offset)
     return BaseResponse(data=data)
 
 
 @router.get("/{project_id}", response_model=BaseResponse)
-async def get_project(project_id: UUID, db: AsyncSession = Depends(get_db)) -> BaseResponse:
+async def get_project(
+    project_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_project_access(project_id, user_id)
     controller = ProjectController(db)
     return await controller.get_by_id(project_id)
