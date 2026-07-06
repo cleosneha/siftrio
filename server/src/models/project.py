@@ -63,6 +63,12 @@ class Project(UUIDMixin, TimestampMixin, Base):
         back_populates="project",
     )
 
+    members = relationship(
+        "ProjectMember",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index(
             "idx_project_client_id",

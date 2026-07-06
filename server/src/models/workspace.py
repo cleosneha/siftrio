@@ -37,3 +37,9 @@ class Workspace(UUIDMixin, TimestampMixin, Base):
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
+
+    members = relationship(
+        "WorkspaceMember",
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )

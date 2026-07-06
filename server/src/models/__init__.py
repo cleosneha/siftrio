@@ -14,6 +14,10 @@ from src.models.knowledge_base import (
     Risk,
     Question,
 )
+from src.models.workspace_member import WorkspaceMember
+from src.models.client_member import ClientMember
+from src.models.project_member import ProjectMember
+from src.models.member_invitation import MemberInvitation
 
 __all__ = [
     "Workspace",
@@ -30,4 +34,8 @@ __all__ = [
     "Decision",
     "Risk",
     "Question",
+    "WorkspaceMember",
+    "ClientMember",
+    "ProjectMember",
+    "MemberInvitation",
 ]

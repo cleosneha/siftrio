@@ -55,6 +55,12 @@ class Client(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    members = relationship(
+        "ClientMember",
+        back_populates="client",
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index(
             "idx_client_workspace_id",

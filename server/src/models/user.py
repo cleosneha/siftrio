@@ -71,3 +71,28 @@ class User(UUIDMixin, TimestampMixin, Base):
         foreign_keys="Meeting.created_by",
         cascade="all, delete-orphan",
     )
+
+    workspace_memberships = relationship(
+        "WorkspaceMember",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    client_memberships = relationship(
+        "ClientMember",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    project_memberships = relationship(
+        "ProjectMember",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    sent_invitations = relationship(
+        "MemberInvitation",
+        back_populates="invited_by_user",
+        foreign_keys="MemberInvitation.invited_by",
+        cascade="all, delete-orphan",
+    )
