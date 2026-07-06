@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter, notFound } from "next/navigation";
 import { Menu, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,16 @@ export default function WorkspacePage() {
   const { data: membersData, isLoading: membersLoading } = useWorkspaceMembers(workspaceId);
   const { data: invitationsData } = usePendingInvitations("workspace", workspaceId);
   const { mutate: removeMember } = useRemoveWorkspaceMember();
+  const router = useRouter();
+
+  useEffect(() => {
+    const projectRedirect = sessionStorage.getItem("jira_project_redirect");
+    if (projectRedirect) {
+      sessionStorage.removeItem("jira_project_redirect");
+      sessionStorage.setItem("jira_auto_open_project", projectRedirect);
+      router.replace(`/projects/${projectRedirect}`);
+    }
+  }, [router]);
 
   const workspace = workspaceData?.data;
   const clients = clientsData?.data ?? [];

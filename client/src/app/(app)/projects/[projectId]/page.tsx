@@ -18,6 +18,7 @@ import { CreateMeetingModal } from "@/features/meetings/components/CreateMeeting
 import { KnowledgeSection } from "@/features/knowledge/KnowledgeSection";
 import { MeetingsSidebar } from "@/features/meetings/MeetingsSidebar";
 import { MembersSection } from "@/features/members/MembersSection";
+import { JiraIntegrationSection } from "@/features/jira/components/JiraIntegrationSection";
 import { useMeetingsDrawer } from "@/features/meetings/meetings-drawer-store";
 
 export default function ProjectPage() {
@@ -104,6 +105,12 @@ export default function ProjectPage() {
           <div className="mb-6">
             <h2 className="mb-4 text-lg font-medium">Knowledge</h2>
             <KnowledgeSection projectId={projectId} />
+          </div>
+
+          <Separator className="mb-6" />
+
+          <div className="mb-6">
+            <JiraIntegrationSection projectId={projectId} clientId={project?.client_id ?? ""} />
           </div>
 
           <Separator className="mb-6" />
