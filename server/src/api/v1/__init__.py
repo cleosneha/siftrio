@@ -14,6 +14,8 @@ from src.api.v1.assistant import router as assistant_router
 from src.api.v1.meeting_suggestions import router as meeting_suggestions_router
 from src.api.v1.invitations import router as invitations_router
 from src.api.v1.members import router as members_router
+from src.api.v1.workspace_jira import router as workspace_jira_router
+from src.api.v1.project_jira import router as project_jira_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -30,3 +32,5 @@ api_router.include_router(assistant_router)
 api_router.include_router(meeting_suggestions_router)
 api_router.include_router(invitations_router)
 api_router.include_router(members_router)
+api_router.include_router(workspace_jira_router)
+api_router.include_router(project_jira_router)
