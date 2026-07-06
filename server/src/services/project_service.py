@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.repositories.client_repository import ClientRepository
+from src.models.workspace_member import MemberRole
+from src.repositories.membership_repository import ClientMemberRepository, ProjectMemberRepository
 from src.repositories.project_repository import ProjectRepository
 from src.schemas.project_schema import ProjectResponse
 from src.services.authorization_service import AuthorizationService
@@ -21,6 +23,8 @@ class ProjectService:
         self.repo = repo
         self.client_repo = client_repo
         self.authorization_service = authorization_service
+        self.project_member_repo = ProjectMemberRepository(db)
+        self.client_member_repo = ClientMemberRepository(db)
 
     async def create(
         self, client_id: str, name: str, description: str | None = None, user_id: UUID | None = None
@@ -37,6 +41,9 @@ class ProjectService:
             await self.authorization_service.assert_workspace_access(client.workspace_id, user_id)
 
         project = await self.repo.create(cl_id, name, description)
+        if user_id:
+            await self.project_member_repo.create(project.id, user_id, role=MemberRole.OWNER)
+            await self.client_member_repo.create(cl_id, user_id)
         await self.db.commit()
         return ProjectResponse.model_validate(project).model_dump()
 
@@ -46,6 +53,9 @@ class ProjectService:
             return None
         return ProjectResponse.model_validate(project).model_dump()
 
-    async def list(self, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
-        projects = await self.repo.list(client_id, limit=limit, offset=offset)
+    async def list(self, client_id: UUID | None = None, user_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
+        if user_id:
+            projects = await self.repo.list_by_user_id(user_id, client_id, limit=limit, offset=offset)
+        else:
+            projects = await self.repo.list(client_id, limit=limit, offset=offset)
         return [ProjectResponse.model_validate(p).model_dump() for p in projects]
