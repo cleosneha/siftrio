@@ -38,13 +38,14 @@ class ChatService:
         if not question:
             raise BaseAPIException(message="Question cannot be empty", status_code=400)
 
-        config = {"configurable": {"thread_id": thread_id}} if thread_id else {}
+        configurable = {"thread_id": thread_id} if thread_id else {}
+        configurable["db"] = self._db
+        config = {"configurable": configurable}
 
         existing_messages, existing_summary = await self._load_memory(config)
 
         initial_state: ChatState = {
             "question": question,
-            "db": self._db,
             "user_context": self._user_context,
             "parsed_query": None,
             "retrieval_scope": None,
@@ -130,13 +131,14 @@ class ChatService:
             yield json.dumps({"error": "Question cannot be empty"}) + "\n"
             return
 
-        config = {"configurable": {"thread_id": thread_id}} if thread_id else {}
+        configurable = {"thread_id": thread_id} if thread_id else {}
+        configurable["db"] = self._db
+        config = {"configurable": configurable}
 
         existing_messages, existing_summary = await self._load_memory(config)
 
         initial_state: ChatState = {
             "question": question,
-            "db": self._db,
             "user_context": self._user_context,
             "parsed_query": None,
             "retrieval_scope": None,
