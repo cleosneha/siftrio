@@ -18,6 +18,8 @@ from src.models.workspace_member import WorkspaceMember
 from src.models.client_member import ClientMember
 from src.models.project_member import ProjectMember
 from src.models.member_invitation import MemberInvitation
+from src.models.workspace_jira import WorkspaceJira
+from src.models.project_jira import ProjectJira
 
 __all__ = [
     "Workspace",
@@ -38,4 +40,6 @@ __all__ = [
     "ClientMember",
     "ProjectMember",
     "MemberInvitation",
+    "WorkspaceJira",
+    "ProjectJira",
 ]

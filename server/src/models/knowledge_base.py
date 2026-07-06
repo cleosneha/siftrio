@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Index, String, Text, func, literal_column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -118,6 +118,13 @@ class AIEntityBase:
 
 class Requirement(AIEntityBase, Base):
     __tablename__ = "requirements"
+    __table_args__ = (
+        Index(
+            "idx_requirements_fts",
+            literal_column("to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))"),
+            postgresql_using="gin",
+        ),
+    )
 
     priority: Mapped[str | None] = mapped_column(
         String(50),
@@ -140,6 +147,13 @@ class Requirement(AIEntityBase, Base):
 
 class ActionItem(AIEntityBase, Base):
     __tablename__ = "action_items"
+    __table_args__ = (
+        Index(
+            "idx_action_items_fts",
+            literal_column("to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))"),
+            postgresql_using="gin",
+        ),
+    )
 
     assignee: Mapped[str | None] = mapped_column(
         String(255),
@@ -156,6 +170,13 @@ class ActionItem(AIEntityBase, Base):
 
 class Decision(AIEntityBase, Base):
     __tablename__ = "decisions"
+    __table_args__ = (
+        Index(
+            "idx_decisions_fts",
+            literal_column("to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))"),
+            postgresql_using="gin",
+        ),
+    )
 
     decision_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
@@ -165,6 +186,13 @@ class Decision(AIEntityBase, Base):
 
 class Risk(AIEntityBase, Base):
     __tablename__ = "risks"
+    __table_args__ = (
+        Index(
+            "idx_risks_fts",
+            literal_column("to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))"),
+            postgresql_using="gin",
+        ),
+    )
 
     severity: Mapped[RiskSeverity | None] = mapped_column(
         SQLEnum(RiskSeverity),
@@ -180,6 +208,13 @@ class Risk(AIEntityBase, Base):
 
 class Question(AIEntityBase, Base):
     __tablename__ = "questions"
+    __table_args__ = (
+        Index(
+            "idx_questions_fts",
+            literal_column("to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))"),
+            postgresql_using="gin",
+        ),
+    )
 
     answer: Mapped[str | None] = mapped_column(
         Text,

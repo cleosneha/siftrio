@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Index, Integer, Text
+from sqlalchemy import ForeignKey, Index, Integer, Text, literal_column
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
@@ -76,5 +76,10 @@ class MeetingChunk(UUIDMixin, TimestampMixin, Base):
             postgresql_using="hnsw",
             postgresql_with={"m": 16, "ef_construction": 200},
             postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+        Index(
+            "idx_meeting_chunks_fts",
+            literal_column("to_tsvector('english', chunk_text)"),
+            postgresql_using="gin",
         ),
     )

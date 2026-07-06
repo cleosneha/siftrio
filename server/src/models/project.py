@@ -69,6 +69,13 @@ class Project(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    jira_integration = relationship(
+        "ProjectJira",
+        back_populates="project",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index(
             "idx_project_client_id",
