@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     MISTRAL_EMBED_MODEL: str = os.getenv("MISTRAL_EMBED_MODEL") or "mistral-embed"
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID") or ""
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET") or ""
+    ATLASSIAN_CLIENT_ID: str = os.getenv("ATLASSIAN_CLIENT_ID") or ""
+    ATLASSIAN_CLIENT_SECRET: str = os.getenv("ATLASSIAN_CLIENT_SECRET") or ""
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or ""
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM") or "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES") or "15")
