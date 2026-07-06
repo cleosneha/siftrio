@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,6 +48,13 @@ interface CreateMeetingModalProps {
   onClose: () => void;
   clientId: string;
   defaultProjectId?: string;
+  prefill?: {
+    title?: string;
+    description?: string;
+    meeting_date?: string;
+    start_time?: string;
+    end_time?: string;
+  };
 }
 
 export function CreateMeetingModal({
@@ -54,6 +62,7 @@ export function CreateMeetingModal({
   onClose,
   clientId,
   defaultProjectId,
+  prefill,
 }: CreateMeetingModalProps) {
   const createMeeting = useCreateMeeting();
 
@@ -67,18 +76,35 @@ export function CreateMeetingModal({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
+      title: prefill?.title ?? "",
       meeting_type: defaultProjectId ? "project" : "miscellaneous",
       project_id: defaultProjectId ?? "",
       tags: "",
-      meeting_date: "",
-      meeting_provider: "none",
-      start_time: "",
-      end_time: "",
+      meeting_date: prefill?.meeting_date ?? "",
+      meeting_provider: prefill?.start_time ? "google_meet" : "none",
+      start_time: prefill?.start_time ?? "",
+      end_time: prefill?.end_time ?? "",
       meeting_url: "",
       guest_emails: "",
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        title: prefill?.title ?? "",
+        meeting_type: defaultProjectId ? "project" : "miscellaneous",
+        project_id: defaultProjectId ?? "",
+        tags: "",
+        meeting_date: prefill?.meeting_date ?? "",
+        meeting_provider: prefill?.start_time ? "google_meet" : "none",
+        start_time: prefill?.start_time ?? "",
+        end_time: prefill?.end_time ?? "",
+        meeting_url: "",
+        guest_emails: "",
+      });
+    }
+  }, [open, prefill?.title, prefill?.meeting_date, prefill?.start_time, prefill?.end_time]);
 
   const showTypeSelector = !defaultProjectId;
   const meetingType = useWatch({ control: form.control, name: "meeting_type" });

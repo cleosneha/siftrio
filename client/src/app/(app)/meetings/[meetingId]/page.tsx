@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video, Mail, Loader } from "lucide-react";
+import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video, Mail, Loader, Calendar, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +21,10 @@ import {
   useRegenerateAnalysis,
   useUploadTranscript,
   useTranscriptStatus,
+  useMeetingSuggestions,
+  useDismissSuggestion,
 } from "@/hooks/useMeetings";
+import { CreateMeetingModal } from "@/components/meeting/CreateMeetingModal";
 
 function AnalysisSection({
   title,
@@ -80,12 +84,26 @@ export default function MeetingPage() {
   const { data: analysisData, isLoading: analysisLoading } =
     useMeetingAnalysis(meetingId);
   const { data: transcriptStatusData } = useTranscriptStatus(meetingId);
+  const { data: suggestionsData } = useMeetingSuggestions(meetingId);
   const regenerateAnalysis = useRegenerateAnalysis();
   const uploadTranscript = useUploadTranscript();
+  const dismissSuggestion = useDismissSuggestion();
+
+  const [scheduleTarget, setScheduleTarget] = useState<{
+    title: string;
+    suggested_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
+  } | null>(null);
 
   const meeting = meetingData?.data;
   const analysis = analysisData?.data;
   const transcriptStatus = transcriptStatusData?.data?.transcript_status;
+  const suggestions = suggestionsData?.data ?? [];
+
+  const pendingSuggestions = suggestions.filter(
+    (s: { status: string }) => s.status === "pending",
+  );
 
   const handleRegenerate = () => {
     regenerateAnalysis.mutate(meetingId);
@@ -94,6 +112,20 @@ export default function MeetingPage() {
   const handleFileUpload = async (file: File) => {
     await uploadTranscript.mutateAsync({ meetingId, file });
   };
+
+  const handleDismiss = useCallback(
+    (suggestionId: string) => {
+      dismissSuggestion.mutate({ meetingId, suggestionId });
+    },
+    [meetingId, dismissSuggestion],
+  );
+
+  const handleSchedule = useCallback(
+    (suggestion: { title: string; suggested_date: string | null; start_time: string | null; end_time: string | null }) => {
+      setScheduleTarget(suggestion);
+    },
+    [],
+  );
 
   const providerLabel =
     meeting?.meeting_provider === "google_meet" ? "Google Meet" : "Manual";
@@ -176,7 +208,7 @@ export default function MeetingPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {meeting.guest_emails.map((email) => (
+                {meeting.guest_emails.map((email: string) => (
                   <Badge key={email} variant="secondary">
                     {email}
                   </Badge>
@@ -252,6 +284,92 @@ export default function MeetingPage() {
           </div>
         ) : analysis ? (
           <div className="space-y-6">
+            {pendingSuggestions.length > 0 && (
+              <Card className="border-primary/30">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    AI Suggested Follow-up Meetings
+                  </CardTitle>
+                  <CardDescription>
+                    The AI detected these follow-up meeting suggestions in the transcript
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {pendingSuggestions.map((suggestion: {
+                    id: string;
+                    title: string;
+                    description: string | null;
+                    suggested_date: string | null;
+                    start_time: string | null;
+                    end_time: string | null;
+                    confidence: number;
+                    reason: string;
+                  }) => (
+                    <Card key={suggestion.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium">{suggestion.title}</h4>
+                            {suggestion.description && (
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {suggestion.description}
+                              </p>
+                            )}
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                              {suggestion.suggested_date && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(suggestion.suggested_date).toLocaleDateString()}
+                                </span>
+                              )}
+                              {suggestion.start_time && (
+                                <span>{suggestion.start_time}</span>
+                              )}
+                              {suggestion.end_time && (
+                                <span>– {suggestion.end_time}</span>
+                              )}
+                              <Badge variant="outline" className="text-[10px]">
+                                {Math.round(suggestion.confidence * 100)}% confidence
+                              </Badge>
+                            </div>
+                            <p className="mt-1.5 text-xs italic text-muted-foreground">
+                              &ldquo;{suggestion.reason}&rdquo;
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSchedule(suggestion)}
+                          >
+                            <Calendar className="mr-1 h-3.5 w-3.5" />
+                            Schedule Meeting
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSchedule(suggestion)}
+                          >
+                            Edit &amp; Schedule
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDismiss(suggestion.id)}
+                            disabled={dismissSuggestion.isPending}
+                          >
+                            <X className="mr-1 h-3.5 w-3.5" />
+                            Dismiss
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             {analysis.summary && (
               <Card>
                 <CardHeader>
@@ -341,6 +459,28 @@ export default function MeetingPage() {
           </div>
         )}
       </div>
+
+      <CreateMeetingModal
+        open={!!scheduleTarget}
+        onClose={() => setScheduleTarget(null)}
+        clientId={meeting?.client_id ?? ""}
+        defaultProjectId={meeting?.project_id ?? undefined}
+        prefill={
+          scheduleTarget
+            ? (() => {
+                const date = scheduleTarget.suggested_date;
+                const start = scheduleTarget.start_time;
+                const end = scheduleTarget.end_time;
+                return {
+                  title: scheduleTarget.title,
+                  meeting_date: date ?? undefined,
+                  start_time: date && start ? `${date}T${start}` : undefined,
+                  end_time: date && end ? `${date}T${end}` : undefined,
+                };
+              })()
+            : undefined
+        }
+      />
     </>
   );
 }
