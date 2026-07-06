@@ -53,6 +53,13 @@ class InvitationService:
                 status_code=400,
             )
 
+        existing_member = await self._check_existing_member(resource_type, resource_id, user.id)
+        if existing_member:
+            raise BaseAPIException(
+                message=f"User is already a member of this {resource_type.value}",
+                status_code=409,
+            )
+
         existing = await self.invitation_repo.get_pending_by_email_and_resource(
             email, resource_type, resource_id
         )
@@ -174,6 +181,17 @@ class InvitationService:
         invitations = await self.invitation_repo.get_by_resource(resource_type, resource_id)
         pending = [i for i in invitations if i.status == InvitationStatus.PENDING]
         return [PendingInvitationItem.model_validate(i).model_dump() for i in pending]
+
+    async def _check_existing_member(
+        self, resource_type: ResourceType, resource_id: UUID, user_id: UUID
+    ) -> bool:
+        if resource_type == ResourceType.WORKSPACE:
+            return await self.ws_member_repo.get_by_user_and_workspace(resource_id, user_id) is not None
+        if resource_type == ResourceType.CLIENT:
+            return await self.client_member_repo.get_by_user_and_client(resource_id, user_id) is not None
+        if resource_type == ResourceType.PROJECT:
+            return await self.project_member_repo.get_by_user_and_project(resource_id, user_id) is not None
+        return False
 
     async def _get_resource_name(self, resource_type: ResourceType, resource_id: UUID) -> str:
         if resource_type == ResourceType.WORKSPACE:
