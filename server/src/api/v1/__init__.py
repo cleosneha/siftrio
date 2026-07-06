@@ -11,6 +11,7 @@ from src.api.v1.auth import router as auth_router
 from src.api.v1.webhooks import router as webhooks_router
 from src.api.v1.knowledge import router as knowledge_router
 from src.api.v1.assistant import router as assistant_router
+from src.api.v1.meeting_suggestions import router as meeting_suggestions_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -24,3 +25,4 @@ api_router.include_router(meeting_analysis_router)
 api_router.include_router(webhooks_router)
 api_router.include_router(knowledge_router)
 api_router.include_router(assistant_router)
+api_router.include_router(meeting_suggestions_router)
