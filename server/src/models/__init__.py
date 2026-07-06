@@ -4,6 +4,7 @@ from src.models.project import Project
 from src.models.meeting import Meeting
 from src.models.meeting_chunk import MeetingChunk
 from src.models.meeting_analysis import MeetingAnalysis
+from src.models.meeting_suggestion import MeetingSuggestion
 from src.models.user import User
 from src.models.user_integration import UserIntegration
 from src.models.knowledge_base import (
@@ -21,6 +22,7 @@ __all__ = [
     "Meeting",
     "MeetingChunk",
     "MeetingAnalysis",
+    "MeetingSuggestion",
     "User",
     "UserIntegration",
     "Requirement",

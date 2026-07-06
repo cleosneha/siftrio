@@ -154,6 +154,12 @@ class Meeting(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    suggestions = relationship(
+        "MeetingSuggestion",
+        back_populates="meeting",
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index("idx_meeting_client_id", "client_id"),
         Index("idx_meeting_project_id", "project_id"),
