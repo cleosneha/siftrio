@@ -123,3 +123,35 @@ export interface Risk extends KnowledgeBase {
 export interface Question extends KnowledgeBase {
   answer: string | null;
 }
+
+export interface Member {
+  id: string;
+  user_id: string;
+  role: string;
+  email: string;
+  full_name: string | null;
+  profile_picture: string | null;
+  created_at: string | null;
+}
+
+export interface PendingInvitation {
+  id: string;
+  email: string;
+  resource_type: string;
+  resource_id: string;
+  status: string;
+  expires_at: string;
+  created_at: string | null;
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  resource_type: string;
+  resource_id: string;
+  status: string;
+  token: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string | null;
+}
