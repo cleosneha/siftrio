@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.schemas.meeting_suggestion_schema import SuggestedMeetingItem
+
 
 class MeetingAnalysisCreate(BaseModel):
     summary: str | None = None
@@ -77,3 +79,4 @@ class MeetingAnalysisOutput(BaseModel):
     structured_decisions: list[DecisionItem] = Field(default_factory=list, description="Structured decisions")
     structured_risks: list[RiskItem] = Field(default_factory=list, description="Structured risks")
     structured_questions: list[QuestionItem] = Field(default_factory=list, description="Structured questions")
+    suggested_meetings: list[SuggestedMeetingItem] = Field(default_factory=list, description="Structured suggestions for follow-up meetings extracted from the transcript")
