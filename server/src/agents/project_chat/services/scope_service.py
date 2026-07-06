@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.agents.schemas import (
+from src.agents.project_chat.schemas import (
     EntityCandidate,
     ParsedQuery,
     ResolvedEntities,

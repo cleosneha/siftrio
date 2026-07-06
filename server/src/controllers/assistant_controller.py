@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.agents.services.response import ChatService
+from src.agents.project_chat.services.response import ChatService
 from src.exceptions.base import BaseAPIException
 from src.schemas.assistant_schema import AssistantQueryRequest, AssistantQueryResponse
 

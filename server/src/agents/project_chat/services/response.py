@@ -5,10 +5,10 @@ from typing import Any, AsyncGenerator
 
 from langchain_core.messages import AIMessageChunk
 
-from src.agents.graph import compiled_graph
-from src.agents.schemas import Citation
-from src.agents.services.summarizer import ConversationSummarizer
-from src.agents.state import ChatState
+from src.agents.project_chat.graph import compiled_graph
+from src.agents.project_chat.schemas import Citation
+from src.agents.project_chat.services.summarizer import ConversationSummarizer
+from src.agents.project_chat.state import ChatState
 from src.exceptions.base import AuthorizationError, BaseAPIException
 from src.schemas.assistant_schema import AssistantCitationResponse
 

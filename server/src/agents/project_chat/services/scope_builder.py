@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.agents.schemas import ParsedQuery, RetrievalScope
-from src.agents.services.entity_resolver import EntityResolverService
-from src.agents.services.scope_service import ScopeService
+from src.agents.project_chat.schemas import ParsedQuery, RetrievalScope
+from src.agents.project_chat.services.entity_resolver import EntityResolverService
+from src.agents.project_chat.services.scope_service import ScopeService
 
 
 class ScopeBuilderService:

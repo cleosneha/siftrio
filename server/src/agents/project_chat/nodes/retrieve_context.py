@@ -1,7 +1,7 @@
 from langgraph.types import RunnableConfig
 
-from src.agents.retrievers.hybrid import HybridRetriever
-from src.agents.state import ChatState
+from src.agents.project_chat.retrievers.hybrid import HybridRetriever
+from src.agents.project_chat.state import ChatState
 
 
 async def retrieve_context(

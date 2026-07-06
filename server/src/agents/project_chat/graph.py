@@ -3,16 +3,16 @@ from functools import partial
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
-from src.agents.nodes.build_context import build_context
-from src.agents.nodes.generate_response import generate_response
-from src.agents.nodes.parse_query import parse_query
-from src.agents.nodes.retrieve_context import retrieve_context
-from src.agents.retrievers.hybrid import HybridRetriever
-from src.agents.services.context_builder import ContextBuilderService
-from src.agents.services.llm import LLMService
-from src.agents.services.query_parser import QueryParserService
-from src.agents.services.scope_builder import ScopeBuilderService
-from src.agents.state import ChatState
+from src.agents.common.llm import LLMService
+from src.agents.project_chat.nodes.build_context import build_context
+from src.agents.project_chat.nodes.generate_response import generate_response
+from src.agents.project_chat.nodes.parse_query import parse_query
+from src.agents.project_chat.nodes.retrieve_context import retrieve_context
+from src.agents.project_chat.retrievers.hybrid import HybridRetriever
+from src.agents.project_chat.services.context_builder import ContextBuilderService
+from src.agents.project_chat.services.query_parser import QueryParserService
+from src.agents.project_chat.services.scope_builder import ScopeBuilderService
+from src.agents.project_chat.state import ChatState
 
 
 def _build_graph():

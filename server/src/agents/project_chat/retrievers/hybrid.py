@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.agents.schemas import RetrievedContext, RetrievalScope
-from src.agents.retrievers.keyword import KeywordRetriever
-from src.agents.retrievers.knowledge import KnowledgeRetriever
-from src.agents.retrievers.meetings import MeetingRetriever
-from src.agents.retrievers.reranker import rrf_merge
-from src.agents.retrievers.vector import VectorRetriever
+from src.agents.project_chat.schemas import RetrievedContext, RetrievalScope
+from src.agents.project_chat.retrievers.keyword import KeywordRetriever
+from src.agents.project_chat.retrievers.knowledge import KnowledgeRetriever
+from src.agents.project_chat.retrievers.meetings import MeetingRetriever
+from src.agents.project_chat.retrievers.reranker import rrf_merge
+from src.agents.project_chat.retrievers.vector import VectorRetriever
 from src.core.embeddings import EmbeddingService, embedder
 
 

@@ -1,6 +1,6 @@
 from typing import Any, NotRequired, TypedDict
 
-from src.agents.schemas import (
+from src.agents.project_chat.schemas import (
     Citation,
     ParsedQuery,
     RetrievedChunk,

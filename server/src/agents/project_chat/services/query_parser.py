@@ -1,8 +1,8 @@
 from langchain_core.messages import HumanMessage
 
-from src.agents.schemas import ParsedQuery
-from src.agents.prompts import QUERY_PARSER_PROMPT
-from src.agents.services.llm import LLMService
+from src.agents.common.llm import LLMService
+from src.agents.project_chat.schemas import ParsedQuery
+from src.agents.project_chat.prompts import QUERY_PARSER_PROMPT
 
 
 class QueryParserService:

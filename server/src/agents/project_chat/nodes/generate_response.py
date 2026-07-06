@@ -2,10 +2,10 @@ import re
 
 from langchain_core.messages import HumanMessage
 
-from src.agents.prompts import ANSWER_PROMPT
-from src.agents.schemas import Citation
-from src.agents.services.llm import LLMService
-from src.agents.state import ChatState
+from src.agents.common.llm import LLMService
+from src.agents.project_chat.prompts import ANSWER_PROMPT
+from src.agents.project_chat.schemas import Citation
+from src.agents.project_chat.state import ChatState
 
 
 _CITATION_PATTERN = re.compile(r"\[(chunk|meeting|knowledge):([^\]]+)\]")

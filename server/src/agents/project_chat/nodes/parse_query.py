@@ -1,8 +1,8 @@
 from langgraph.types import RunnableConfig
 
-from src.agents.services.query_parser import QueryParserService
-from src.agents.services.scope_builder import ScopeBuilderService
-from src.agents.state import ChatState
+from src.agents.project_chat.services.query_parser import QueryParserService
+from src.agents.project_chat.services.scope_builder import ScopeBuilderService
+from src.agents.project_chat.state import ChatState
 
 
 async def parse_query(

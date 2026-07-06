@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.agents.schemas import RetrievedKnowledge
+from src.agents.project_chat.schemas import RetrievedKnowledge
 from src.models.client import Client
 from src.models.knowledge_base import (
     ActionItem,

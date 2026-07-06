@@ -1,4 +1,4 @@
-from src.agents.schemas import RetrievedChunk
+from src.agents.project_chat.schemas import RetrievedChunk
 
 
 def rrf_merge(

@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.agents.schemas import RetrievedMeeting
+from src.agents.project_chat.schemas import RetrievedMeeting
 from src.models.meeting import Meeting
 
 

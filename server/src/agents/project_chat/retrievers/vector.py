@@ -1,15 +1,21 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.agents.schemas import RetrievedChunk
+from src.agents.project_chat.schemas import RetrievedChunk
+from src.core.embeddings import EmbeddingService
 from src.models.meeting import Meeting
 from src.models.meeting_chunk import MeetingChunk
 
 
-class KeywordRetriever:
-    def __init__(self, top_k: int = 20) -> None:
+class VectorRetriever:
+    def __init__(
+        self,
+        embeddings: EmbeddingService,
+        top_k: int = 20,
+    ) -> None:
+        self.embeddings = embeddings
         self.top_k = top_k
 
     async def search(
@@ -18,16 +24,15 @@ class KeywordRetriever:
         query: str,
         filters: dict | None = None,
     ) -> list[RetrievedChunk]:
-        filters = filters or {}
+        query_embedding = await self.embeddings.embed_query(query)
 
-        ts_query = func.plainto_tsquery("english", query)
-        ts_vector = func.to_tsvector("english", MeetingChunk.chunk_text)
-        rank = func.ts_rank(ts_vector, ts_query).label("rank")
+        distance = MeetingChunk.embedding.cosine_distance(query_embedding)
+        stmt = select(MeetingChunk, distance.label("distance"))
 
-        stmt = select(MeetingChunk, rank).where(ts_vector.op("@@")(ts_query))
+        if filters:
+            stmt = self._apply_filters(stmt, filters)
 
-        stmt = self._apply_filters(stmt, filters)
-        stmt = stmt.order_by(func.coalesce(rank, 0).desc()).limit(self.top_k)
+        stmt = stmt.order_by(distance).limit(self.top_k)
 
         result = await db.execute(stmt)
         rows = result.all()
@@ -38,11 +43,11 @@ class KeywordRetriever:
                 meeting_id=str(chunk.meeting_id),
                 chunk_index=chunk.chunk_index,
                 chunk_text=chunk.chunk_text,
-                score=float(rank_val) if rank_val is not None else 0.0,
-                keyword_score=float(rank_val) if rank_val is not None else 0.0,
+                score=round(1.0 - (dist / 2.0), 4),
+                vector_score=round(1.0 - (dist / 2.0), 4),
                 metadata=chunk.chunk_metadata or {},
             )
-            for chunk, rank_val in rows
+            for chunk, dist in rows
         ]
 
     @staticmethod

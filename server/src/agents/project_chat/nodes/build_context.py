@@ -1,6 +1,6 @@
-from src.agents.schemas import RetrievedContext
-from src.agents.services.context_builder import ContextBuilderService
-from src.agents.state import ChatState
+from src.agents.project_chat.schemas import RetrievedContext
+from src.agents.project_chat.services.context_builder import ContextBuilderService
+from src.agents.project_chat.state import ChatState
 
 
 def _format_messages(messages: list[dict[str, str]], max_pairs: int = 4) -> str:

@@ -2,7 +2,7 @@ import logging
 
 from langchain_core.messages import HumanMessage
 
-from src.agents.services.llm import LLMService
+from src.agents.common.llm import LLMService
 
 logger = logging.getLogger(__name__)
 

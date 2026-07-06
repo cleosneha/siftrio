@@ -1,4 +1,4 @@
-from src.agents.schemas import RetrievedContext
+from src.agents.project_chat.schemas import RetrievedContext
 
 _MAX_TOKENS = 6000
 _CHARS_PER_TOKEN = 4
