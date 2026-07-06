@@ -1,0 +1,8 @@
+{{ inviter_name }} invited you to join the {{ resource_name }} {{ resource_type }}.
+
+Accept the invitation here:
+{{ accept_url }}
+
+This invitation expires on {{ expires_at }}.
+
+Sent via SiftRio
