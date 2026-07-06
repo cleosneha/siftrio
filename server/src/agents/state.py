@@ -1,7 +1,5 @@
 from typing import Any, NotRequired, TypedDict
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.agents.schemas import (
     Citation,
     ParsedQuery,
@@ -14,7 +12,6 @@ from src.agents.schemas import (
 
 class ChatState(TypedDict):
     question: str
-    db: AsyncSession
     user_context: dict[str, Any]
     parsed_query: ParsedQuery | None
     retrieval_scope: RetrievalScope | None
