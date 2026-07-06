@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     GOOGLE_CALENDAR_API_URL: str = os.getenv("GOOGLE_CALENDAR_API_URL") or "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1"
     COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "False").lower() == "true"
     COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE") or "lax"
+    SMTP_HOST: str = os.getenv("SMTP_HOST") or ""
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT") or "587")
+    SMTP_USER: str = os.getenv("SMTP_USER") or ""
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD") or ""
+    SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL") or "noreply@siftrio.com"
+    SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME") or "SiftRio"
+
     CORS_ORIGINS: list[str] = [
         o.strip()
         for o in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173").split(",")
