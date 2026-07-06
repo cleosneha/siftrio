@@ -14,7 +14,7 @@ const Sidebar = dynamic(
 
 const CreateWorkspaceModal = dynamic(
   () =>
-    import("@/components/workspace/CreateWorkspaceModal").then(
+    import("@/features/workspaces/components/CreateWorkspaceModal").then(
       (m) => m.CreateWorkspaceModal,
     ),
   { ssr: false },

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { workspaceService } from "@/services/workspace.service";
+import { workspaceService } from "@/features/workspaces/services/workspace.service";
 
 const QUERY_KEY = ["workspaces"];
 

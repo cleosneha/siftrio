@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.controllers.auth_controller import AuthController
 from src.core.config import settings
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.repositories.auth_repository import AuthRepository
 from src.schemas.base_response import BaseResponse
 from src.services.auth_service import AuthService

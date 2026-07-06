@@ -1,6 +1,6 @@
 "use client";
 
-import { useRequirements, useUpdateRequirement } from "@/hooks/useKnowledge";
+import { useRequirements, useUpdateRequirement } from "@/features/knowledge/hooks/useKnowledge";
 import { KnowledgeTabBase } from "../KnowledgeTabBase";
 
 export function RequirementsTab({ projectId }: { projectId: string }) {

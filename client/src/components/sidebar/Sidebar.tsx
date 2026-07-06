@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { useWorkspaces } from "@/features/workspaces/hooks/useWorkspaces";
 import { useAppContext } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
 import { SidebarWorkspace } from "./SidebarWorkspace";

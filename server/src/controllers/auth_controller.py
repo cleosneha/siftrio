@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repositories.auth_repository import AuthRepository
 from src.services.auth_service import AuthService
-from src.tools.google_oauth import get_authorization_url
+from src.integrations.google_oauth import get_authorization_url
 from src.core.config import settings
 
 

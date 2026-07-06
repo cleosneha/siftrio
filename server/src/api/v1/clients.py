@@ -2,17 +2,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.controllers.client_controller import ClientController
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.repositories.client_repository import ClientRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.client_schema import ClientCreate
-from src.services.authorization_service import AuthorizationService
 from src.services.client_service import ClientService
+from src.services.membership_service import MembershipService
 from src.utils.uuid_validator import parse_optional_uuid
+
 
 router = APIRouter(
     prefix="/clients",
@@ -28,8 +27,7 @@ async def create_client(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id) if request.state.user else None
-    authz = AuthorizationService(db)
-    service = ClientService(db, ClientRepository(db), WorkspaceRepository(db), authorization_service=authz)
+    service = ClientService(db, ClientRepository(db), WorkspaceRepository(db))
     data = await service.create(body.workspace_id, body.name, body.description, user_id=user_id)
     return BaseResponse(message="Client created successfully", data=data)
 
@@ -56,7 +54,9 @@ async def get_client(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    from src.services.membership_service import MembershipService
     await MembershipService(db).assert_client_access(client_id, user_id)
-    controller = ClientController(db)
-    return await controller.get_by_id(client_id)
+    service = ClientService(db, ClientRepository(db), WorkspaceRepository(db))
+    data = await service.get_by_id(client_id)
+    if data is None:
+        return BaseResponse(success=False, message="Client not found", data=None)
+    return BaseResponse(data=data)

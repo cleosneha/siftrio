@@ -23,8 +23,8 @@ import {
   useTranscriptStatus,
   useMeetingSuggestions,
   useDismissSuggestion,
-} from "@/hooks/useMeetings";
-import { CreateMeetingModal } from "@/components/meeting/CreateMeetingModal";
+} from "@/features/meetings/hooks/useMeetings";
+import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
 
 function AnalysisSection({
   title,

@@ -7,7 +7,7 @@ import jwt
 from src.core.config import settings
 from src.repositories.auth_repository import AuthRepository
 from src.schemas.auth_schema import UserResponse
-from src.tools.google_oauth import (
+from src.integrations.google_oauth import (
     fetch_token,
     get_google_profile,
     refresh_google_token,

@@ -23,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useCreateProject } from "@/hooks/useProjects";
+import { useCreateProject } from "@/features/projects/hooks/useProjects";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),

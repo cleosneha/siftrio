@@ -2,17 +2,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.controllers.project_controller import ProjectController
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.repositories.client_repository import ClientRepository
 from src.repositories.project_repository import ProjectRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.project_schema import ProjectCreate
-from src.services.authorization_service import AuthorizationService
+from src.services.membership_service import MembershipService
 from src.services.project_service import ProjectService
 from src.utils.uuid_validator import parse_optional_uuid
+
 
 router = APIRouter(
     prefix="/projects",
@@ -28,8 +27,7 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id) if request.state.user else None
-    authz = AuthorizationService(db)
-    service = ProjectService(db, ProjectRepository(db), ClientRepository(db), authorization_service=authz)
+    service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
     data = await service.create(body.client_id, body.name, body.description, user_id=user_id)
     return BaseResponse(message="Project created successfully", data=data)
 
@@ -56,7 +54,9 @@ async def get_project(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    from src.services.membership_service import MembershipService
     await MembershipService(db).assert_project_access(project_id, user_id)
-    controller = ProjectController(db)
-    return await controller.get_by_id(project_id)
+    service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
+    data = await service.get_by_id(project_id)
+    if data is None:
+        return BaseResponse(success=False, message="Project not found", data=None)
+    return BaseResponse(data=data)

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.meeting_suggestion_controller import MeetingSuggestionController
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.repositories.meeting_repository import MeetingRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.meeting_suggestion_schema import MeetingSuggestionScheduleRequest

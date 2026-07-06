@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionItems, useUpdateActionItem } from "@/hooks/useKnowledge";
+import { useActionItems, useUpdateActionItem } from "@/features/knowledge/hooks/useKnowledge";
 import { KnowledgeTabBase } from "../KnowledgeTabBase";
 
 export function ActionItemsTab({ projectId }: { projectId: string }) {

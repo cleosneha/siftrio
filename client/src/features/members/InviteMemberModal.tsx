@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useInviteMember } from "@/hooks/useInvitations";
+import { useInviteMember } from "@/features/invitations/hooks/useInvitations";
 
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address"),

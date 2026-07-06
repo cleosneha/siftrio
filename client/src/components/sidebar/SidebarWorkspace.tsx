@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Box } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useClients } from "@/hooks/useClients";
-import { useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/features/clients/hooks/useClients";
+import { useProjects } from "@/features/projects/hooks/useProjects";
 import { SidebarClient } from "./SidebarClient";
 import type { Client, Workspace } from "@/types";
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.models.member_invitation import ResourceType
 from src.schemas.base_response import BaseResponse
 from src.schemas.member_invitation_schema import InviteMemberRequest

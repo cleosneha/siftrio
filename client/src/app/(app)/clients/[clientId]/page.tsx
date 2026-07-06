@@ -12,16 +12,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useClient } from "@/hooks/useClients";
-import { useProjects } from "@/hooks/useProjects";
-import { useMiscellaneousMeetings } from "@/hooks/useMeetings";
-import { useClientMembers } from "@/hooks/useMembers";
-import { usePendingInvitations } from "@/hooks/useInvitations";
-import { useRemoveClientMember } from "@/hooks/useMembers";
+import { useClient } from "@/features/clients/hooks/useClients";
+import { useProjects } from "@/features/projects/hooks/useProjects";
+import { useMiscellaneousMeetings } from "@/features/meetings/hooks/useMeetings";
+import { useClientMembers } from "@/features/members/hooks/useMembers";
+import { usePendingInvitations } from "@/features/invitations/hooks/useInvitations";
+import { useRemoveClientMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
-import { CreateProjectModal } from "@/components/project/CreateProjectModal";
-import { CreateMeetingModal } from "@/components/meeting/CreateMeetingModal";
+import { CreateProjectModal } from "@/features/projects/components/CreateProjectModal";
+import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
 import { MembersSection } from "@/features/members/MembersSection";
 
 export default function ClientPage() {

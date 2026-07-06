@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.exceptions.base import BaseAPIException
 from src.services.auth_service import AuthService
-from src.tools.google_oauth import create_oauth_client
+from src.integrations.google_oauth import create_oauth_client
 
 logger = logging.getLogger(__name__)
 

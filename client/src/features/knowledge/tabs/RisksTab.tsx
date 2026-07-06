@@ -1,6 +1,6 @@
 "use client";
 
-import { useRisks, useUpdateRisk } from "@/hooks/useKnowledge";
+import { useRisks, useUpdateRisk } from "@/features/knowledge/hooks/useKnowledge";
 import { KnowledgeTabBase } from "../KnowledgeTabBase";
 
 export function RisksTab({ projectId }: { projectId: string }) {

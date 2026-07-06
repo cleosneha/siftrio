@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { useWorkspaces } from "@/features/workspaces/hooks/useWorkspaces";
 import { useAppContext } from "@/lib/app-context";
 
 export default function DashboardPage() {

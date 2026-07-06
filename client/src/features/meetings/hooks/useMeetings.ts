@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { meetingService } from "@/services/meeting.service";
+import { meetingService } from "@/features/meetings/services/meeting.service";
 
 export function useCreateMeeting() {
   const queryClient = useQueryClient();

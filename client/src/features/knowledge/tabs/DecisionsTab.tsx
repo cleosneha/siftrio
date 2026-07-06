@@ -1,6 +1,6 @@
 "use client";
 
-import { useDecisions, useUpdateDecision } from "@/hooks/useKnowledge";
+import { useDecisions, useUpdateDecision } from "@/features/knowledge/hooks/useKnowledge";
 import { KnowledgeTabBase } from "../KnowledgeTabBase";
 
 export function DecisionsTab({ projectId }: { projectId: string }) {

@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { invitationService } from "@/services/invitation.service";
+import { invitationService } from "@/features/invitations/services/invitation.service";
 
 type AcceptState =
   | { status: "idle" }

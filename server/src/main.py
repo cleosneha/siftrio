@@ -22,14 +22,14 @@ def create_app() -> FastAPI:
         version=settings.PROJECT_VERSION,
     )
 
-    register_middlewares(app)
+    register_middleware(app)
     register_exception_handlers(app)
     register_routes(app)
 
     return app
 
 
-def register_middlewares(app: FastAPI) -> None:
+def register_middleware(app: FastAPI) -> None:
     origins = list(set(settings.CORS_ORIGINS + [settings.FRONTEND_URL]))
 
     app.add_middleware(

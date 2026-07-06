@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useCreateClient } from "@/hooks/useClients";
+import { useCreateWorkspace } from "@/features/workspaces/hooks/useWorkspaces";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),
@@ -31,18 +32,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface CreateClientModalProps {
+interface CreateWorkspaceModalProps {
   open: boolean;
   onClose: () => void;
-  workspaceId: string;
 }
 
-export function CreateClientModal({
-  open,
-  onClose,
-  workspaceId,
-}: CreateClientModalProps) {
-  const createClient = useCreateClient();
+export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProps) {
+  const router = useRouter();
+  const createWorkspace = useCreateWorkspace();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -50,22 +47,24 @@ export function CreateClientModal({
   });
 
   const onSubmit = async (values: FormValues) => {
-    await createClient.mutateAsync({
-      workspace_id: workspaceId,
+    const result = await createWorkspace.mutateAsync({
       name: values.name,
       description: values.description || null,
     });
     form.reset();
     onClose();
+    if (result.data?.id) {
+      router.push(`/workspaces/${result.data.id}`);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { form.reset(); onClose(); } }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Client</DialogTitle>
+          <DialogTitle>Create Workspace</DialogTitle>
           <DialogDescription>
-            Add a new client to this workspace.
+            Create a new workspace to organize your clients and projects.
           </DialogDescription>
         </DialogHeader>
 
@@ -78,7 +77,7 @@ export function CreateClientModal({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Client name" autoFocus {...field} />
+                    <Input placeholder="My Workspace" autoFocus {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -107,8 +106,8 @@ export function CreateClientModal({
               <Button type="button" variant="outline" onClick={() => { form.reset(); onClose(); }}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createClient.isPending}>
-                {createClient.isPending ? "Creating..." : "Create"}
+              <Button type="submit" disabled={createWorkspace.isPending}>
+                {createWorkspace.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
           </form>

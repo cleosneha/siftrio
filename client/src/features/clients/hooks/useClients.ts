@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { clientService } from "@/services/client.service";
+import { clientService } from "@/features/clients/services/client.service";
 
 export function useCreateClient() {
   const queryClient = useQueryClient();

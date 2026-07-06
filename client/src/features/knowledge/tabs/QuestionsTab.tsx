@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuestions, useUpdateQuestion } from "@/hooks/useKnowledge";
+import { useQuestions, useUpdateQuestion } from "@/features/knowledge/hooks/useKnowledge";
 import { KnowledgeTabBase } from "../KnowledgeTabBase";
 
 export function QuestionsTab({ projectId }: { projectId: string }) {

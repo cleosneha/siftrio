@@ -24,8 +24,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useCreateMeeting } from "@/hooks/useMeetings";
-import { projectService } from "@/services/project.service";
+import { useCreateMeeting } from "@/features/meetings/hooks/useMeetings";
+import { projectService } from "@/features/projects/services/project.service";
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { knowledgeService } from "@/services/knowledge.service";
+import { knowledgeService } from "@/features/knowledge/services/knowledge.service";
 
 function useListQuery<T>(key: (string | undefined)[], fn: () => Promise<{ data: T }>, enabled?: boolean) {
   return useQuery({

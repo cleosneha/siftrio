@@ -1,7 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { invitationService } from "@/services/invitation.service";
+import { invitationService } from "@/features/invitations/services/invitation.service";
 
 export function useInviteMember(resourceType: string, resourceId: string) {
   const queryClient = useQueryClient();

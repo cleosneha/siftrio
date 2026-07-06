@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.assistant_controller import AssistantController
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.schemas.assistant_schema import AssistantQueryRequest, AssistantQueryResponse
 
 router = APIRouter(

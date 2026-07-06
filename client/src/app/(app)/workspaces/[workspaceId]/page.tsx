@@ -7,19 +7,19 @@ import { Menu, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ProjectCard } from "@/components/project/ProjectCard";
-import { useWorkspace } from "@/hooks/useWorkspaces";
-import { useClients } from "@/hooks/useClients";
-import { useWorkspaceMembers } from "@/hooks/useMembers";
-import { usePendingInvitations } from "@/hooks/useInvitations";
-import { useRemoveWorkspaceMember } from "@/hooks/useMembers";
+import { ProjectCard } from "@/features/projects/components/ProjectCard";
+import { useWorkspace } from "@/features/workspaces/hooks/useWorkspaces";
+import { useClients } from "@/features/clients/hooks/useClients";
+import { useWorkspaceMembers } from "@/features/members/hooks/useMembers";
+import { usePendingInvitations } from "@/features/invitations/hooks/useInvitations";
+import { useRemoveWorkspaceMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
 import { MembersSection } from "@/features/members/MembersSection";
 
 const CreateClientModal = dynamic(
   () =>
-    import("@/components/workspace/CreateClientModal").then(
+    import("@/features/clients/components/CreateClientModal").then(
       (m) => m.CreateClientModal,
     ),
   { ssr: false },
@@ -27,7 +27,7 @@ const CreateClientModal = dynamic(
 
 const CreateProjectModal = dynamic(
   () =>
-    import("@/components/project/CreateProjectModal").then(
+    import("@/features/projects/components/CreateProjectModal").then(
       (m) => m.CreateProjectModal,
     ),
   { ssr: false },

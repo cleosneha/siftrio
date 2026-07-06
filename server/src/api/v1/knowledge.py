@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.controllers.knowledge_controller import KnowledgeController
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.schemas.base_response import BaseResponse
 from src.schemas.knowledge_schema import (
     ActionItemUpdate,

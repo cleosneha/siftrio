@@ -15,11 +15,9 @@ from src.models.member_invitation import (
 from src.models.workspace_member import MemberRole
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.member_invitation_repository import MemberInvitationRepository
-from src.repositories.membership_repository import (
-    ClientMemberRepository,
-    ProjectMemberRepository,
-    WorkspaceMemberRepository,
-)
+from src.repositories.client_member_repository import ClientMemberRepository
+from src.repositories.project_member_repository import ProjectMemberRepository
+from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.repositories.project_repository import ProjectRepository
 from src.repositories.client_repository import ClientRepository
 from src.repositories.workspace_repository import WorkspaceRepository

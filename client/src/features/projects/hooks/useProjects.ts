@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { projectService } from "@/services/project.service";
+import { projectService } from "@/features/projects/services/project.service";
 
 export function useCreateProject() {
   const queryClient = useQueryClient();

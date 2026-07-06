@@ -9,11 +9,9 @@ from src.models.client_member import ClientMember
 from src.models.project import Project
 from src.models.project_member import ProjectMember
 from src.models.workspace_member import MemberRole, WorkspaceMember
-from src.repositories.membership_repository import (
-    ClientMemberRepository,
-    ProjectMemberRepository,
-    WorkspaceMemberRepository,
-)
+from src.repositories.client_member_repository import ClientMemberRepository
+from src.repositories.project_member_repository import ProjectMemberRepository
+from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.repositories.member_invitation_repository import MemberInvitationRepository
 from src.models.member_invitation import ResourceType
 from src.schemas.membership_schema import MemberResponse

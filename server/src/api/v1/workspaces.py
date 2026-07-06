@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 from src.core.database import get_db
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.models.workspace_member import MemberRole
-from src.repositories.membership_repository import WorkspaceMemberRepository
+from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.base_response import BaseResponse
 from src.schemas.workspace_schema import WorkspaceCreate, WorkspaceResponse

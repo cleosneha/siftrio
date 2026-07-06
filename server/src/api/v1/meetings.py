@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import async_session_factory, get_db
 from src.utils.uuid_validator import parse_optional_uuid
-from src.middlewares.auth import require_authenticated_user
+from src.middleware.auth import require_authenticated_user
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.client_repository import ClientRepository
 from src.repositories.meeting_repository import MeetingRepository

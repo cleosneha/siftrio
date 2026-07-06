@@ -1,7 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { memberService } from "@/services/member.service";
+import { memberService } from "@/features/members/services/member.service";
 
 export function useWorkspaceMembers(workspaceId: string) {
   return useQuery({
