@@ -1,10 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { useState } from "react";
 import { Menu, ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Card,
   CardDescription,
@@ -14,24 +15,39 @@ import {
 import { useClient } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { useMiscellaneousMeetings } from "@/hooks/useMeetings";
+import { useClientMembers } from "@/hooks/useMembers";
+import { usePendingInvitations } from "@/hooks/useInvitations";
+import { useRemoveClientMember } from "@/hooks/useMembers";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
 import { CreateProjectModal } from "@/components/project/CreateProjectModal";
 import { CreateMeetingModal } from "@/components/meeting/CreateMeetingModal";
+import { MembersSection } from "@/features/members/MembersSection";
 
 export default function ClientPage() {
   const params = useParams();
   const clientId = params.clientId as string;
   const { setSidebarOpen } = useAppContext();
+  const { user } = useAuth();
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
 
-  const { data: clientData } = useClient(clientId);
+  const { data: clientData, isLoading: clientLoading } = useClient(clientId);
   const { data: projectsData } = useProjects(clientId);
   const { data: meetingsData } = useMiscellaneousMeetings(clientId);
+  const { data: membersData, isLoading: membersLoading } = useClientMembers(clientId);
+  const { data: invitationsData } = usePendingInvitations("client", clientId);
+  const { mutate: removeMember } = useRemoveClientMember();
 
   const client = clientData?.data;
   const projects = projectsData?.data ?? [];
   const meetings = meetingsData?.data ?? [];
+  const members = membersData?.data ?? [];
+  const pendingInvitations = invitationsData?.data ?? [];
+
+  if (!clientLoading && !client) {
+    notFound();
+  }
 
   return (
     <>
@@ -73,7 +89,7 @@ export default function ClientPage() {
         </div>
       </header>
 
-      <div className="flex-1 p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mb-8">
           <h2 className="mb-4 text-lg font-medium">Projects</h2>
           {projects.length === 0 ? (
@@ -106,7 +122,7 @@ export default function ClientPage() {
           )}
         </div>
 
-        <div>
+        <div className="mb-8">
           <h2 className="mb-4 text-lg font-medium">
             Miscellaneous Meetings
             {meetings.length > 0 && (
@@ -161,6 +177,18 @@ export default function ClientPage() {
             </div>
           )}
         </div>
+
+        <Separator className="mb-6" />
+
+        <MembersSection
+          resourceType="client"
+          resourceId={clientId}
+          members={members}
+          pendingInvitations={pendingInvitations}
+          currentUserId={user?.id}
+          onRemove={(userId) => removeMember({ clientId, userId })}
+          isLoading={membersLoading}
+        />
       </div>
 
       <CreateProjectModal

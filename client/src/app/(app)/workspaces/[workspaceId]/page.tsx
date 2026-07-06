@@ -2,14 +2,20 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import { Menu, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { useWorkspace } from "@/hooks/useWorkspaces";
 import { useClients } from "@/hooks/useClients";
+import { useWorkspaceMembers } from "@/hooks/useMembers";
+import { usePendingInvitations } from "@/hooks/useInvitations";
+import { useRemoveWorkspaceMember } from "@/hooks/useMembers";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
+import { MembersSection } from "@/features/members/MembersSection";
 
 const CreateClientModal = dynamic(
   () =>
@@ -31,16 +37,26 @@ export default function WorkspacePage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
   const { setSidebarOpen } = useAppContext();
+  const { user } = useAuth();
 
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  const { data: workspaceData } = useWorkspace(workspaceId);
+  const { data: workspaceData, isLoading: workspaceLoading } = useWorkspace(workspaceId);
   const { data: clientsData } = useClients(workspaceId);
+  const { data: membersData, isLoading: membersLoading } = useWorkspaceMembers(workspaceId);
+  const { data: invitationsData } = usePendingInvitations("workspace", workspaceId);
+  const { mutate: removeMember } = useRemoveWorkspaceMember();
 
   const workspace = workspaceData?.data;
   const clients = clientsData?.data ?? [];
+  const members = membersData?.data ?? [];
+  const pendingInvitations = invitationsData?.data ?? [];
+
+  if (!workspaceLoading && !workspace) {
+    notFound();
+  }
 
   return (
     <>
@@ -70,7 +86,7 @@ export default function WorkspacePage() {
         </div>
       </header>
 
-      <div className="flex-1 p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-medium">Clients</h2>
@@ -85,7 +101,7 @@ export default function WorkspacePage() {
         </div>
 
         {clients.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
+          <div className="mb-8 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
             <h3 className="mb-2 text-lg font-medium">No clients yet</h3>
             <p className="mb-4 text-sm text-muted-foreground">
               Create a client to start organizing projects
@@ -96,7 +112,7 @@ export default function WorkspacePage() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clients.map((client) => (
               <ProjectCard
                 key={client.id}
@@ -109,6 +125,18 @@ export default function WorkspacePage() {
             ))}
           </div>
         )}
+
+        <Separator className="mb-6" />
+
+        <MembersSection
+          resourceType="workspace"
+          resourceId={workspaceId}
+          members={members}
+          pendingInvitations={pendingInvitations}
+          currentUserId={user?.id}
+          onRemove={(userId) => removeMember({ workspaceId, userId })}
+          isLoading={membersLoading}
+        />
       </div>
 
       <CreateClientModal

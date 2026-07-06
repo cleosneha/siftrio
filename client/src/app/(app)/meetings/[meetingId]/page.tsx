@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, notFound } from "next/navigation";
 import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video, Mail, Loader, Calendar, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +80,7 @@ export default function MeetingPage() {
   const meetingId = params.meetingId as string;
   const { setSidebarOpen } = useAppContext();
 
-  const { data: meetingData } = useMeeting(meetingId);
+  const { data: meetingData, isLoading: meetingLoading } = useMeeting(meetingId);
   const { data: analysisData, isLoading: analysisLoading } =
     useMeetingAnalysis(meetingId);
   const { data: transcriptStatusData } = useTranscriptStatus(meetingId);
@@ -100,6 +100,10 @@ export default function MeetingPage() {
   const analysis = analysisData?.data;
   const transcriptStatus = transcriptStatusData?.data?.transcript_status;
   const suggestions = suggestionsData?.data ?? [];
+
+  if (!meetingLoading && !meeting) {
+    notFound();
+  }
 
   const pendingSuggestions = suggestions.filter(
     (s: { status: string }) => s.status === "pending",
