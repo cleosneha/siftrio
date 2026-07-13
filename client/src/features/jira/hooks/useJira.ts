@@ -2,6 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import type {
+  ActionItemJiraCreateRequest,
+} from "@/features/jira/types/jira.types";
 import { jiraService } from "@/features/jira/services/jira.service";
 
 export function useWorkspaceJira(workspaceId: string | undefined) {
@@ -110,6 +113,48 @@ export function useDisconnectProjectFromJira() {
     },
     onError: () => {
       toast.error("Failed to disconnect Jira project");
+    },
+  });
+}
+
+// Action Item Jira hooks
+
+export function useActionItemJiraPreview(projectId: string | undefined, actionItemId: string | undefined) {
+  return useQuery({
+    queryKey: ["action-item-jira-preview", projectId, actionItemId],
+    queryFn: () => jiraService.getActionItemJiraPreview(projectId!, actionItemId!),
+    enabled: !!projectId && !!actionItemId,
+    retry: false,
+  });
+}
+
+export function useActionItemJiraIssueTypes(projectId: string | undefined, actionItemId: string | undefined) {
+  return useQuery({
+    queryKey: ["action-item-jira-issue-types", projectId, actionItemId],
+    queryFn: () => jiraService.getActionItemJiraIssueTypes(projectId!, actionItemId!),
+    enabled: !!projectId && !!actionItemId,
+  });
+}
+
+export function useCreateActionItemJiraIssue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      actionItemId,
+      data,
+    }: {
+      projectId: string;
+      actionItemId: string;
+      data: ActionItemJiraCreateRequest;
+    }) => jiraService.createActionItemJiraIssue(projectId, actionItemId, data),
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["action-items", variables.projectId] });
+      toast.success(res.message || "Jira issue created");
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof Error ? error.message : "Failed to create Jira issue";
+      toast.error(msg);
     },
   });
 }

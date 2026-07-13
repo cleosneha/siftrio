@@ -6,7 +6,8 @@ import { invitationService } from "@/features/invitations/services/invitation.se
 export function useInviteMember(resourceType: string, resourceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (email: string) => invitationService.invite(resourceType, resourceId, email),
+    mutationFn: ({ email }: { email: string }) =>
+      invitationService.invite(resourceType, resourceId, email),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["pending-invitations", resourceType, resourceId] });
       queryClient.invalidateQueries({ queryKey: [`${resourceType}-members`, resourceId] });
