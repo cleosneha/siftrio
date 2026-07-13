@@ -123,6 +123,7 @@ export default function ProjectPage() {
             currentUserId={user?.id}
             onRemove={(userId) => removeMember({ projectId, userId })}
             isLoading={membersLoading}
+            projectId={projectId}
           />
         </div>
       </div>

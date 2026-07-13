@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
-import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video, Mail, Loader, Calendar, X, Check } from "lucide-react";
+import { Menu, ArrowLeft, RefreshCw, Upload, Loader2, ExternalLink, Video, Mail, Loader, Calendar, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,6 +24,11 @@ import {
   useMeetingSuggestions,
   useDismissSuggestion,
 } from "@/features/meetings/hooks/useMeetings";
+import { useQuery } from "@tanstack/react-query";
+import { knowledgeService } from "@/features/knowledge/services/knowledge.service";
+import { useProjectJira } from "@/features/jira/hooks/useJira";
+import { JiraPreviewModal } from "@/features/jira/components/JiraPreviewModal";
+import type { ActionItem } from "@/types";
 import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
 
 function AnalysisSection({
@@ -89,6 +94,7 @@ export default function MeetingPage() {
   const uploadTranscript = useUploadTranscript();
   const dismissSuggestion = useDismissSuggestion();
 
+  const [jiraItem, setJiraItem] = useState<ActionItem | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<{
     title: string;
     suggested_date: string | null;
@@ -100,6 +106,17 @@ export default function MeetingPage() {
   const analysis = analysisData?.data;
   const transcriptStatus = transcriptStatusData?.data?.transcript_status;
   const suggestions = suggestionsData?.data ?? [];
+
+  const projectId = meeting?.project_id ?? undefined;
+  const { data: actionItemsRes } = useQuery({
+    queryKey: ["meeting-action-items", meetingId],
+    queryFn: () => knowledgeService.listActionItems({ meeting_id: meetingId }),
+    enabled: !!meetingId,
+  });
+  const { data: jiraData } = useProjectJira(projectId);
+  const jiraMapping = jiraData?.data;
+  const hasJira = !!jiraMapping;
+  const meetingActionItems = actionItemsRes?.data ?? [];
 
   if (!meetingLoading && !meeting) {
     notFound();
@@ -411,11 +428,64 @@ export default function MeetingPage() {
                 items={analysis.decisions}
                 emptyText="No decisions recorded"
               />
-              <AnalysisSection
-                title="Action Items"
-                items={analysis.action_items}
-                emptyText="No action items"
-              />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Action Items</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {meetingActionItems.length === 0 ? (
+                    analysis.action_items.length > 0 ? (
+                      <ul className="space-y-2">
+                        {analysis.action_items.map((item, i) => (
+                          <li key={i} className="flex gap-2 text-sm">
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <CardDescription>No action items</CardDescription>
+                    )
+                  ) : (
+                    <div className="space-y-3">
+                      {meetingActionItems.map((ai) => (
+                        <div key={ai.id} className="rounded-lg border p-3">
+                          <div className="mb-1 text-sm font-medium">{ai.title}</div>
+                          {ai.description && (
+                            <div className="mb-2 text-xs text-muted-foreground">{ai.description}</div>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            {ai.assignee && <span>Assignee: {ai.assignee}</span>}
+                            {ai.due_date && <span>Due: {new Date(ai.due_date).toLocaleDateString()}</span>}
+                            {ai.jira_issue_url && ai.sync_status === "synced" ? (
+                              <a
+                                href={ai.jira_issue_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-primary hover:underline"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                View in Jira
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={!hasJira}
+                                title={!hasJira ? "Connect a Jira project first" : "Create Jira issue"}
+                                onClick={() => setJiraItem(ai)}
+                                className="inline-flex items-center gap-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed hover:text-foreground"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {!hasJira ? "Jira Unavailable" : "Create Jira Issue"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
               <AnalysisSection
                 title="Answered Questions"
                 items={analysis.answered_questions}
@@ -463,6 +533,13 @@ export default function MeetingPage() {
           </div>
         )}
       </div>
+
+      <JiraPreviewModal
+        open={!!jiraItem}
+        onClose={() => setJiraItem(null)}
+        projectId={projectId ?? ""}
+        actionItemId={jiraItem?.id ?? ""}
+      />
 
       <CreateMeetingModal
         open={!!scheduleTarget}
