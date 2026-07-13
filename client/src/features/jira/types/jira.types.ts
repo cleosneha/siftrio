@@ -33,7 +33,43 @@ export interface ProjectJira {
   jira_project_key: string;
   jira_project_name: string;
   jira_project_type: string | null;
-  connected_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+}
+
+export interface JiraIssueType {
+  id: string;
+  name: string;
+  description: string | null;
+  subtask: boolean;
+}
+
+export interface JiraUser {
+  account_id: string;
+  display_name: string;
+  email_address: string | null;
+}
+
+export interface ActionItemJiraPreview {
+  summary: string;
+  description: string;
+  issue_type: string;
+  priority: string;
+  labels: string[];
+  assignee: string | null;
+}
+
+export interface ActionItemJiraCreateRequest {
+  summary: string;
+  description: string;
+  issue_type_id: string;
+  priority: string;
+  labels: string[];
+  assignee_account_id: string | null;
+}
+
+export interface ActionItemJiraCreateResponse {
+  issue_id: string;
+  issue_key: string;
+  issue_url: string;
 }

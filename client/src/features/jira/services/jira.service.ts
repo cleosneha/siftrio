@@ -1,6 +1,16 @@
 import { api } from "@/lib/api";
 import type { ApiResponse } from "@/types";
-import type { AtlassianSite, JiraProjectItem, ProjectJira, WorkspaceJira } from "@/features/jira/types/jira.types";
+import type {
+  ActionItemJiraCreateRequest,
+  ActionItemJiraCreateResponse,
+  ActionItemJiraPreview,
+  AtlassianSite,
+  JiraIssueType,
+  JiraProjectItem,
+  JiraUser,
+  ProjectJira,
+  WorkspaceJira,
+} from "@/features/jira/types/jira.types";
 
 export const jiraService = {
   async getWorkspaceJira(workspaceId: string) {
@@ -50,6 +60,36 @@ export const jiraService = {
 
   async disconnectProjectFromJira(projectId: string) {
     const res = await api.delete<ApiResponse<null>>(`/projects/${projectId}/jira`);
+    return res.data;
+  },
+
+  async getActionItemJiraPreview(projectId: string, actionItemId: string) {
+    const res = await api.get<ApiResponse<ActionItemJiraPreview>>(
+      `/projects/${projectId}/action-items/${actionItemId}/jira/preview`,
+    );
+    return res.data;
+  },
+
+  async getActionItemJiraIssueTypes(projectId: string, actionItemId: string) {
+    const res = await api.get<ApiResponse<JiraIssueType[]>>(
+      `/projects/${projectId}/action-items/${actionItemId}/jira/issue-types`,
+    );
+    return res.data;
+  },
+
+  async searchActionItemJiraUsers(projectId: string, actionItemId: string, query: string) {
+    const res = await api.get<ApiResponse<JiraUser[]>>(
+      `/projects/${projectId}/action-items/${actionItemId}/jira/users`,
+      { params: { query } },
+    );
+    return res.data;
+  },
+
+  async createActionItemJiraIssue(projectId: string, actionItemId: string, data: ActionItemJiraCreateRequest) {
+    const res = await api.post<ApiResponse<ActionItemJiraCreateResponse>>(
+      `/projects/${projectId}/action-items/${actionItemId}/jira/issues`,
+      data,
+    );
     return res.data;
   },
 };
