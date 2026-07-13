@@ -67,11 +67,13 @@ export function KnowledgeTabBase({
   config,
   label,
   onUpdate,
+  renderActions,
 }: {
   items: BaseItem[];
   config: TabConfig;
   label: string;
   onUpdate: (id: string, data: Record<string, string | boolean>) => Promise<unknown>;
+  renderActions?: (item: BaseItem) => React.ReactNode;
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -187,6 +189,7 @@ export function KnowledgeTabBase({
                       {String(item.meeting_title)}
                     </Link>
                   ) : null}
+                  {renderActions?.(item)}
                   <Button
                     variant="ghost"
                     size="xs"

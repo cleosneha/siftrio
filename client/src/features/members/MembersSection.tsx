@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Plus, UserMinus, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -84,9 +83,9 @@ export function MembersSection({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className="text-xs">
+                    <span className="text-xs text-muted-foreground px-2">
                       {member.role}
-                    </Badge>
+                    </span>
                     {onRemove && member.user_id !== currentUserId && member.role !== "owner" && (
                       <Button
                         variant="ghost"

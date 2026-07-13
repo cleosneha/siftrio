@@ -43,7 +43,7 @@ export function InviteMemberModal({ open, onClose, resourceType, resourceId }: I
   });
 
   async function onSubmit(data: InviteForm) {
-    await inviteMutation.mutateAsync(data.email);
+    await inviteMutation.mutateAsync({ email: data.email });
     form.reset();
     onClose();
   }
