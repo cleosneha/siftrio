@@ -16,6 +16,7 @@ import { useRemoveWorkspaceMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
 import { MembersSection } from "@/features/members/MembersSection";
+import { useWorkspaceJira } from "@/features/jira/hooks/useJira";
 
 const CreateClientModal = dynamic(
   () =>
@@ -48,6 +49,7 @@ export default function WorkspacePage() {
   const { data: membersData, isLoading: membersLoading } = useWorkspaceMembers(workspaceId);
   const { data: invitationsData } = usePendingInvitations("workspace", workspaceId);
   const { mutate: removeMember } = useRemoveWorkspaceMember();
+  useWorkspaceJira(workspaceId);
   const router = useRouter();
   const searchParams = useSearchParams();
 
