@@ -5,6 +5,7 @@ import type {
   ActionItemJiraCreateResponse,
   ActionItemJiraPreview,
   AtlassianSite,
+  JiraIssueDetails,
   JiraIssueType,
   JiraProjectItem,
   JiraUser,
@@ -89,6 +90,13 @@ export const jiraService = {
     const res = await api.post<ApiResponse<ActionItemJiraCreateResponse>>(
       `/projects/${projectId}/action-items/${actionItemId}/jira/issues`,
       data,
+    );
+    return res.data;
+  },
+
+  async getActionItemJiraIssue(projectId: string, actionItemId: string) {
+    const res = await api.get<ApiResponse<JiraIssueDetails>>(
+      `/projects/${projectId}/action-items/${actionItemId}/jira/issue`,
     );
     return res.data;
   },

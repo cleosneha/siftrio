@@ -9,6 +9,7 @@ import {
 } from "@/features/knowledge/hooks/useKnowledge";
 import { useProjectJira } from "@/features/jira/hooks/useJira";
 import { JiraPreviewModal } from "@/features/jira/components/JiraPreviewModal";
+import { JiraIssueDetailsModal } from "@/features/jira/components/JiraIssueDetailsModal";
 import { KnowledgeTabBase } from "../KnowledgeTabBase";
 import type { ActionItem } from "@/types";
 
@@ -17,6 +18,7 @@ export function ActionItemsTab({ projectId }: { projectId: string }) {
   const updateMutation = useUpdateActionItem();
   const { data: jiraData } = useProjectJira(projectId);
   const [jiraItem, setJiraItem] = useState<ActionItem | null>(null);
+  const [detailsItem, setDetailsItem] = useState<ActionItem | null>(null);
 
   const jiraMapping = jiraData?.data;
   const hasJira = !!jiraMapping;
@@ -64,15 +66,14 @@ export function ActionItemsTab({ projectId }: { projectId: string }) {
           const ai = item as ActionItem;
           if (ai.jira_issue_url && ai.sync_status === "synced") {
             return (
-              <a
-                href={ai.jira_issue_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-6 items-center gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs hover:bg-muted hover:text-foreground"
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => setDetailsItem(ai)}
               >
                 <ExternalLink className="h-3 w-3" />
-                View in Jira
-              </a>
+                View Issue
+              </Button>
             );
           }
           if (ai.jira_issue_id && ai.sync_status === "failed") {
@@ -105,6 +106,13 @@ export function ActionItemsTab({ projectId }: { projectId: string }) {
         onClose={() => setJiraItem(null)}
         projectId={projectId}
         actionItemId={jiraItem?.id ?? ""}
+      />
+
+      <JiraIssueDetailsModal
+        open={!!detailsItem}
+        onClose={() => setDetailsItem(null)}
+        projectId={projectId}
+        actionItemId={detailsItem?.id ?? ""}
       />
     </>
   );

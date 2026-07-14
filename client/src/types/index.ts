@@ -83,6 +83,8 @@ export interface MeetingAnalysis {
   risks: string[];
   blockers: string[];
   future_meetings: string[];
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface KnowledgeBase {

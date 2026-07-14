@@ -4,7 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type {
   ActionItemJiraCreateRequest,
+  JiraIssueDetails,
+  JiraIssueType,
 } from "@/features/jira/types/jira.types";
+import type { ApiResponse } from "@/types";
 import { jiraService } from "@/features/jira/services/jira.service";
 
 export function useWorkspaceJira(workspaceId: string | undefined) {
@@ -129,13 +132,10 @@ export function useActionItemJiraPreview(projectId: string | undefined, actionIt
 }
 
 export function useActionItemJiraIssueTypes(projectId: string | undefined, actionItemId: string | undefined) {
-  return useQuery({
+  return useQuery<ApiResponse<JiraIssueType[]>>({
     queryKey: ["action-item-jira-issue-types", projectId, actionItemId],
     queryFn: () => jiraService.getActionItemJiraIssueTypes(projectId!, actionItemId!),
     enabled: !!projectId && !!actionItemId,
-    onError: () => {
-      toast.error("Failed to load Jira issue types");
-    },
   });
 }
 
@@ -159,5 +159,13 @@ export function useCreateActionItemJiraIssue() {
       const msg = error instanceof Error ? error.message : "Failed to create Jira issue";
       toast.error(msg);
     },
+  });
+}
+
+export function useActionItemJiraIssue(projectId: string | undefined, actionItemId: string | undefined) {
+  return useQuery<ApiResponse<JiraIssueDetails>>({
+    queryKey: ["action-item-jira-issue", projectId, actionItemId],
+    queryFn: () => jiraService.getActionItemJiraIssue(projectId!, actionItemId!),
+    enabled: !!projectId && !!actionItemId,
   });
 }

@@ -73,3 +73,21 @@ export interface ActionItemJiraCreateResponse {
   issue_key: string;
   issue_url: string;
 }
+
+export interface JiraIssueDetails {
+  issue_id: string;
+  issue_key: string;
+  summary: string;
+  description: string | null;
+  status: string | null;
+  status_category: string | null;
+  issue_type: string | null;
+  priority: string | null;
+  assignee: string | null;
+  assignee_email: string | null;
+  reporter: string | null;
+  labels: string[];
+  created: string | null;
+  updated: string | null;
+  url: string;
+}
