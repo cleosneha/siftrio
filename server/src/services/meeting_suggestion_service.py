@@ -1,11 +1,10 @@
-from datetime import date, datetime, time
+from datetime import date, time
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.models.meeting_suggestion import SuggestionStatus
-from src.repositories.meeting_repository import MeetingRepository
 from src.repositories.meeting_suggestion_repository import MeetingSuggestionRepository
 from src.schemas.meeting_suggestion_schema import MeetingSuggestionResponse
 

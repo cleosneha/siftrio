@@ -3,11 +3,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
-from src.integrations.atlassian_oauth import (
-    create_jira_project,
-    get_current_user,
-    get_jira_projects,
-)
+from src.integrations.atlassian.client import JiraClient
 from src.repositories.project_jira_repository import ProjectJiraRepository
 from src.repositories.project_repository import ProjectRepository
 from src.schemas.jira_schema import (
@@ -50,7 +46,8 @@ class ProjectJiraService:
                 status_code=400,
             )
 
-        projects = await get_jira_projects(integration.cloud_id, access_token)
+        client = JiraClient(integration.cloud_id, access_token)
+        projects = await client.get_projects()
         return [
             JiraProjectItem(
                 id=p["id"],
@@ -117,12 +114,12 @@ class ProjectJiraService:
                 status_code=400,
             )
 
-        user = await get_current_user(integration.cloud_id or "", access_token)
+        client = JiraClient(integration.cloud_id or "", access_token)
+
+        user = await client.get_current_user()
         lead_account_id = user.get("accountId") if user else None
 
-        created = await create_jira_project(
-            cloud_id=integration.cloud_id or "",
-            access_token=access_token,
+        created = await client.create_project(
             key=body.key,
             name=body.name,
             project_type_key=body.project_type_key,

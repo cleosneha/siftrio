@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
-from src.integrations.atlassian_oauth import (
+from src.integrations.atlassian import (
     fetch_token,
     get_accessible_resources,
     get_authorization_url,

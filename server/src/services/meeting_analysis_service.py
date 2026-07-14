@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timezone
+from datetime import date, time
 from uuid import UUID
 
 from langchain_mistralai import ChatMistralAI
@@ -94,10 +94,6 @@ class MeetingAnalysisService:
             future_meetings=result.future_meetings,
         )
 
-        now = datetime.now(timezone.utc)
-        analysis.generated_at = now
-        await self.db.flush()
-
         await self.knowledge_service.extract_from_analysis(
             meeting_id=meeting_id,
             requirements=[r.model_dump() for r in result.requirements] if result.requirements else None,
@@ -142,8 +138,6 @@ class MeetingAnalysisService:
 
             await self.suggestion_repo.create(
                 meeting_id=meeting.id,
-                client_id=meeting.client_id,
-                project_id=meeting.project_id,
                 title=item.title,
                 description=item.description,
                 suggested_date=parsed_date,

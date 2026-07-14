@@ -4,7 +4,6 @@ from fastapi import HTTPException
 from sqlalchemy import exists, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.client import Client
 from src.models.client_member import ClientMember
 from src.models.project import Project
 from src.models.project_member import ProjectMember
@@ -12,8 +11,6 @@ from src.models.workspace_member import MemberRole, WorkspaceMember
 from src.repositories.client_member_repository import ClientMemberRepository
 from src.repositories.project_member_repository import ProjectMemberRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
-from src.repositories.member_invitation_repository import MemberInvitationRepository
-from src.models.member_invitation import ResourceType
 from src.schemas.membership_schema import MemberResponse
 
 
@@ -23,7 +20,6 @@ class MembershipService:
         self.ws_member_repo = WorkspaceMemberRepository(db)
         self.client_member_repo = ClientMemberRepository(db)
         self.project_member_repo = ProjectMemberRepository(db)
-        self.invitation_repo = MemberInvitationRepository(db)
 
     async def assert_workspace_access(self, workspace_id: UUID, user_id: UUID) -> None:
         result = await self.db.execute(

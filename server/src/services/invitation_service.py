@@ -9,10 +9,8 @@ from src.email.sender import sender
 from src.exceptions.base import BaseAPIException
 from src.models.member_invitation import (
     InvitationStatus,
-    MemberInvitation,
     ResourceType,
 )
-from src.models.workspace_member import MemberRole
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.member_invitation_repository import MemberInvitationRepository
 from src.repositories.client_member_repository import ClientMemberRepository
