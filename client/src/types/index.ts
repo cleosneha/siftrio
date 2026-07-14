@@ -83,7 +83,6 @@ export interface MeetingAnalysis {
   risks: string[];
   blockers: string[];
   future_meetings: string[];
-  generated_at: string | null;
 }
 
 export interface KnowledgeBase {
@@ -109,6 +108,12 @@ export interface Requirement extends KnowledgeBase {
 export interface ActionItem extends KnowledgeBase {
   assignee: string | null;
   due_date: string | null;
+  jira_issue_id: string | null;
+  jira_issue_key: string | null;
+  jira_issue_url: string | null;
+  jira_issue_type: string | null;
+  jira_synced_at: string | null;
+  sync_status: string | null;
 }
 
 export interface Decision extends KnowledgeBase {
