@@ -15,6 +15,9 @@ class ClientMemberRepository:
     async def create(
         self, client_id: UUID, user_id: UUID, role: MemberRole = MemberRole.MEMBER
     ) -> ClientMember:
+        existing = await self.get_by_user_and_client(client_id, user_id)
+        if existing:
+            return existing
         member = ClientMember(client_id=client_id, user_id=user_id, role=role)
         self._db.add(member)
         await self._db.flush()

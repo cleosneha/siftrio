@@ -15,6 +15,9 @@ class ProjectMemberRepository:
     async def create(
         self, project_id: UUID, user_id: UUID, role: MemberRole = MemberRole.MEMBER
     ) -> ProjectMember:
+        existing = await self.get_by_user_and_project(project_id, user_id)
+        if existing:
+            return existing
         member = ProjectMember(project_id=project_id, user_id=user_id, role=role)
         self._db.add(member)
         await self._db.flush()

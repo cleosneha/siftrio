@@ -70,19 +70,3 @@ class MemberInvitationRepository:
             .order_by(MemberInvitation.created_at.desc())
         )
         return list(result.scalars().all())
-
-    async def update_status(
-        self, invitation_id: UUID, status: InvitationStatus, accepted_at=None
-    ) -> MemberInvitation | None:
-        result = await self._db.execute(
-            select(MemberInvitation).where(MemberInvitation.id == invitation_id)
-        )
-        invitation = result.scalar_one_or_none()
-        if invitation is None:
-            return None
-        invitation.status = status
-        if accepted_at:
-            invitation.accepted_at = accepted_at
-        await self._db.flush()
-        await self._db.refresh(invitation)
-        return invitation

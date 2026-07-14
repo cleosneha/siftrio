@@ -1,10 +1,10 @@
 from datetime import date, time
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.meeting_suggestion import MeetingSuggestion, SuggestionStatus
+from src.models.meeting_suggestion import MeetingSuggestion
 
 
 class MeetingSuggestionRepository:
@@ -14,8 +14,6 @@ class MeetingSuggestionRepository:
     async def create(
         self,
         meeting_id: UUID,
-        client_id: UUID,
-        project_id: UUID | None,
         title: str,
         description: str | None,
         suggested_date: date | None,
@@ -26,8 +24,6 @@ class MeetingSuggestionRepository:
     ) -> MeetingSuggestion:
         suggestion = MeetingSuggestion(
             meeting_id=meeting_id,
-            client_id=client_id,
-            project_id=project_id,
             title=title,
             description=description,
             suggested_date=suggested_date,
@@ -54,16 +50,3 @@ class MeetingSuggestionRepository:
             select(MeetingSuggestion).where(MeetingSuggestion.id == suggestion_id)
         )
         return result.scalar_one_or_none()
-
-    async def update_status(
-        self,
-        suggestion_id: UUID,
-        status: SuggestionStatus,
-    ) -> MeetingSuggestion | None:
-        suggestion = await self.get_by_id(suggestion_id)
-        if suggestion is None:
-            return None
-        suggestion.status = status
-        await self._db.flush()
-        await self._db.refresh(suggestion)
-        return suggestion

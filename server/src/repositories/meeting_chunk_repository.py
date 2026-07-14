@@ -36,14 +36,6 @@ class MeetingChunkRepository:
         await self._db.refresh(chunk)
         return chunk
 
-    async def list_by_meeting(self, meeting_id: UUID) -> list[MeetingChunk]:
-        result = await self._db.execute(
-            select(MeetingChunk)
-            .where(MeetingChunk.meeting_id == meeting_id)
-            .order_by(MeetingChunk.chunk_index)
-        )
-        return list(result.scalars().all())
-
     async def delete_by_meeting(self, meeting_id: UUID) -> None:
         await self._db.execute(
             delete(MeetingChunk).where(MeetingChunk.meeting_id == meeting_id)

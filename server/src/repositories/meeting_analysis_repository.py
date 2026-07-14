@@ -74,7 +74,6 @@ class MeetingAnalysisRepository:
             existing.risks = risks or []
             existing.blockers = blockers or []
             existing.future_meetings = future_meetings or []
-            existing.generated_at = None
             await self._db.flush()
             await self._db.refresh(existing)
             return existing

@@ -30,29 +30,6 @@ class ClientRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_by_user_id(self, user_id: UUID, workspace_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Client]:
-        from src.models.client_member import ClientMember
-        from src.models.project_member import ProjectMember
-        client_member_exists = exists().where(
-            and_(
-                ClientMember.client_id == Client.id,
-                ClientMember.user_id == user_id,
-            )
-        )
-        project_member_exists = exists().where(
-            and_(
-                ProjectMember.user_id == user_id,
-                Project.id == ProjectMember.project_id,
-                Project.client_id == Client.id,
-            )
-        )
-        query = select(Client).where(client_member_exists | project_member_exists)
-        if workspace_id is not None:
-            query = query.where(Client.workspace_id == workspace_id)
-        query = query.order_by(Client.created_at.desc()).limit(limit).offset(offset)
-        result = await self._db.execute(query)
-        return list(result.scalars().all())
-
     async def list_with_project_counts(
         self, workspace_id: UUID | None = None, limit: int = 50, offset: int = 0
     ) -> list[tuple[Client, int]]:

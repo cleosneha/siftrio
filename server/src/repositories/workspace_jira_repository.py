@@ -57,9 +57,3 @@ class WorkspaceJiraRepository:
     async def delete(self, integration: WorkspaceJira) -> None:
         await self._db.delete(integration)
         await self._db.flush()
-
-    async def list_by_workspace_ids(self, workspace_ids: list[UUID]) -> list[WorkspaceJira]:
-        result = await self._db.execute(
-            select(WorkspaceJira).where(WorkspaceJira.workspace_id.in_(workspace_ids))
-        )
-        return list(result.scalars().all())
