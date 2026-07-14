@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -73,11 +71,6 @@ class MeetingAnalysis(UUIDMixin, TimestampMixin, Base):
         JSONB,
         nullable=False,
         default=list,
-    )
-
-    generated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
     )
 
     meeting = relationship(

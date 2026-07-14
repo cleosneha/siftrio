@@ -23,18 +23,6 @@ class MeetingSuggestion(UUIDMixin, TimestampMixin, Base):
         nullable=False,
     )
 
-    client_id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("clients.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    project_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-
     title: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
