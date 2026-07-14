@@ -30,7 +30,7 @@ class ActionItemJiraService:
         self.knowledge_repo = KnowledgeRepository(db)
         self.workspace_jira_service = WorkspaceJiraService(db)
 
-    async def _resolve_jira_integration(self, project_id: UUID) -> tuple[str, str, str]:
+    async def _resolve_jira_integration(self, project_id: UUID) -> tuple[str, str, str, str]:
         project = await self.project_repo.get_by_id(project_id)
         if project is None:
             raise BaseAPIException(message="Project not found", status_code=404)
@@ -63,7 +63,12 @@ class ActionItemJiraService:
                 status_code=400,
             )
 
-        return integration.cloud_id, access_token, project_jira.jira_project_key
+        return (
+            integration.cloud_id,
+            access_token,
+            project_jira.jira_project_id,
+            project_jira.jira_project_key,
+        )
 
     async def get_preview(self, action_item_id: UUID) -> ActionItemJiraPreview:
         entity = await self.knowledge_repo.get_action_item(action_item_id)
@@ -98,24 +103,23 @@ class ActionItemJiraService:
     async def get_issue_types(
         self, project_id: UUID,
     ) -> list[JiraIssueType]:
-        cloud_id, access_token, jira_project_key = await self._resolve_jira_integration(project_id)
+        cloud_id, access_token, jira_project_id, _jira_project_key = await self._resolve_jira_integration(project_id)
         client = JiraClient(cloud_id, access_token)
-        raw = await client.get_issue_types(jira_project_key)
+        raw = await client.get_issue_types(jira_project_id)
         return [
             JiraIssueType(
-                id=t["id"],
+                id=str(t["id"]),
                 name=t["name"],
                 description=t.get("description"),
                 subtask=t.get("subtask", False),
             )
             for t in raw
-            if not t.get("subtask", False)
         ]
 
     async def search_users(
         self, project_id: UUID, query: str,
     ) -> list[JiraUser]:
-        cloud_id, access_token, jira_project_key = await self._resolve_jira_integration(project_id)
+        cloud_id, access_token, _jira_project_id, jira_project_key = await self._resolve_jira_integration(project_id)
         client = JiraClient(cloud_id, access_token)
         raw = await client.search_users(query, project=jira_project_key)
         return [
@@ -143,7 +147,7 @@ class ActionItemJiraService:
                 status_code=409,
             )
 
-        cloud_id, access_token, jira_project_key = await self._resolve_jira_integration(
+        cloud_id, access_token, _jira_project_id, jira_project_key = await self._resolve_jira_integration(
             entity.project_id,
         )
 

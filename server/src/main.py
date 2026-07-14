@@ -9,8 +9,10 @@ from src.exceptions.base import BaseAPIException
 from src.exceptions.handlers import (
     base_exception_handler,
     global_exception_handler,
+    jira_api_exception_handler,
     validation_exception_handler,
 )
+from src.integrations.atlassian.client import JiraAPIError
 from fastapi.exceptions import RequestValidationError
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -43,6 +45,7 @@ def register_middleware(app: FastAPI) -> None:
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(BaseAPIException, base_exception_handler)
+    app.add_exception_handler(JiraAPIError, jira_api_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, global_exception_handler)
 

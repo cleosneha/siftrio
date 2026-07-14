@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from src.exceptions.base import BaseAPIException
+from src.integrations.atlassian.client import JiraAPIError
 from src.schemas.base_response import ErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,16 @@ async def base_exception_handler(request: Request, exc: BaseAPIException) -> JSO
         content=ErrorResponse(
             message=exc.message,
             errors=exc.errors,
+        ).model_dump(),
+    )
+
+
+async def jira_api_exception_handler(request: Request, exc: JiraAPIError) -> JSONResponse:
+    logger.error("Jira API error [%s]: %s", exc.status_code, exc.body[:500])
+    return JSONResponse(
+        status_code=502,
+        content=ErrorResponse(
+            message=f"Jira API error: {exc.status_code}",
         ).model_dump(),
     )
 

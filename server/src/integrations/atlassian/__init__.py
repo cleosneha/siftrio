@@ -1,4 +1,4 @@
-from src.integrations.atlassian.client import JiraClient
+from src.integrations.atlassian.client import JiraClient, JiraAPIError
 from src.integrations.atlassian.oauth import (
     fetch_token,
     get_accessible_resources,
@@ -8,6 +8,7 @@ from src.integrations.atlassian.oauth import (
 )
 
 __all__ = [
+    "JiraAPIError",
     "JiraClient",
     "fetch_token",
     "get_accessible_resources",

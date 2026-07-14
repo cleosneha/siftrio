@@ -126,11 +126,6 @@ class ProjectJiraService:
             template_key=body.template_key,
             lead_account_id=lead_account_id,
         )
-        if created is None:
-            raise BaseAPIException(
-                message="Failed to create Jira project. Check permissions and try again.",
-                status_code=400,
-            )
 
         try:
             mapping = await self.repo.create(

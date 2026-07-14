@@ -7,6 +7,13 @@ API_BASE = "https://api.atlassian.com"
 logger = logging.getLogger(__name__)
 
 
+class JiraAPIError(Exception):
+    def __init__(self, status_code: int, body: str) -> None:
+        self.status_code = status_code
+        self.body = body
+        super().__init__(f"Jira API error {status_code}: {body[:300]}")
+
+
 class JiraClient:
     def __init__(self, cloud_id: str, access_token: str) -> None:
         self.cloud_id = cloud_id
@@ -28,15 +35,10 @@ class JiraClient:
             return None
 
     async def get_projects(self) -> list[dict]:
-        try:
-            resp = await self._client.get(self._url("/project/search"), params={"maxResults": 100})
-            if resp.status_code == 200:
-                return resp.json().get("values", [])
-            logger.error("Failed to fetch Jira projects: %s %s", resp.status_code, resp.text)
-            return []
-        except Exception as exc:
-            logger.error("Failed to fetch Jira projects: %s", exc)
-            return []
+        resp = await self._client.get(self._url("/project/search"), params={"maxResults": 100})
+        if resp.status_code == 200:
+            return resp.json().get("values", [])
+        raise JiraAPIError(resp.status_code, resp.text)
 
     async def create_project(
         self,
@@ -45,7 +47,7 @@ class JiraClient:
         project_type_key: str = "software",
         template_key: str = "com.pyxis.greenhopper.jira:gh-simplified-agility-scrum",
         lead_account_id: str | None = None,
-    ) -> dict | None:
+    ) -> dict:
         payload: dict[str, object] = {
             "key": key,
             "name": name,
@@ -56,33 +58,26 @@ class JiraClient:
         if lead_account_id:
             payload["leadAccountId"] = lead_account_id
 
-        try:
-            resp = await self._client.post(self._url("/project"), json=payload)
-            if resp.status_code == 201:
-                return resp.json()
-            body = resp.text or "no body"
-            logger.error(
-                "Jira create project failed [%s] payload=%s body=%s",
-                resp.status_code, payload, body,
-            )
-            return None
-        except Exception as exc:
-            logger.error("Failed to create Jira project: %s", exc)
-            return None
+        resp = await self._client.post(self._url("/project"), json=payload)
+        if resp.status_code == 201:
+            return resp.json()
+        raise JiraAPIError(resp.status_code, resp.text)
 
-    async def get_issue_types(self, project_id_or_key: str) -> list[dict]:
-        try:
-            resp = await self._client.get(
-                self._url("/issuetype/project"),
-                params={"projectIdOrKey": project_id_or_key},
-            )
-            if resp.status_code == 200:
-                return resp.json()
-            logger.error("Failed to fetch issue types: %s %s", resp.status_code, resp.text)
-            return []
-        except Exception as exc:
-            logger.error("Failed to fetch issue types: %s", exc)
-            return []
+    async def get_issue_types(self, jira_project_id: str) -> list[dict]:
+        resp = await self._client.get(
+            self._url(f"/project/{jira_project_id}/hierarchy"),
+        )
+        if resp.status_code == 200:
+            body = resp.json()
+            hierarchy = body.get("hierarchy", [])
+            issue_types = []
+            for level in hierarchy:
+                if level.get("level", 0) == -1:
+                    continue
+                for it in level.get("issueTypes", []):
+                    issue_types.append(it)
+            return issue_types
+        raise JiraAPIError(resp.status_code, resp.text)
 
     async def search_users(
         self,
@@ -97,28 +92,14 @@ class JiraClient:
         params: dict[str, object] = {"query": query, "maxResults": 10}
         if project and not global_search:
             params["project"] = project
-        try:
-            resp = await self._client.get(url, params=params)
-            if resp.status_code == 200:
-                return resp.json()
-            logger.error("Failed to search Jira users: %s %s", resp.status_code, resp.text)
-            return []
-        except Exception as exc:
-            logger.error("Failed to search Jira users: %s", exc)
-            return []
+        resp = await self._client.get(url, params=params)
+        if resp.status_code == 200:
+            return resp.json()
+        raise JiraAPIError(resp.status_code, resp.text)
 
-    async def create_issue(self, fields: dict) -> dict | None:
+    async def create_issue(self, fields: dict) -> dict:
         payload: dict[str, object] = {"fields": fields}
-        try:
-            resp = await self._client.post(self._url("/issue"), json=payload)
-            if resp.status_code == 201:
-                return resp.json()
-            body = resp.text or "no body"
-            logger.error(
-                "Jira create issue failed [%s] payload=%s body=%s",
-                resp.status_code, payload, body,
-            )
-            return None
-        except Exception as exc:
-            logger.error("Failed to create Jira issue: %s", exc)
-            return None
+        resp = await self._client.post(self._url("/issue"), json=payload)
+        if resp.status_code == 201:
+            return resp.json()
+        raise JiraAPIError(resp.status_code, resp.text)

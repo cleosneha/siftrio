@@ -133,6 +133,9 @@ export function useActionItemJiraIssueTypes(projectId: string | undefined, actio
     queryKey: ["action-item-jira-issue-types", projectId, actionItemId],
     queryFn: () => jiraService.getActionItemJiraIssueTypes(projectId!, actionItemId!),
     enabled: !!projectId && !!actionItemId,
+    onError: () => {
+      toast.error("Failed to load Jira issue types");
+    },
   });
 }
 
