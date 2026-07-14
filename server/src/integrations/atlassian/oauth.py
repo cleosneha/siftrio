@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timezone
-from urllib.parse import urlencode
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from authlib.oauth2.rfc6749 import OAuth2Token
@@ -88,90 +87,6 @@ async def get_accessible_resources(access_token: str) -> list[dict]:
     except Exception as exc:
         logger.error("Failed to fetch accessible resources: %s", exc)
         return []
-
-
-async def get_current_user(
-    cloud_id: str,
-    access_token: str,
-) -> dict | None:
-    client = _create_client()
-    client.token = {"access_token": access_token, "token_type": "Bearer"}
-    try:
-        resp = await client.get(
-            f"{API_BASE}/ex/jira/{cloud_id}/rest/api/3/myself"
-        )
-        if resp.status_code == 200:
-            return resp.json()
-        logger.error(
-            "Failed to fetch current user: %s %s",
-            resp.status_code, resp.text,
-        )
-        return None
-    except Exception as exc:
-        logger.error("Failed to fetch current user: %s", exc)
-        return None
-
-
-async def get_jira_projects(
-    cloud_id: str,
-    access_token: str,
-) -> list[dict]:
-    client = _create_client()
-    client.token = {"access_token": access_token, "token_type": "Bearer"}
-    url = f"{API_BASE}/ex/jira/{cloud_id}/rest/api/3/project/search"
-    try:
-        resp = await client.get(url, params={"maxResults": 100})
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get("values", [])
-        logger.error(
-            "Failed to fetch Jira projects: %s %s",
-            resp.status_code, resp.text,
-        )
-        return []
-    except Exception as exc:
-        logger.error("Failed to fetch Jira projects: %s", exc)
-        return []
-
-
-async def create_jira_project(
-    cloud_id: str,
-    access_token: str,
-    key: str,
-    name: str,
-    project_type_key: str = "software",
-    template_key: str = "com.pyxis.greenhopper.jira:gh-simplified-agility-scrum",
-    lead_account_id: str | None = None,
-) -> dict | None:
-    client = _create_client()
-    client.token = {"access_token": access_token, "token_type": "Bearer"}
-    url = f"{API_BASE}/ex/jira/{cloud_id}/rest/api/3/project"
-    payload: dict[str, object] = {
-        "key": key,
-        "name": name,
-        "projectTypeKey": project_type_key,
-    }
-    if template_key:
-        payload["projectTemplateKey"] = template_key
-    if lead_account_id:
-        payload["leadAccountId"] = lead_account_id
-
-    try:
-        resp = await client.post(url, json=payload)
-        if resp.status_code == 201:
-            return resp.json()
-        try:
-            body = resp.text or "no body"
-        except Exception:
-            body = "unreadable body"
-        logger.error(
-            "Jira create project failed [%s] payload=%s body=%s",
-            resp.status_code, payload, body,
-        )
-        return None
-    except Exception as exc:
-        logger.error("Failed to create Jira project: %s", exc)
-        return None
 
 
 def is_token_expired(expires_at: float | None) -> bool:
