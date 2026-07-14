@@ -98,4 +98,22 @@ class ActionItemJiraCreateResponse(BaseModel):
     issue_url: str
 
 
+class JiraIssueDetailsResponse(BaseModel):
+    issue_id: str
+    issue_key: str
+    summary: str
+    description: str | None = None
+    status: str | None = None
+    status_category: str | None = None
+    issue_type: str | None = None
+    priority: str | None = None
+    assignee: str | None = None
+    assignee_email: str | None = None
+    reporter: str | None = None
+    labels: list[str] = []
+    created: str | None = None
+    updated: str | None = None
+    url: str
+
+
 

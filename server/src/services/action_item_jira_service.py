@@ -14,6 +14,7 @@ from src.schemas.jira_schema import (
     ActionItemJiraCreateRequest,
     ActionItemJiraCreateResponse,
     ActionItemJiraPreview,
+    JiraIssueDetailsResponse,
     JiraIssueType,
     JiraUser,
 )
@@ -100,6 +101,62 @@ class ActionItemJiraService:
             assignee=entity.assignee,
         )
 
+    async def get_issue_details(
+        self, project_id: UUID, action_item_id: UUID,
+    ) -> JiraIssueDetailsResponse:
+        entity = await self.knowledge_repo.get_action_item(action_item_id)
+        if entity is None:
+            raise BaseAPIException(message="Action item not found", status_code=404)
+
+        if not entity.jira_issue_id:
+            raise BaseAPIException(
+                message="Action item has no linked Jira issue",
+                status_code=400,
+            )
+
+        cloud_id, access_token, _jira_project_id, _jira_project_key = await self._resolve_jira_integration(project_id)
+        client = JiraClient(cloud_id, access_token)
+        raw = await client.get_issue(entity.jira_issue_key or entity.jira_issue_id)
+
+        fields = raw.get("fields", {})
+
+        def _extract_text(field_value: object) -> str | None:
+            if not field_value or not isinstance(field_value, dict):
+                return None
+            parts: list[str] = []
+            for block in field_value.get("content", []):
+                for item in block.get("content", []):
+                    if item.get("type") == "text":
+                        parts.append(item.get("text", ""))
+            return "\n".join(parts) if parts else None
+
+        status_obj = fields.get("status", {})
+        status_category_obj = fields.get("statusCategory", {})
+        issue_type_obj = fields.get("issuetype", {})
+        priority_obj = fields.get("priority", {})
+        assignee_obj = fields.get("assignee")
+        reporter_obj = fields.get("reporter")
+
+        issue_key = str(raw.get("key", ""))
+
+        return JiraIssueDetailsResponse(
+            issue_id=str(raw.get("id", "")),
+            issue_key=issue_key,
+            summary=fields.get("summary", ""),
+            description=_extract_text(fields.get("description")),
+            status=status_obj.get("name"),
+            status_category=status_category_obj.get("name"),
+            issue_type=issue_type_obj.get("name"),
+            priority=priority_obj.get("name"),
+            assignee=assignee_obj.get("displayName") if assignee_obj else None,
+            assignee_email=assignee_obj.get("emailAddress") if assignee_obj else None,
+            reporter=reporter_obj.get("displayName") if reporter_obj else None,
+            labels=fields.get("labels", []),
+            created=fields.get("created"),
+            updated=fields.get("updated"),
+            url=entity.jira_issue_url or "",
+        )
+
     async def get_issue_types(
         self, project_id: UUID,
     ) -> list[JiraIssueType]:
@@ -175,11 +232,10 @@ class ActionItemJiraService:
 
         client = JiraClient(cloud_id, access_token)
         result = await client.create_issue(fields)
-        if result is None:
-            raise BaseAPIException(
-                message="Failed to create Jira issue. Check logs for details.",
-                status_code=502,
-            )
+        logger.warning(
+            "[JIRA-CREATE] action_item=%s result=%s",
+            action_item_id, result,
+        )
 
         issue_id = str(result.get("id", ""))
         issue_key = str(result.get("key", ""))

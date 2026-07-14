@@ -33,6 +33,8 @@ class MeetingAnalysisResponse(BaseModel):
     risks: list = []
     blockers: list = []
     future_meetings: list = []
+    created_at: str | None = None
+    updated_at: str | None = None
 
 class RequirementItem(BaseModel):
     title: str = Field(description="Requirement title")

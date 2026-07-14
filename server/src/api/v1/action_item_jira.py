@@ -86,3 +86,17 @@ async def create_jira_issue_from_action_item(
 
     data = await service.create_issue(action_item_id, body, site_url=site_url)
     return BaseResponse(message="Jira issue created", data=data)
+
+
+@router.get("/projects/{project_id}/action-items/{action_item_id}/jira/issue", response_model=BaseResponse)
+async def get_jira_issue_details(
+    project_id: UUID,
+    action_item_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_project_access(project_id, user_id)
+    service = ActionItemJiraService(db)
+    data = await service.get_issue_details(project_id, action_item_id)
+    return BaseResponse(data=data)

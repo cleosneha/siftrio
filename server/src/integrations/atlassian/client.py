@@ -97,6 +97,12 @@ class JiraClient:
             return resp.json()
         raise JiraAPIError(resp.status_code, resp.text)
 
+    async def get_issue(self, issue_id_or_key: str) -> dict:
+        resp = await self._client.get(self._url(f"/issue/{issue_id_or_key}"))
+        if resp.status_code == 200:
+            return resp.json()
+        raise JiraAPIError(resp.status_code, resp.text)
+
     async def create_issue(self, fields: dict) -> dict:
         payload: dict[str, object] = {"fields": fields}
         resp = await self._client.post(self._url("/issue"), json=payload)
