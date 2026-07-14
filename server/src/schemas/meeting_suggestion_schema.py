@@ -19,8 +19,6 @@ class MeetingSuggestionResponse(BaseModel):
 
     id: UUID
     meeting_id: UUID
-    client_id: UUID
-    project_id: UUID | None = None
     title: str
     description: str | None = None
     suggested_date: date | None = None

@@ -43,7 +43,6 @@ class ProjectJiraResponse(BaseModel):
     jira_project_key: str
     jira_project_name: str
     jira_project_type: str | None = None
-    connected_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -60,3 +59,43 @@ class ConnectJiraProjectRequest(BaseModel):
     jira_project_key: str
     jira_project_name: str
     jira_project_type: str | None = None
+
+
+class JiraIssueType(BaseModel):
+    id: str
+    name: str
+    description: str | None = None
+    subtask: bool = False
+
+
+class JiraUser(BaseModel):
+    account_id: str
+    display_name: str
+    email_address: str | None = None
+
+
+class ActionItemJiraPreview(BaseModel):
+    summary: str
+    description: str
+    issue_type: str
+    priority: str
+    labels: list[str] = []
+    assignee: str | None = None
+
+
+class ActionItemJiraCreateRequest(BaseModel):
+    summary: str
+    description: str
+    issue_type_id: str
+    priority: str
+    labels: list[str] = []
+    assignee_account_id: str | None = None
+
+
+class ActionItemJiraCreateResponse(BaseModel):
+    issue_id: str
+    issue_key: str
+    issue_url: str
+
+
+

@@ -63,6 +63,12 @@ class ActionItemUpdate(BaseModel):
 class ActionItemResponse(KnowledgeBaseResponse):
     assignee: str | None = None
     due_date: datetime | None = None
+    jira_issue_id: str | None = None
+    jira_issue_key: str | None = None
+    jira_issue_url: str | None = None
+    jira_issue_type: str | None = None
+    jira_synced_at: datetime | None = None
+    sync_status: str | None = None
 
 
 class DecisionCreate(BaseModel):
