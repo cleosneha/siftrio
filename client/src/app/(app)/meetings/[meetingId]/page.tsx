@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { knowledgeService } from "@/features/knowledge/services/knowledge.service";
 import { useProjectJira } from "@/features/jira/hooks/useJira";
 import { JiraPreviewModal } from "@/features/jira/components/JiraPreviewModal";
+import { JiraIssueDetailsModal } from "@/features/jira/components/JiraIssueDetailsModal";
 import type { ActionItem } from "@/types";
 import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
 
@@ -95,6 +96,7 @@ export default function MeetingPage() {
   const dismissSuggestion = useDismissSuggestion();
 
   const [jiraItem, setJiraItem] = useState<ActionItem | null>(null);
+  const [detailsItem, setDetailsItem] = useState<ActionItem | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<{
     title: string;
     suggested_date: string | null;
@@ -177,10 +179,10 @@ export default function MeetingPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {analysis?.generated_at && (
+            {analysis?.created_at && (
               <p className="text-xs text-muted-foreground">
                 Generated{" "}
-                {new Date(analysis.generated_at).toLocaleDateString()}
+                {new Date(analysis.created_at).toLocaleDateString()}
               </p>
             )}
             <Button
@@ -458,15 +460,14 @@ export default function MeetingPage() {
                             {ai.assignee && <span>Assignee: {ai.assignee}</span>}
                             {ai.due_date && <span>Due: {new Date(ai.due_date).toLocaleDateString()}</span>}
                             {ai.jira_issue_url && ai.sync_status === "synced" ? (
-                              <a
-                                href={ai.jira_issue_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-primary hover:underline"
+                              <button
+                                type="button"
+                                onClick={() => setDetailsItem(ai)}
+                                className="inline-flex items-center gap-1 text-xs hover:text-foreground"
                               >
                                 <ExternalLink className="h-3 w-3" />
-                                View in Jira
-                              </a>
+                                View Issue
+                              </button>
                             ) : (
                               <button
                                 type="button"
@@ -539,6 +540,13 @@ export default function MeetingPage() {
         onClose={() => setJiraItem(null)}
         projectId={projectId ?? ""}
         actionItemId={jiraItem?.id ?? ""}
+      />
+
+      <JiraIssueDetailsModal
+        open={!!detailsItem}
+        onClose={() => setDetailsItem(null)}
+        projectId={projectId ?? ""}
+        actionItemId={detailsItem?.id ?? ""}
       />
 
       <CreateMeetingModal
