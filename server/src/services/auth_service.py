@@ -183,5 +183,6 @@ class AuthService:
             ),
             scopes=token_data.get("scope") or integration.scopes,
         )
+        await self.repo._db.commit()
 
         return token_data["access_token"]

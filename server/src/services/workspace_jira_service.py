@@ -31,6 +31,8 @@ class WorkspaceJiraService:
         integration = await self.repo.get_by_workspace(workspace_id)
         if integration is None:
             return None
+        await self.get_valid_access_token(workspace_id)
+        integration = await self.repo.get_by_workspace(workspace_id)
         return WorkspaceJiraResponse.model_validate(integration).model_dump()
 
     async def get_or_create_oauth_url(self, workspace_id: UUID, user_id: UUID) -> str:
@@ -43,12 +45,19 @@ class WorkspaceJiraService:
                 )
             refreshed = await refresh_access_token(integration.refresh_token or "")
             if refreshed:
+                expires_at_ts = refreshed.get("expires_at")
+                new_expires_at = (
+                    datetime.fromtimestamp(expires_at_ts, tz=timezone.utc)
+                    if isinstance(expires_at_ts, (int, float))
+                    else expires_at_ts
+                )
                 await self.repo.update(
                     integration,
                     access_token=refreshed["access_token"],
                     refresh_token=refreshed.get("refresh_token") or integration.refresh_token,
-                    token_expires_at=refreshed.get("expires_at"),
+                    token_expires_at=new_expires_at,
                 )
+                await self.db.commit()
                 return ""
 
         workspace = await self.workspace_repo.get_by_id(workspace_id)
