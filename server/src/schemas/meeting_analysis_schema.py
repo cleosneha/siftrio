@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -33,8 +34,8 @@ class MeetingAnalysisResponse(BaseModel):
     risks: list = []
     blockers: list = []
     future_meetings: list = []
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 class RequirementItem(BaseModel):
     title: str = Field(description="Requirement title")
