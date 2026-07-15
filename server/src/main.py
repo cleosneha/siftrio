@@ -37,6 +37,7 @@ def create_app() -> FastAPI:
     register_middleware(app)
     register_exception_handlers(app)
     register_routes(app)
+    _build_assistant_graph()
 
     return app
 
@@ -64,6 +65,23 @@ def register_routes(app: FastAPI) -> None:
     prefix = f"/api"
     app.include_router(api_router, prefix=prefix)
     mount_mcp(app)
+
+
+def _build_assistant_graph() -> None:
+    from src.agents.project_chat.graph import build_graph
+    from src.mcp.server import get_dispatcher
+    from src.mcp.registry import ToolRegistry, TOOL_MODULES
+    import importlib
+
+    dispatcher = get_dispatcher()
+
+    specs = []
+    for module_path in TOOL_MODULES:
+        module = importlib.import_module(module_path)
+        if hasattr(module, "TOOL_SPECS"):
+            specs.extend(module.TOOL_SPECS)
+
+    build_graph(dispatcher, specs)
 
 
 app = create_app()

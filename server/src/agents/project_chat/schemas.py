@@ -104,3 +104,14 @@ class RetrievedContext(BaseModel):
     chunks: list[RetrievedChunk] = Field(default_factory=list, description="Vector search results")
     meetings: list[RetrievedMeeting] = Field(default_factory=list, description="Meeting analysis results")
     knowledge: list[RetrievedKnowledge] = Field(default_factory=list, description="Knowledge entity results")
+
+
+class ToolCall(BaseModel):
+    tool: str = Field(description="Name of the MCP tool to invoke")
+    args: dict = Field(default_factory=dict, description="Arguments to pass to the tool")
+
+
+class ToolPlan(BaseModel):
+    tool_calls: list[ToolCall] = Field(default_factory=list, description="MCP tools to invoke")
+    rag_needed: bool = Field(default=True, description="Whether RAG retrieval is needed")
+    rag_query: str | None = Field(default=None, description="Search query for RAG if needed")
