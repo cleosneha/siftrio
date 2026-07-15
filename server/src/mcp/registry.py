@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import importlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from src.mcp.schemas.common import ToolSpec
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
+
+    from src.mcp.dispatcher import MCPDispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +25,14 @@ TOOL_MODULES = [
 
 
 class ToolRegistry:
-    def __init__(self, mcp_server: "FastMCP") -> None:
+    def __init__(
+        self,
+        mcp_server: FastMCP,
+        dispatcher: MCPDispatcher,
+    ) -> None:
         self.mcp = mcp_server
+        self.dispatcher = dispatcher
+        self._specs: list[ToolSpec] = []
         self._registered: list[str] = []
 
     def register_all(self) -> None:
@@ -28,14 +40,11 @@ class ToolRegistry:
             try:
                 module = importlib.import_module(module_path)
                 if hasattr(module, "register"):
-                    module.register(self.mcp)
+                    module.register(self.mcp, self.dispatcher)
                     self._registered.append(module_path)
                     logger.info("Registered MCP tool module: %s", module_path)
-                else:
-                    logger.debug(
-                        "MCP tool module %s has no register() function, skipping",
-                        module_path,
-                    )
+                if hasattr(module, "TOOL_SPECS"):
+                    self._specs.extend(module.TOOL_SPECS)
             except ImportError:
                 logger.debug(
                     "MCP tool module %s not found, skipping", module_path
@@ -46,9 +55,16 @@ class ToolRegistry:
                 )
 
         logger.info(
-            "MCP tool registry complete: %d modules registered",
+            "MCP tool registry complete: %d modules registered, %d tool specs",
             len(self._registered),
+            len(self._specs),
         )
+
+    def add_spec(self, spec: ToolSpec) -> None:
+        self._specs.append(spec)
+
+    def all_specs(self) -> list[ToolSpec]:
+        return list(self._specs)
 
     @property
     def registered_modules(self) -> list[str]:

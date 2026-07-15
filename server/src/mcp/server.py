@@ -11,6 +11,7 @@ from src.core.config import settings
 from src.core.database import async_session_factory
 from src.mcp.auth import ApiKeyVerifier
 from src.mcp.context import MCPContext
+from src.mcp.dispatcher import MCPDispatcher
 from src.mcp.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -40,13 +41,27 @@ mcp_server = FastMCP(
 
 mcp_app = mcp_server.streamable_http_app()
 
+_dispatcher: MCPDispatcher | None = None
 
-def mount_mcp(app: FastAPI) -> None:
+
+def get_dispatcher() -> MCPDispatcher:
+    if _dispatcher is None:
+        raise RuntimeError("MCP dispatcher not initialized. Call mount_mcp() first.")
+    return _dispatcher
+
+
+def mount_mcp(app: FastAPI) -> MCPDispatcher:
+    global _dispatcher
+
+    _dispatcher = MCPDispatcher()
+    registry = ToolRegistry(mcp_server, _dispatcher)
+    registry.register_all()
+
     app.mount(
         "/mcp",
         app=mcp_app,
         name="mcp",
     )
-    registry = ToolRegistry(mcp_server)
-    registry.register_all()
     logger.info("MCP server mounted at /mcp")
+
+    return _dispatcher
