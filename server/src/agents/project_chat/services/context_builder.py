@@ -1,4 +1,7 @@
+import json
+
 from src.agents.project_chat.schemas import RetrievedContext
+from src.mcp.schemas.common import ToolResult
 
 _MAX_TOKENS = 6000
 _CHARS_PER_TOKEN = 4
@@ -10,8 +13,24 @@ def _estimate_tokens(text: str) -> int:
 
 class ContextBuilderService:
     @staticmethod
-    def build(context: RetrievedContext) -> str:
+    def build(context: RetrievedContext, tool_results: list[ToolResult] | None = None) -> str:
         sections = []
+
+        if tool_results:
+            lines = ["STRUCTURED DATA"]
+            for tr in tool_results:
+                if tr.success and tr.data:
+                    if isinstance(tr.data, list):
+                        for item in tr.data:
+                            if isinstance(item, dict):
+                                lines.append(f"- {json.dumps(item, default=str)}")
+                            else:
+                                lines.append(f"- {item}")
+                    elif isinstance(tr.data, dict):
+                        lines.append(f"- {json.dumps(tr.data, default=str)}")
+                    else:
+                        lines.append(f"- {tr.data}")
+            sections.append("\n".join(lines))
 
         if context.meetings:
             lines = ["RELEVANT MEETINGS"]
@@ -54,7 +73,7 @@ class ContextBuilderService:
         chunk_lines: list[str] = []
 
         for section in sections:
-            if section.startswith("RELEVANT MEETINGS"):
+            if section.startswith("RELEVANT MEETINGS") or section.startswith("STRUCTURED DATA"):
                 kept_sections.append(section)
                 meeting_count = section.count("\n- ")
             elif section.startswith("SUPPORTING TRANSCRIPT CHUNKS"):

@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator
 
 from langchain_core.messages import AIMessageChunk
 
-from src.agents.project_chat.graph import compiled_graph
+from src.agents.project_chat.graph import get_compiled_graph
 from src.agents.project_chat.schemas import Citation
 from src.agents.project_chat.services.summarizer import ConversationSummarizer
 from src.agents.project_chat.state import ChatState
@@ -26,7 +26,7 @@ class ChatService:
     ) -> None:
         self._db = db
         self._user_context = user_context or {}
-        self._graph = compiled_graph
+        self._graph = get_compiled_graph()
         self._summarizer = ConversationSummarizer()
 
     async def chat(
@@ -49,9 +49,11 @@ class ChatService:
             "user_context": self._user_context,
             "parsed_query": None,
             "retrieval_scope": None,
+            "tool_plan": None,
             "retrieved_chunks": [],
             "meeting_analysis": [],
             "knowledge_entities": [],
+            "tool_results": [],
             "context": None,
             "answer": None,
             "citations": [],
@@ -142,9 +144,11 @@ class ChatService:
             "user_context": self._user_context,
             "parsed_query": None,
             "retrieval_scope": None,
+            "tool_plan": None,
             "retrieved_chunks": [],
             "meeting_analysis": [],
             "knowledge_entities": [],
+            "tool_results": [],
             "context": None,
             "answer": None,
             "citations": [],
@@ -229,9 +233,11 @@ class ChatService:
                 "conversation_summary": summary,
                 "parsed_query": None,
                 "retrieval_scope": None,
+                "tool_plan": None,
                 "retrieved_chunks": [],
                 "meeting_analysis": [],
                 "knowledge_entities": [],
+                "tool_results": [],
                 "context": None,
                 "answer": None,
                 "citations": [],
