@@ -6,12 +6,13 @@ from mcp.server.auth.provider import AccessToken, TokenVerifier
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from src.models.workspace_api_key import WorkspaceApiKey
+from src.models.api_key import ApiKey
+from src.models.workspace_member import WorkspaceMember
 
 logger = logging.getLogger(__name__)
 
 
-class WorkspaceApiKeyVerifier(TokenVerifier):
+class ApiKeyVerifier(TokenVerifier):
     def __init__(self, session_factory: async_sessionmaker) -> None:
         self._session_factory = session_factory
 
@@ -20,9 +21,7 @@ class WorkspaceApiKeyVerifier(TokenVerifier):
 
         async with self._session_factory() as db:
             result = await db.execute(
-                select(WorkspaceApiKey).where(
-                    WorkspaceApiKey.hashed_secret == hashed
-                )
+                select(ApiKey).where(ApiKey.hashed_secret == hashed)
             )
             api_key = result.scalar_one_or_none()
 
@@ -36,19 +35,26 @@ class WorkspaceApiKeyVerifier(TokenVerifier):
             api_key.last_used_at = datetime.now(timezone.utc)
             await db.commit()
 
+            ws_result = await db.execute(
+                select(WorkspaceMember.workspace_id).where(
+                    WorkspaceMember.user_id == api_key.user_id
+                )
+            )
+            workspace_ids = [str(row[0]) for row in ws_result.fetchall()]
+
             logger.info(
-                "API key authenticated: workspace=%s user=%s key=%s",
-                api_key.workspace_id,
-                api_key.created_by,
+                "API key authenticated: user=%s key=%s workspaces=%d",
+                api_key.user_id,
                 api_key.id,
+                len(workspace_ids),
             )
 
             return AccessToken(
                 token=token,
-                client_id=str(api_key.workspace_id),
+                client_id=str(api_key.user_id),
                 scopes=["mcp:read"],
                 claims={
-                    "workspace_id": str(api_key.workspace_id),
-                    "user_id": str(api_key.created_by),
+                    "user_id": str(api_key.user_id),
+                    "workspace_ids": workspace_ids,
                 },
             )

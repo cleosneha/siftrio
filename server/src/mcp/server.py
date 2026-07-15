@@ -9,7 +9,7 @@ from pydantic import AnyHttpUrl
 
 from src.core.config import settings
 from src.core.database import async_session_factory
-from src.mcp.auth import WorkspaceApiKeyVerifier
+from src.mcp.auth import ApiKeyVerifier
 from src.mcp.context import MCPContext
 from src.mcp.registry import ToolRegistry
 
@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 async def mcp_lifespan(server: FastMCP) -> AsyncIterator[MCPContext]:  # type: ignore[type-arg]
     logger.info("MCP server starting up")
     yield MCPContext(
-        workspace_id=None,  # type: ignore[arg-type]
         user_id=None,  # type: ignore[arg-type]
+        workspace_ids=[],
     )
     logger.info("MCP server shutting down")
 
@@ -30,7 +30,7 @@ mcp_server = FastMCP(
     "Siftrio",
     instructions="Siftrio MCP Server - AI Project Memory + SDLC Copilot",
     lifespan=mcp_lifespan,
-    token_verifier=WorkspaceApiKeyVerifier(async_session_factory),
+    token_verifier=ApiKeyVerifier(async_session_factory),
     auth=AuthSettings(
         issuer_url=AnyHttpUrl(settings.BACKEND_URL),
         resource_server_url=AnyHttpUrl(f"{settings.BACKEND_URL}/mcp"),

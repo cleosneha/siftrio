@@ -5,7 +5,7 @@ from mcp.server.fastmcp import Context
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.mcp.context import MCPContext
-from src.mcp.dependencies import get_auth_context, get_session_factory
+from src.mcp.dependencies import get_auth_context
 from src.mcp.schemas.common import ToolResult
 
 logger = logging.getLogger(__name__)
@@ -17,17 +17,18 @@ async def run_tool(
     func: Any,
     **kwargs: Any,
 ) -> ToolResult:
+    from src.core.database import async_session_factory
+
     auth = get_auth_context(ctx)
-    session_factory = get_session_factory(ctx)
 
     logger.info(
-        "mcp.tool.start tool=%s workspace=%s user=%s",
+        "mcp.tool.start tool=%s user=%s workspaces=%d",
         tool_name,
-        auth.workspace_id,
         auth.user_id,
+        len(auth.workspace_ids),
     )
 
-    async with session_factory() as db:
+    async with async_session_factory() as db:
         try:
             result = await func(db=db, auth=auth, **kwargs)
             logger.info("mcp.tool.complete tool=%s", tool_name)

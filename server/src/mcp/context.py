@@ -1,15 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class AuthContext(BaseModel):
-    workspace_id: UUID
     user_id: UUID
+    workspace_ids: list[UUID]
 
 
 @dataclass
 class MCPContext:
-    workspace_id: UUID
     user_id: UUID
+    workspace_ids: list[UUID] = field(default_factory=list)
