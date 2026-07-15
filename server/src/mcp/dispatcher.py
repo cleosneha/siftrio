@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 from uuid import UUID
 
@@ -52,6 +53,7 @@ class MCPDispatcher:
         )
 
         async with async_session_factory() as db:
+            t0 = time.perf_counter()
             try:
                 auth = MCPContext(
                     user_id=context.user_id,
@@ -73,8 +75,19 @@ class MCPDispatcher:
                 auth.resolved_workspace = resolved
 
                 result = await func(db=db, auth=auth, **entity_kwargs, **kwargs)
-                logger.info("mcp.dispatch.complete tool=%s", tool_name)
+                elapsed = (time.perf_counter() - t0) * 1000
+                logger.info(
+                    "mcp.dispatch.complete tool=%s elapsed=%.1fms",
+                    tool_name,
+                    elapsed,
+                )
                 return result
             except Exception as e:
-                logger.error("mcp.dispatch.error tool=%s error=%s", tool_name, str(e))
+                elapsed = (time.perf_counter() - t0) * 1000
+                logger.error(
+                    "mcp.dispatch.error tool=%s elapsed=%.1fms error=%s",
+                    tool_name,
+                    elapsed,
+                    str(e),
+                )
                 raise
