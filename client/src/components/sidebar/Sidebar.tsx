@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Layers, Bot } from "lucide-react";
+import { Plus, Layers, Bot, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,6 +24,7 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
   const { data: workspacesData } = useWorkspaces();
   const workspaces: Workspace[] = workspacesData?.data ?? [];
   const isAssistantActive = pathname === "/assistant";
+  const isSettingsActive = pathname === "/settings";
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -55,6 +56,16 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
         >
           <Bot className="h-4 w-4" />
           <span>AI Assistant</span>
+        </Link>
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+            isSettingsActive && "bg-accent font-medium text-accent-foreground",
+          )}
+        >
+          <Settings className="h-4 w-4" />
+          <span>Settings</span>
         </Link>
       </div>
 
