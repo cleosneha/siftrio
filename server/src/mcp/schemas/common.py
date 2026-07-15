@@ -14,3 +14,16 @@ class PaginatedResult(BaseModel):
     total: int = 0
     limit: int = 50
     offset: int = 0
+
+
+class AmbiguousMatch(BaseModel):
+    workspace_id: str
+    workspace_name: str
+    resource_type: str
+    resource_name: str
+
+
+class AmbiguousResult(BaseModel):
+    status: str = "ambiguous"
+    message: str = "Multiple matching resources found."
+    matches: list[AmbiguousMatch] = Field(default_factory=list)

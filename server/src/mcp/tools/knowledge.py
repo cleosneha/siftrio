@@ -23,14 +23,6 @@ from src.services.knowledge_service import KnowledgeService
 
 logger = logging.getLogger(__name__)
 
-_RESPONSE_MAP = {
-    "requirements": RequirementResponse,
-    "action_items": ActionItemResponse,
-    "decisions": DecisionResponse,
-    "risks": RiskResponse,
-    "questions": QuestionResponse,
-}
-
 
 def _service(db: AsyncSession) -> KnowledgeService:
     return KnowledgeService(
@@ -167,6 +159,7 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def list_requirements(
         ctx: Context,
+        workspace_id: str | None = None,
         project_id: str | None = None,
         meeting_id: str | None = None,
         status: str | None = None,
@@ -176,6 +169,7 @@ def register(mcp: FastMCP) -> None:
         """List project requirements, optionally filtered by project, meeting, or status.
 
         Args:
+            workspace_id: Filter by workspace UUID. Auto-resolved if not provided.
             project_id: Filter by project UUID.
             meeting_id: Filter by meeting UUID.
             status: Filter by status (e.g., 'pending', 'approved').
@@ -184,6 +178,7 @@ def register(mcp: FastMCP) -> None:
         """
         result = await run_tool(
             ctx, "list_requirements", _list_requirements,
+            workspace_id=workspace_id,
             project_id=project_id, meeting_id=meeting_id,
             status=status, limit=limit, offset=offset,
         )
@@ -192,6 +187,7 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def list_action_items(
         ctx: Context,
+        workspace_id: str | None = None,
         project_id: str | None = None,
         meeting_id: str | None = None,
         status: str | None = None,
@@ -201,6 +197,7 @@ def register(mcp: FastMCP) -> None:
         """List action items across meetings, optionally filtered by project, meeting, or status.
 
         Args:
+            workspace_id: Filter by workspace UUID. Auto-resolved if not provided.
             project_id: Filter by project UUID.
             meeting_id: Filter by meeting UUID.
             status: Filter by status (e.g., 'pending', 'completed').
@@ -209,6 +206,7 @@ def register(mcp: FastMCP) -> None:
         """
         result = await run_tool(
             ctx, "list_action_items", _list_action_items,
+            workspace_id=workspace_id,
             project_id=project_id, meeting_id=meeting_id,
             status=status, limit=limit, offset=offset,
         )
@@ -217,6 +215,7 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def list_decisions(
         ctx: Context,
+        workspace_id: str | None = None,
         project_id: str | None = None,
         meeting_id: str | None = None,
         status: str | None = None,
@@ -226,6 +225,7 @@ def register(mcp: FastMCP) -> None:
         """List decisions recorded in meetings, optionally filtered by project, meeting, or status.
 
         Args:
+            workspace_id: Filter by workspace UUID. Auto-resolved if not provided.
             project_id: Filter by project UUID.
             meeting_id: Filter by meeting UUID.
             status: Filter by status.
@@ -234,6 +234,7 @@ def register(mcp: FastMCP) -> None:
         """
         result = await run_tool(
             ctx, "list_decisions", _list_decisions,
+            workspace_id=workspace_id,
             project_id=project_id, meeting_id=meeting_id,
             status=status, limit=limit, offset=offset,
         )
@@ -242,6 +243,7 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def list_risks(
         ctx: Context,
+        workspace_id: str | None = None,
         project_id: str | None = None,
         meeting_id: str | None = None,
         status: str | None = None,
@@ -251,6 +253,7 @@ def register(mcp: FastMCP) -> None:
         """List risks identified in meetings, optionally filtered by project, meeting, or status.
 
         Args:
+            workspace_id: Filter by workspace UUID. Auto-resolved if not provided.
             project_id: Filter by project UUID.
             meeting_id: Filter by meeting UUID.
             status: Filter by status (e.g., 'open', 'mitigated').
@@ -259,6 +262,7 @@ def register(mcp: FastMCP) -> None:
         """
         result = await run_tool(
             ctx, "list_risks", _list_risks,
+            workspace_id=workspace_id,
             project_id=project_id, meeting_id=meeting_id,
             status=status, limit=limit, offset=offset,
         )
@@ -267,6 +271,7 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def list_questions(
         ctx: Context,
+        workspace_id: str | None = None,
         project_id: str | None = None,
         meeting_id: str | None = None,
         status: str | None = None,
@@ -276,6 +281,7 @@ def register(mcp: FastMCP) -> None:
         """List open or answered questions from meetings, optionally filtered by project, meeting, or status.
 
         Args:
+            workspace_id: Filter by workspace UUID. Auto-resolved if not provided.
             project_id: Filter by project UUID.
             meeting_id: Filter by meeting UUID.
             status: Filter by status (e.g., 'pending', 'answered').
@@ -284,6 +290,7 @@ def register(mcp: FastMCP) -> None:
         """
         result = await run_tool(
             ctx, "list_questions", _list_questions,
+            workspace_id=workspace_id,
             project_id=project_id, meeting_id=meeting_id,
             status=status, limit=limit, offset=offset,
         )
@@ -294,15 +301,18 @@ def register(mcp: FastMCP) -> None:
         ctx: Context,
         item_type: str,
         item_id: str,
+        workspace_id: str | None = None,
     ) -> str:
         """Get a specific knowledge item (requirement, action_item, decision, risk, or question) by ID.
 
         Args:
             item_type: One of 'requirement', 'action_item', 'decision', 'risk', 'question'.
             item_id: The UUID of the item to retrieve.
+            workspace_id: Scope to a specific workspace. Auto-resolved from item if not provided.
         """
         result = await run_tool(
             ctx, "get_knowledge_item", _get_knowledge_item,
+            workspace_id=workspace_id,
             item_type=item_type, item_id=item_id,
         )
         return result.model_dump_json()

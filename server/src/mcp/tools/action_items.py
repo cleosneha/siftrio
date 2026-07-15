@@ -26,6 +26,16 @@ def _service(db: AsyncSession) -> KnowledgeService:
     )
 
 
+async def _get_action_item(
+    db: AsyncSession, auth: MCPContext, action_item_id: str
+) -> ToolResult:
+    svc = _service(db)
+    item = await svc.get_action_item(UUID(action_item_id))
+    if item is None:
+        return ToolResult(success=False, message="Action item not found")
+    return ToolResult(data=item)
+
+
 async def _update_action_item_status(
     db: AsyncSession,
     auth: MCPContext,
@@ -39,42 +49,43 @@ async def _update_action_item_status(
     return ToolResult(data=item, message=f"Action item status updated to '{status}'")
 
 
-async def _get_action_item(
-    db: AsyncSession, auth: MCPContext, action_item_id: str
-) -> ToolResult:
-    svc = _service(db)
-    item = await svc.get_action_item(UUID(action_item_id))
-    if item is None:
-        return ToolResult(success=False, message="Action item not found")
-    return ToolResult(data=item)
-
-
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
-    async def get_action_item(ctx: Context, action_item_id: str) -> str:
+    async def get_action_item(
+        ctx: Context,
+        action_item_id: str,
+        workspace_id: str | None = None,
+    ) -> str:
         """Get a specific action item by ID, including assignee, due date, and Jira sync status.
 
         Args:
             action_item_id: The UUID of the action item.
+            workspace_id: Scope to a specific workspace. Auto-resolved from action item if not provided.
         """
         result = await run_tool(
             ctx, "get_action_item", _get_action_item,
+            workspace_id=workspace_id,
             action_item_id=action_item_id,
         )
         return result.model_dump_json()
 
     @mcp.tool()
     async def update_action_item_status(
-        ctx: Context, action_item_id: str, status: str
+        ctx: Context,
+        action_item_id: str,
+        status: str,
+        workspace_id: str | None = None,
     ) -> str:
         """Update the status of an action item.
 
         Args:
             action_item_id: The UUID of the action item.
             status: New status value (e.g., 'completed', 'in_progress', 'pending').
+            workspace_id: Scope to a specific workspace. Auto-resolved from action item if not provided.
         """
         result = await run_tool(
             ctx, "update_action_item_status", _update_action_item_status,
+            workspace_id=workspace_id,
             action_item_id=action_item_id, status=status,
         )
         return result.model_dump_json()
