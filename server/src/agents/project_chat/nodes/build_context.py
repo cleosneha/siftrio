@@ -1,6 +1,7 @@
 from src.agents.project_chat.schemas import RetrievedContext
 from src.agents.project_chat.services.context_builder import ContextBuilderService
 from src.agents.project_chat.state import ChatState
+from src.mcp.schemas.common import ToolResult
 
 
 def _format_messages(messages: list[dict[str, str]], max_pairs: int = 4) -> str:
@@ -25,6 +26,7 @@ async def build_context(
         meetings=state["meeting_analysis"],
         knowledge=state["knowledge_entities"],
     )
+    tool_results = state.get("tool_results", [])
     messages = state.get("messages", [])
     summary = state.get("conversation_summary", "")
 
@@ -36,7 +38,7 @@ async def build_context(
     if recent and recent != "(no previous conversation)":
         parts.append(f"Recent Conversation:\n{recent}")
 
-    parts.append(f"Retrieved Knowledge:\n{context_builder.build(retrieved_context)}")
+    parts.append(f"Retrieved Knowledge:\n{context_builder.build(retrieved_context, tool_results)}")
 
     context = "\n\n".join(parts)
     return {"context": context}
