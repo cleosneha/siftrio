@@ -96,3 +96,9 @@ class User(UUIDMixin, TimestampMixin, Base):
         foreign_keys="MemberInvitation.invited_by",
         cascade="all, delete-orphan",
     )
+
+    api_keys = relationship(
+        "ApiKey",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

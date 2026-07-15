@@ -8,12 +8,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class WorkspaceApiKey(UUIDMixin, TimestampMixin, Base):
-    __tablename__ = "workspace_api_keys"
+class ApiKey(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "api_keys"
 
-    workspace_id: Mapped[UUID] = mapped_column(
+    user_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -34,12 +34,6 @@ class WorkspaceApiKey(UUIDMixin, TimestampMixin, Base):
         unique=True,
     )
 
-    created_by: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
     last_used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -50,5 +44,4 @@ class WorkspaceApiKey(UUIDMixin, TimestampMixin, Base):
         nullable=True,
     )
 
-    workspace = relationship("Workspace")
-    creator = relationship("User", foreign_keys=[created_by])
+    user = relationship("User", back_populates="api_keys")
