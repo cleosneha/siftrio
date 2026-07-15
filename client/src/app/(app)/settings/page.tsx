@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/lib/app-context";
 import { ApiKeysSection } from "@/features/api-keys/components/ApiKeysSection";
+import { McpClientConfig } from "@/features/api-keys/components/McpClientConfig";
+import type { ApiKeyCreatedResponse } from "@/features/api-keys/types/apiKey.types";
 
 export default function SettingsPage() {
   const { setSidebarOpen } = useAppContext();
+  const [createdKey, setCreatedKey] = useState<ApiKeyCreatedResponse | null>(null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -31,7 +35,12 @@ export default function SettingsPage() {
               Manage API keys and integrations for external tools.
             </p>
           </div>
-          <ApiKeysSection />
+          <ApiKeysSection
+            createdKey={createdKey}
+            onCreated={setCreatedKey}
+            onClearCreatedKey={() => setCreatedKey(null)}
+          />
+          <McpClientConfig apiKey={createdKey?.secret} />
         </div>
       </div>
     </div>
