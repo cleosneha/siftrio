@@ -27,3 +27,17 @@ class AmbiguousResult(BaseModel):
     status: str = "ambiguous"
     message: str = "Multiple matching resources found."
     matches: list[AmbiguousMatch] = Field(default_factory=list)
+
+
+class ToolParameterSpec(BaseModel):
+    name: str
+    type: str
+    description: str
+    required: bool = True
+    default: Any = None
+
+
+class ToolSpec(BaseModel):
+    name: str
+    description: str
+    parameters: list[ToolParameterSpec] = Field(default_factory=list)
