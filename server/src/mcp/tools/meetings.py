@@ -1,19 +1,50 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mcp.server.fastmcp import Context, FastMCP
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.mcp.context import MCPContext
-from src.mcp.schemas.common import AmbiguousMatch, AmbiguousResult, ToolResult
-from src.mcp.tool_helpers import run_tool
+from src.mcp.schemas.common import (
+    AmbiguousMatch,
+    AmbiguousResult,
+    ToolParameterSpec,
+    ToolResult,
+    ToolSpec,
+)
 from src.repositories.client_repository import ClientRepository
 from src.repositories.meeting_repository import MeetingRepository
 from src.schemas.meeting_schema import MeetingResponse
 
+if TYPE_CHECKING:
+    from src.mcp.dispatcher import MCPDispatcher
+
 logger = logging.getLogger(__name__)
+
+TOOL_SPECS = [
+    ToolSpec(
+        name="list_meetings",
+        description="List meetings, optionally filtered by client or project.",
+        parameters=[
+            ToolParameterSpec(name="workspace_id", type="string", description="Filter by workspace UUID. Auto-resolved if not provided.", required=False),
+            ToolParameterSpec(name="client_id", type="string", description="Filter by client UUID.", required=False),
+            ToolParameterSpec(name="project_id", type="string", description="Filter by project UUID.", required=False),
+            ToolParameterSpec(name="limit", type="integer", description="Maximum number of results (default 50).", required=False, default=50),
+            ToolParameterSpec(name="offset", type="integer", description="Pagination offset.", required=False, default=0),
+        ],
+    ),
+    ToolSpec(
+        name="get_meeting",
+        description="Get details of a specific meeting by ID, including transcript if available.",
+        parameters=[
+            ToolParameterSpec(name="meeting_id", type="string", description="The UUID of the meeting to retrieve.", required=True),
+            ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from meeting if not provided.", required=False),
+        ],
+    ),
+]
 
 
 async def _list_meetings(
@@ -82,7 +113,10 @@ async def _get_meeting(
     return ToolResult(data=MeetingResponse.model_validate(meeting).model_dump())
 
 
-def register(mcp: FastMCP) -> None:
+def register(mcp: FastMCP, dispatcher: MCPDispatcher) -> None:
+    for spec in TOOL_SPECS:
+        dispatcher.register(spec.name, {"list_meetings": _list_meetings, "get_meeting": _get_meeting}[spec.name])
+
     @mcp.tool()
     async def list_meetings(
         ctx: Context,
@@ -101,11 +135,14 @@ def register(mcp: FastMCP) -> None:
             limit: Maximum number of results (default 50).
             offset: Pagination offset.
         """
-        result = await run_tool(
-            ctx, "list_meetings", _list_meetings,
-            workspace_id=workspace_id,
-            client_id=client_id,
-            project_id=project_id,
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
+
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "list_meetings", context,
+            workspace_id=workspace_id, client_id=client_id, project_id=project_id,
             limit=limit, offset=offset,
         )
         return result.model_dump_json()
@@ -122,9 +159,13 @@ def register(mcp: FastMCP) -> None:
             meeting_id: The UUID of the meeting to retrieve.
             workspace_id: Scope to a specific workspace. Auto-resolved from meeting if not provided.
         """
-        result = await run_tool(
-            ctx, "get_meeting", _get_meeting,
-            workspace_id=workspace_id,
-            meeting_id=meeting_id,
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
+
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "get_meeting", context,
+            meeting_id=meeting_id, workspace_id=workspace_id,
         )
         return result.model_dump_json()

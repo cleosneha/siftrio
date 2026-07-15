@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mcp.server.fastmcp import Context, FastMCP
@@ -8,10 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.mcp.context import MCPContext
-from src.mcp.schemas.common import ToolResult
-from src.mcp.tool_helpers import run_tool
+from src.mcp.schemas.common import ToolParameterSpec, ToolResult, ToolSpec
 from src.repositories.project_jira_repository import ProjectJiraRepository
 from src.repositories.workspace_jira_repository import WorkspaceJiraRepository
+
+if TYPE_CHECKING:
+    from src.mcp.dispatcher import MCPDispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -100,78 +103,110 @@ async def _get_jira_issue(
         return ToolResult(success=False, message=e.message)
 
 
-def register(mcp: FastMCP) -> None:
+JIRA_TOOLS = {
+    "get_jira_integration_status": _get_jira_integration_status,
+    "list_jira_projects": _list_jira_projects,
+    "get_project_jira_mapping": _get_project_jira_mapping,
+    "get_jira_issue": _get_jira_issue,
+}
+
+TOOL_SPECS = [
+    ToolSpec(
+        name="get_jira_integration_status",
+        description="Check if Jira is connected for a workspace and get connection details.",
+        parameters=[
+            ToolParameterSpec(name="workspace_id", type="string", description="The UUID of the workspace to check. Auto-resolved if not provided.", required=False),
+        ],
+    ),
+    ToolSpec(
+        name="list_jira_projects",
+        description="List available Jira projects that can be linked to a Siftrio project.",
+        parameters=[
+            ToolParameterSpec(name="project_id", type="string", description="The UUID of the Siftrio project.", required=True),
+            ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),
+        ],
+    ),
+    ToolSpec(
+        name="get_project_jira_mapping",
+        description="Get the Jira project mapping for a Siftrio project, if one exists.",
+        parameters=[
+            ToolParameterSpec(name="project_id", type="string", description="The UUID of the Siftrio project.", required=True),
+            ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),
+        ],
+    ),
+    ToolSpec(
+        name="get_jira_issue",
+        description="Get details of a Jira issue linked to an action item.",
+        parameters=[
+            ToolParameterSpec(name="project_id", type="string", description="The UUID of the Siftrio project.", required=True),
+            ToolParameterSpec(name="action_item_id", type="string", description="The UUID of the action item with a linked Jira issue.", required=True),
+            ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),
+        ],
+    ),
+]
+
+
+def register(mcp: FastMCP, dispatcher: MCPDispatcher) -> None:
+    for spec in TOOL_SPECS:
+        dispatcher.register(spec.name, JIRA_TOOLS[spec.name])
+
     @mcp.tool()
     async def get_jira_integration_status(
-        ctx: Context,
-        workspace_id: str | None = None,
+        ctx: Context, workspace_id: str | None = None,
     ) -> str:
-        """Check if Jira is connected for a workspace and get connection details.
+        """Check if Jira is connected for a workspace and get connection details."""
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
 
-        Args:
-            workspace_id: The UUID of the workspace to check. Auto-resolved if not provided.
-        """
-        result = await run_tool(
-            ctx, "get_jira_integration_status", _get_jira_integration_status,
-            workspace_id=workspace_id,
-        )
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch("get_jira_integration_status", context, workspace_id=workspace_id)
         return result.model_dump_json()
 
     @mcp.tool()
     async def list_jira_projects(
-        ctx: Context,
-        project_id: str,
-        workspace_id: str | None = None,
+        ctx: Context, project_id: str, workspace_id: str | None = None,
     ) -> str:
-        """List available Jira projects that can be linked to a Siftrio project.
+        """List available Jira projects that can be linked to a Siftrio project."""
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
 
-        Args:
-            project_id: The UUID of the Siftrio project.
-            workspace_id: Scope to a specific workspace. Auto-resolved from project if not provided.
-        """
-        result = await run_tool(
-            ctx, "list_jira_projects", _list_jira_projects,
-            workspace_id=workspace_id,
-            project_id=project_id,
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "list_jira_projects", context,
+            project_id=project_id, workspace_id=workspace_id,
         )
         return result.model_dump_json()
 
     @mcp.tool()
     async def get_project_jira_mapping(
-        ctx: Context,
-        project_id: str,
-        workspace_id: str | None = None,
+        ctx: Context, project_id: str, workspace_id: str | None = None,
     ) -> str:
-        """Get the Jira project mapping for a Siftrio project, if one exists.
+        """Get the Jira project mapping for a Siftrio project, if one exists."""
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
 
-        Args:
-            project_id: The UUID of the Siftrio project.
-            workspace_id: Scope to a specific workspace. Auto-resolved from project if not provided.
-        """
-        result = await run_tool(
-            ctx, "get_project_jira_mapping", _get_project_jira_mapping,
-            workspace_id=workspace_id,
-            project_id=project_id,
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "get_project_jira_mapping", context,
+            project_id=project_id, workspace_id=workspace_id,
         )
         return result.model_dump_json()
 
     @mcp.tool()
     async def get_jira_issue(
-        ctx: Context,
-        project_id: str,
-        action_item_id: str,
-        workspace_id: str | None = None,
+        ctx: Context, project_id: str, action_item_id: str, workspace_id: str | None = None,
     ) -> str:
-        """Get details of a Jira issue linked to an action item.
+        """Get details of a Jira issue linked to an action item."""
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
 
-        Args:
-            project_id: The UUID of the Siftrio project.
-            action_item_id: The UUID of the action item with a linked Jira issue.
-            workspace_id: Scope to a specific workspace. Auto-resolved from project if not provided.
-        """
-        result = await run_tool(
-            ctx, "get_jira_issue", _get_jira_issue,
-            workspace_id=workspace_id,
-            project_id=project_id, action_item_id=action_item_id,
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "get_jira_issue", context,
+            project_id=project_id, action_item_id=action_item_id, workspace_id=workspace_id,
         )
         return result.model_dump_json()
