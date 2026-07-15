@@ -73,6 +73,15 @@ export function ApiKeyCreatedDialog({
           </div>
         )}
 
+        <div className="rounded-lg border bg-muted/30 p-3">
+          <p className="text-sm font-medium">Next Steps</p>
+          <ul className="mt-1 list-inside list-disc space-y-1 text-sm text-muted-foreground">
+            <li>Copy the secret key above</li>
+            <li>Scroll down to "MCP Client Setup" for configuration instructions</li>
+            <li>Paste the key into your AI client config file</li>
+          </ul>
+        </div>
+
         <DialogFooter>
           <Button onClick={onClose}>Done</Button>
         </DialogFooter>
