@@ -20,6 +20,7 @@ from src.models.project_member import ProjectMember
 from src.models.member_invitation import MemberInvitation
 from src.models.workspace_jira import WorkspaceJira
 from src.models.project_jira import ProjectJira
+from src.models.workspace_api_key import WorkspaceApiKey
 
 __all__ = [
     "Workspace",
@@ -42,4 +43,5 @@ __all__ = [
     "MemberInvitation",
     "WorkspaceJira",
     "ProjectJira",
+    "WorkspaceApiKey",
 ]
