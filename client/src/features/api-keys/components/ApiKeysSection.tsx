@@ -10,9 +10,14 @@ import { CreateApiKeyDialog } from "./CreateApiKeyDialog";
 import { ApiKeyCreatedDialog } from "./ApiKeyCreatedDialog";
 import type { ApiKeyCreatedResponse } from "../types/apiKey.types";
 
-export function ApiKeysSection() {
+interface ApiKeysSectionProps {
+  createdKey?: ApiKeyCreatedResponse | null;
+  onClearCreatedKey?: () => void;
+  onCreated?: (key: ApiKeyCreatedResponse) => void;
+}
+
+export function ApiKeysSection({ createdKey, onClearCreatedKey, onCreated }: ApiKeysSectionProps) {
   const [showCreate, setShowCreate] = useState(false);
-  const [createdKey, setCreatedKey] = useState<ApiKeyCreatedResponse | null>(null);
   const { data: keysData, isLoading } = useApiKeys();
   const keys = keysData?.data ?? [];
 
@@ -47,13 +52,13 @@ export function ApiKeysSection() {
         onClose={() => setShowCreate(false)}
         onCreated={(key) => {
           setShowCreate(false);
-          setCreatedKey(key);
+          onCreated?.(key);
         }}
       />
 
       <ApiKeyCreatedDialog
-        apiKey={createdKey}
-        onClose={() => setCreatedKey(null)}
+        apiKey={createdKey ?? null}
+        onClose={() => onClearCreatedKey?.()}
       />
     </>
   );
