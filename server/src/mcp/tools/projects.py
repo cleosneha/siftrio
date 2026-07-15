@@ -1,19 +1,49 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mcp.server.fastmcp import Context, FastMCP
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.mcp.context import MCPContext
-from src.mcp.schemas.common import AmbiguousMatch, AmbiguousResult, ToolResult
-from src.mcp.tool_helpers import run_tool
+from src.mcp.schemas.common import (
+    AmbiguousMatch,
+    AmbiguousResult,
+    ToolParameterSpec,
+    ToolResult,
+    ToolSpec,
+)
 from src.repositories.client_repository import ClientRepository
 from src.repositories.project_repository import ProjectRepository
 from src.schemas.project_schema import ProjectResponse
 
+if TYPE_CHECKING:
+    from src.mcp.dispatcher import MCPDispatcher
+
 logger = logging.getLogger(__name__)
+
+TOOL_SPECS = [
+    ToolSpec(
+        name="list_projects",
+        description="List projects you have access to, optionally filtered by client.",
+        parameters=[
+            ToolParameterSpec(name="workspace_id", type="string", description="Filter by workspace UUID. Auto-resolved if not provided.", required=False),
+            ToolParameterSpec(name="client_id", type="string", description="Filter by client UUID.", required=False),
+            ToolParameterSpec(name="limit", type="integer", description="Maximum number of results (default 50).", required=False, default=50),
+            ToolParameterSpec(name="offset", type="integer", description="Pagination offset.", required=False, default=0),
+        ],
+    ),
+    ToolSpec(
+        name="get_project",
+        description="Get details of a specific project by ID.",
+        parameters=[
+            ToolParameterSpec(name="project_id", type="string", description="The UUID of the project to retrieve.", required=True),
+            ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),
+        ],
+    ),
+]
 
 
 async def _list_projects(
@@ -79,7 +109,10 @@ async def _get_project(
     return ToolResult(data=ProjectResponse.model_validate(project).model_dump())
 
 
-def register(mcp: FastMCP) -> None:
+def register(mcp: FastMCP, dispatcher: MCPDispatcher) -> None:
+    for spec in TOOL_SPECS:
+        dispatcher.register(spec.name, {"list_projects": _list_projects, "get_project": _get_project}[spec.name])
+
     @mcp.tool()
     async def list_projects(
         ctx: Context,
@@ -96,10 +129,14 @@ def register(mcp: FastMCP) -> None:
             limit: Maximum number of results (default 50).
             offset: Pagination offset.
         """
-        result = await run_tool(
-            ctx, "list_projects", _list_projects,
-            workspace_id=workspace_id,
-            client_id=client_id,
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
+
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "list_projects", context,
+            workspace_id=workspace_id, client_id=client_id,
             limit=limit, offset=offset,
         )
         return result.model_dump_json()
@@ -116,9 +153,13 @@ def register(mcp: FastMCP) -> None:
             project_id: The UUID of the project to retrieve.
             workspace_id: Scope to a specific workspace. Auto-resolved from project if not provided.
         """
-        result = await run_tool(
-            ctx, "get_project", _get_project,
-            workspace_id=workspace_id,
-            project_id=project_id,
+        from src.mcp.dependencies import get_auth_context
+        from src.mcp.schemas.execution_context import ToolExecutionContext
+
+        auth = get_auth_context(ctx)
+        context = ToolExecutionContext(user_id=auth.user_id, workspace_ids=auth.workspace_ids)
+        result = await dispatcher.dispatch(
+            "get_project", context,
+            project_id=project_id, workspace_id=workspace_id,
         )
         return result.model_dump_json()
