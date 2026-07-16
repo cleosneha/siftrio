@@ -180,13 +180,13 @@ function DetailRow({
 function getStatusColor(category: string | null): { bg: string; text: string } {
   switch (category?.toLowerCase()) {
     case "to do":
-      return { bg: "#dbeafe", text: "#1e40af" };
+      return { bg: "var(--status-progress-bg)", text: "var(--status-progress-fg)" };
     case "in progress":
-      return { bg: "#fef3c7", text: "#92400e" };
+      return { bg: "var(--status-pending-bg)", text: "var(--status-pending-fg)" };
     case "done":
-      return { bg: "#d1fae5", text: "#065f46" };
+      return { bg: "var(--status-done-bg)", text: "var(--status-done-fg)" };
     default:
-      return { bg: "#f3f4f6", text: "#374151" };
+      return { bg: "var(--status-default-bg)", text: "var(--status-default-fg)" };
   }
 }
 
