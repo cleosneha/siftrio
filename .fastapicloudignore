@@ -1,0 +1,54 @@
+# Exclude client (deployed separately on Vercel)
+client/
+
+# Exclude local dev infrastructure
+docker-compose*.yml
+docker-data/
+
+# Exclude scripts
+scripts/
+
+# Exclude non-server files at root
+README.md
+LICENSE
+.gitignore
+
+# Exclude Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Exclude local database files
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+*.dump
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude IDE
+.vscode/
+.idea/
+
+# Exclude test files
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exclude generated/AI files
+chroma/
+chromadb/
+vectorstore/
+.faiss/
+faiss_index/
+generated/
+exports/
