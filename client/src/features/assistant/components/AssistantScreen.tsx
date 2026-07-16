@@ -183,7 +183,7 @@ export function AssistantScreen({ threadId }: { threadId: string }) {
         </div>
       )}
 
-      <div className="border-t bg-background px-4 py-3 md:px-6">
+      <div className="bg-background px-4 py-3 md:px-6">
         <div className="mx-auto flex max-w-4xl items-center gap-2">
           {messages.length > 0 && (
             <Button
