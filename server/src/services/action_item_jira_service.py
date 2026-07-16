@@ -250,6 +250,8 @@ class ActionItemJiraService:
             jira_issue_type=request.issue_type_id,
             jira_synced_at=datetime.now(timezone.utc),
             sync_status=ActionItemSyncStatus.SYNCED.value,
+            jira_assignee_name=request.assignee_name,
+            jira_assignee_email=request.assignee_email,
         )
         if updated is None:
             raise BaseAPIException(

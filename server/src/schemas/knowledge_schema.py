@@ -69,6 +69,8 @@ class ActionItemResponse(KnowledgeBaseResponse):
     jira_issue_type: str | None = None
     jira_synced_at: datetime | None = None
     sync_status: str | None = None
+    jira_assignee_name: str | None = None
+    jira_assignee_email: str | None = None
 
 
 class DecisionCreate(BaseModel):

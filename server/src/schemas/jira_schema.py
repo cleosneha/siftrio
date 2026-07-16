@@ -90,6 +90,8 @@ class ActionItemJiraCreateRequest(BaseModel):
     priority: str
     labels: list[str] = []
     assignee_account_id: str | None = None
+    assignee_name: str | None = None
+    assignee_email: str | None = None
 
 
 class ActionItemJiraCreateResponse(BaseModel):
