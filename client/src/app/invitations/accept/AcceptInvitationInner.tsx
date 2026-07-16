@@ -85,7 +85,7 @@ export function AcceptInvitationInner() {
         </>
       ) : state.status === "success" ? (
         <>
-          <CheckCircle className="h-12 w-12 text-green-500" />
+          <CheckCircle className="h-12 w-12" style={{ color: "var(--success)" }} />
           <h1 className="text-2xl font-semibold">Invitation Accepted!</h1>
           <p className="text-muted-foreground">{state.message}</p>
           <Button onClick={() => router.push("/dashboard")}>
