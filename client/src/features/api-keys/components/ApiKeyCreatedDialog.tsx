@@ -63,7 +63,7 @@ export function ApiKeyCreatedDialog({
                   className="shrink-0"
                 >
                   {copied ? (
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4" style={{ color: "var(--success)" }} />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -73,7 +73,7 @@ export function ApiKeyCreatedDialog({
           </div>
         )}
 
-        <div className="rounded-lg border bg-muted/30 p-3">
+        <div className="rounded-lg bg-muted/30 p-3">
           <p className="text-sm font-medium">Next Steps</p>
           <ul className="mt-1 list-inside list-disc space-y-1 text-sm text-muted-foreground">
             <li>Copy the secret key above</li>

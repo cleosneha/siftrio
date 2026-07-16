@@ -29,7 +29,7 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
     >
       {copied ? (
-        <Check className="h-3 w-3 text-green-600" />
+        <Check className="h-3 w-3" style={{ color: "var(--success)" }} />
       ) : (
         <Copy className="h-3 w-3" />
       )}
@@ -56,7 +56,7 @@ export function ApiKeyList({ keys }: ApiKeyListProps) {
         return (
           <div
             key={key.id}
-            className="flex items-center justify-between rounded-lg border p-4"
+            className="flex items-center justify-between rounded-lg bg-muted/50 p-4"
           >
             <div className="flex items-center gap-3">
               <div>
