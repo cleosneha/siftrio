@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRevokeApiKey, useDeleteApiKey } from "../hooks/useApiKeys";
@@ -8,6 +10,31 @@ import { formatDistanceToNow } from "@/lib/utils";
 
 interface ApiKeyListProps {
   keys: ApiKey[];
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-6 w-6"
+      onClick={handleCopy}
+    >
+      {copied ? (
+        <Check className="h-3 w-3 text-green-600" />
+      ) : (
+        <Copy className="h-3 w-3" />
+      )}
+    </Button>
+  );
 }
 
 export function ApiKeyList({ keys }: ApiKeyListProps) {
@@ -41,8 +68,9 @@ export function ApiKeyList({ keys }: ApiKeyListProps) {
                     <Badge variant="secondary">Active</Badge>
                   )}
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground">
+                <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                   <span className="font-mono">{key.key_prefix}...</span>
+                  <CopyButton text={key.key_prefix} />
                   {key.last_used_at && (
                     <span className="ml-2">
                       Last used {formatDistanceToNow(new Date(key.last_used_at))} ago

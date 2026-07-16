@@ -34,10 +34,35 @@ const CLIENTS: { id: ClientType; label: string; configPath: string }[] = [
   },
 ];
 
-function getConfigSnippet(mcpUrl: string, apiKey: string): string {
+function getConfigSnippet(client: ClientType, mcpUrl: string, apiKey: string): string {
   const maskedKey = apiKey
     ? `${apiKey.slice(0, 12)}...${apiKey.slice(-4)}`
     : "YOUR_API_KEY";
+
+  if (client === "claude") {
+    return JSON.stringify(
+      {
+        mcpServers: {
+          siftrio: {
+            command: "cmd",
+            args: [
+              "/c",
+              "npx",
+              "-y",
+              "mcp-remote",
+              mcpUrl,
+              "--transport",
+              "http-only",
+              "--header",
+              `Authorization:Bearer ${maskedKey}`,
+            ],
+          },
+        },
+      },
+      null,
+      2,
+    );
+  }
 
   return JSON.stringify(
     {
@@ -116,7 +141,7 @@ export function McpClientConfig({ apiKey }: McpClientConfigProps) {
   const mcpUrl = getMcpUrl();
   const client = CLIENTS.find((c) => c.id === selectedClient)!;
   const steps = getSteps(selectedClient, client.configPath);
-  const configSnippet = getConfigSnippet(mcpUrl, apiKey ?? "");
+  const configSnippet = getConfigSnippet(selectedClient, mcpUrl, apiKey ?? "");
 
   return (
     <Card>
@@ -151,65 +176,61 @@ export function McpClientConfig({ apiKey }: McpClientConfigProps) {
           )}
 
           {!apiKey && (
-            <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-              Create an API key above to get started.
+            <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+              Create an API key above, then replace <code className="font-mono">YOUR_API_KEY</code> in the config below.
             </div>
           )}
         </div>
 
-        {apiKey && (
-          <>
-            <div className="flex gap-2">
-              {CLIENTS.map((c) => (
-                <Button
-                  key={c.id}
-                  variant={selectedClient === c.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedClient(c.id)}
-                >
-                  {c.label}
-                </Button>
-              ))}
-            </div>
+        <div className="flex gap-2">
+          {CLIENTS.map((c) => (
+            <Button
+              key={c.id}
+              variant={selectedClient === c.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedClient(c.id)}
+            >
+              {c.label}
+            </Button>
+          ))}
+        </div>
 
-            <div className="space-y-4">
-              {steps.map((step, i) => (
-                <div key={i} className="space-y-2">
-                  {i === 1 ? (
-                    <>
-                      <p className="text-sm font-medium">
-                        Step {i + 1}: {step}
-                      </p>
-                      <div className="relative">
-                        <pre className="overflow-x-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs">
-                          {configSnippet}
-                        </pre>
-                        <div className="absolute right-2 top-2">
-                          <CopyButton text={configSnippet} />
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-sm">
-                      <span className="font-medium text-muted-foreground">
-                        Step {i + 1}:{" "}
-                      </span>
-                      {step}
-                    </p>
-                  )}
-                </div>
-              ))}
+        <div className="space-y-4">
+          {steps.map((step, i) => (
+            <div key={i} className="space-y-2">
+              {i === 1 ? (
+                <>
+                  <p className="text-sm font-medium">
+                    Step {i + 1}: {step}
+                  </p>
+                  <div className="relative">
+                    <pre className="overflow-x-auto rounded-lg border bg-muted/50 p-4 font-mono text-xs">
+                      {configSnippet}
+                    </pre>
+                    <div className="absolute right-2 top-2">
+                      <CopyButton text={configSnippet} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm">
+                  <span className="font-medium text-muted-foreground">
+                    Step {i + 1}:{" "}
+                  </span>
+                  {step}
+                </p>
+              )}
             </div>
+          ))}
+        </div>
 
-            <div className="rounded-lg border bg-muted/30 p-3">
-              <p className="text-xs text-muted-foreground">
-                The server URL and API key above are tied to your account. Your
-                API key grants access to all workspaces you belong to. Never
-                share your API key publicly.
-              </p>
-            </div>
-          </>
-        )}
+        <div className="rounded-lg border bg-muted/30 p-3">
+          <p className="text-xs text-muted-foreground">
+            The server URL and API key above are tied to your account. Your
+            API key grants access to all workspaces you belong to. Never
+            share your API key publicly.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
