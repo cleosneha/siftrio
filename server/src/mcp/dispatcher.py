@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import time
 from typing import Any
@@ -22,6 +23,12 @@ def _extract_entity_ids(kwargs: dict[str, Any]) -> dict[str, str | None]:
 
 def _requires_workspace(tool_name: str, kwargs: dict[str, Any]) -> bool:
     return any(kwargs.get(k) for k in ("workspace_id", "client_id", "project_id", "meeting_id"))
+
+
+def _filter_kwargs(func: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
+    sig = inspect.signature(func)
+    accepted = set(sig.parameters.keys())
+    return {k: v for k, v in kwargs.items() if k in accepted or "kwargs" in sig.parameters}
 
 
 class MCPDispatcher:
@@ -74,7 +81,8 @@ class MCPDispatcher:
 
                 auth.resolved_workspace = resolved
 
-                result = await func(db=db, auth=auth, **entity_kwargs, **kwargs)
+                filtered_kwargs = _filter_kwargs(func, {**entity_kwargs, **kwargs})
+                result = await func(db=db, auth=auth, **filtered_kwargs)
                 elapsed = (time.perf_counter() - t0) * 1000
                 logger.info(
                     "mcp.dispatch.complete tool=%s elapsed=%.1fms",

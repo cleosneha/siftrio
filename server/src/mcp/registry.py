@@ -66,6 +66,14 @@ class ToolRegistry:
     def all_specs(self) -> list[ToolSpec]:
         return list(self._specs)
 
+    def hydration_tools(self) -> dict[str, str]:
+        """Returns {entity_type: tool_name} for all hydration-capable tools."""
+        return {
+            spec.entity_type: spec.name
+            for spec in self._specs
+            if spec.entity_type is not None
+        }
+
     @property
     def registered_modules(self) -> list[str]:
         return list(self._registered)
