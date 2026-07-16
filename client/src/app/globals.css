@@ -20,7 +20,10 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
+  --color-divider: var(--divider);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -36,29 +39,149 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-scrollbar: var(--scrollbar);
+  --color-scrollbar-hover: var(--scrollbar-hover);
+  --color-selected: var(--selected);
+  --color-hover-surface: var(--hover-surface);
+  --color-pressed-surface: var(--pressed-surface);
+  --color-elevated: var(--elevated);
+  --color-body-text: var(--body-text);
+  --color-secondary-text: var(--secondary-text);
+  --color-disabled-text: var(--disabled-text);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 6px;
+  --radius-md: 7px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
+  --radius-3xl: 18px;
+  --radius-4xl: 22px;
+  --radius-pill: 999px;
 }
 
 :root {
-  --radius: 0.625rem;
-  --popover: oklch(0.985 0 0);
-}
+  /* Base */
+  --background: #08090A;
+  --foreground: #FFFFFF;
 
-.dark {
-  --popover: oklch(0.23 0 0);
+  /* Surfaces */
+  --card: #121314;
+  --card-foreground: #D0D3D6;
+  --popover: #121314;
+  --popover-foreground: #D0D3D6;
+  --elevated: #121314;
+  --hover-surface: #17191C;
+  --pressed-surface: #1D2024;
+  --selected: #17191C;
+
+  /* Primary - White */
+  --primary: #FFFFFF;
+  --primary-foreground: #08090A;
+
+  /* Secondary - Transparent */
+  --secondary: transparent;
+  --secondary-foreground: #D0D3D6;
+
+  /* Muted */
+  --muted: #111213;
+  --muted-foreground: #9EA3A9;
+
+  /* Accent */
+  --accent: #17191C;
+  --accent-foreground: #FFFFFF;
+
+  /* Destructive */
+  --destructive: #EF4444;
+
+  /* Status */
+  --success: #22C55E;
+  --warning: #F59E0B;
+
+  /* Borders - rgba(255,255,255,0.05) */
+  --border: rgba(255, 255, 255, 0.05);
+  --divider: rgba(255, 255, 255, 0.05);
+  --input: #111213;
+  --ring: rgba(255, 255, 255, 0.1);
+
+  /* Text hierarchy */
+  --body-text: #D0D3D6;
+  --disabled-text: #6D737C;
+  --secondary-text: #E8E8E8;
+
+  /* Scrollbar */
+  --scrollbar: #2A2E34;
+  --scrollbar-hover: #40454D;
+
+  /* Charts */
+  --chart-1: #FFFFFF;
+  --chart-2: #9EA3A9;
+  --chart-3: #22C55E;
+  --chart-4: #EF4444;
+  --chart-5: #F59E0B;
+
+  /* Sidebar */
+  --sidebar: #08090A;
+  --sidebar-foreground: #9EA3A9;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #08090A;
+  --sidebar-accent: #17191C;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: transparent;
+  --sidebar-ring: rgba(255, 255, 255, 0.1);
+
+  /* Status badges */
+  --status-pending-bg: #1D2024;
+  --status-pending-fg: #F59E0B;
+  --status-progress-bg: #17191C;
+  --status-progress-fg: #9EA3A9;
+  --status-done-bg: rgba(34, 197, 94, 0.1);
+  --status-done-fg: #22C55E;
+  --status-error-bg: rgba(239, 68, 68, 0.1);
+  --status-error-fg: #EF4444;
+  --status-default-bg: #111213;
+  --status-default-fg: #9EA3A9;
 }
 
 body {
   font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+}
+
+/* Card shadow for elevated surfaces */
+.card-shadow {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.02),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Modal shadow */
+.modal-shadow {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.02),
+    0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+/* Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* Subtle hover/active transitions */
+* {
+  transition-property: background-color, border-color, color, opacity, box-shadow;
+  transition-timing-function: ease-in-out;
 }
 
 @layer base {
