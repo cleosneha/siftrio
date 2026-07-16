@@ -100,7 +100,10 @@ class ChatService:
 
         answer = result.get("answer", "")
 
-        if not context.strip() or (not retrieved_chunks and not meeting_analysis and not knowledge_entities):
+        tool_plan = result.get("tool_plan")
+        if tool_plan and getattr(tool_plan, "out_of_scope", False):
+            answer = "This question is outside the scope of this assistant. I can only help with project-related queries such as meetings, action items, requirements, and Jira issues."
+        elif not context.strip() or (not retrieved_chunks and not meeting_analysis and not knowledge_entities):
             answer = "I couldn't find relevant context for that question."
 
         serialized_citations = self._format_citations(

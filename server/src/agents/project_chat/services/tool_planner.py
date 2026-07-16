@@ -51,9 +51,10 @@ class ToolPlannerService:
         response = await structured.ainvoke([HumanMessage(content=prompt)])
 
         logger.info(
-            "Tool plan: %d MCP calls, rag_needed=%s",
+            "Tool plan: %d MCP calls, rag_needed=%s, out_of_scope=%s",
             len(response.tool_calls),
             response.rag_needed,
+            response.out_of_scope,
         )
         for call in response.tool_calls:
             logger.info("  -> %s(%s)", call.tool, call.args)

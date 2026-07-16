@@ -19,17 +19,20 @@ class ContextBuilderService:
         if tool_results:
             lines = ["STRUCTURED DATA"]
             for tr in tool_results:
-                if tr.success and tr.data:
-                    if isinstance(tr.data, list):
-                        for item in tr.data:
-                            if isinstance(item, dict):
-                                lines.append(f"- {json.dumps(item, default=str)}")
-                            else:
-                                lines.append(f"- {item}")
-                    elif isinstance(tr.data, dict):
-                        lines.append(f"- {json.dumps(tr.data, default=str)}")
-                    else:
-                        lines.append(f"- {tr.data}")
+                if tr.success:
+                    if tr.data:
+                        if isinstance(tr.data, list):
+                            for item in tr.data:
+                                if isinstance(item, dict):
+                                    lines.append(f"- {json.dumps(item, default=str)}")
+                                else:
+                                    lines.append(f"- {item}")
+                        elif isinstance(tr.data, dict):
+                            lines.append(f"- {json.dumps(tr.data, default=str)}")
+                        else:
+                            lines.append(f"- {tr.data}")
+                    elif tr.message:
+                        lines.append(f"- {tr.message}")
             sections.append("\n".join(lines))
 
         if context.meetings:
