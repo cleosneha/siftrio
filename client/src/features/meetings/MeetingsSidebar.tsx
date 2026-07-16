@@ -10,7 +10,7 @@ export function MeetingsSidebar() {
 
   return (
     <div
-      className="relative flex cursor-pointer items-center justify-center border bg-muted/30 transition-colors hover:bg-muted/60"
+      className="relative flex cursor-pointer items-center justify-center bg-muted/30 transition-colors hover:bg-muted/60"
       style={{ width: 32, height: 32, borderRadius: 6 }}
       onClick={() => setOpen(true)}
       onMouseEnter={() => setHovering(true)}

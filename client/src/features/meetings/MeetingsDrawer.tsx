@@ -107,14 +107,14 @@ export function MeetingsDrawer() {
 
   const drawerContent = (
     <>
-      <div className="flex items-center justify-between border-b px-3 py-2.5">
+      <div className="flex items-center justify-between px-3 py-2.5">
         <span className="text-sm font-medium">Meetings</span>
         <Button variant="ghost" size="icon-sm" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="space-y-2 border-b p-3">
+      <div className="space-y-2 p-3">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -202,7 +202,7 @@ export function MeetingsDrawer() {
         )}
       </ScrollArea>
 
-      <div className="flex items-center justify-between border-t px-3 py-2">
+      <div className="flex items-center justify-between px-3 py-2">
         <Button
           variant="ghost"
           size="xs"
