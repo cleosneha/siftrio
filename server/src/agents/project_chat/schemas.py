@@ -115,3 +115,4 @@ class ToolPlan(BaseModel):
     tool_calls: list[ToolCall] = Field(default_factory=list, description="MCP tools to invoke")
     rag_needed: bool = Field(default=True, description="Whether RAG retrieval is needed")
     rag_query: str | None = Field(default=None, description="Search query for RAG if needed")
+    out_of_scope: bool = Field(default=False, description="True if the question is unrelated to the application")
