@@ -6,6 +6,7 @@ from langgraph.types import RunnableConfig
 
 from src.agents.project_chat.retrievers.hybrid import HybridRetriever
 from src.agents.project_chat.schemas import RetrievedContext
+from src.agents.project_chat.services.entity_hydrator import EntityHydrator
 from src.agents.project_chat.state import ChatState
 from src.mcp.dispatcher import MCPDispatcher
 from src.mcp.schemas.common import ToolResult
@@ -18,6 +19,7 @@ async def execute_tools(
     state: ChatState,
     dispatcher: MCPDispatcher,
     retriever: HybridRetriever,
+    hydrator: EntityHydrator,
     config: RunnableConfig | None = None,
 ) -> dict[str, object]:
     tool_plan = state.get("tool_plan")
@@ -25,6 +27,9 @@ async def execute_tools(
     db = config["configurable"]["db"] if config else None
 
     if db is None:
+        return {"tool_results": [], "retrieved_chunks": [], "meeting_analysis": [], "knowledge_entities": []}
+
+    if tool_plan and tool_plan.out_of_scope:
         return {"tool_results": [], "retrieved_chunks": [], "meeting_analysis": [], "knowledge_entities": []}
 
     user_context = state["user_context"]
@@ -68,6 +73,16 @@ async def execute_tools(
         elif isinstance(r, Exception):
             logger.error("Tool execution failed: %s", r)
             tool_results.append(ToolResult(success=False, message=str(r)))
+
+    if knowledge_entities:
+        hydrated = await hydrator.hydrate(knowledge_entities, context)
+        non_hydrated = []
+        for h in hydrated:
+            if h.source == "mcp" and h.data is not None:
+                tool_results.append(ToolResult(success=True, data=h.data))
+            else:
+                non_hydrated.append(h.entity)
+        knowledge_entities = non_hydrated
 
     return {
         "tool_results": tool_results,
