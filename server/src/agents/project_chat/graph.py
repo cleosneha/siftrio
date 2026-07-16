@@ -15,6 +15,7 @@ from src.agents.project_chat.nodes.parse_query import parse_query
 from src.agents.project_chat.nodes.plan_tools import plan_tools
 from src.agents.project_chat.retrievers.hybrid import HybridRetriever
 from src.agents.project_chat.services.context_builder import ContextBuilderService
+from src.agents.project_chat.services.entity_hydrator import EntityHydrator
 from src.agents.project_chat.services.query_parser import QueryParserService
 from src.agents.project_chat.services.scope_builder import ScopeBuilderService
 from src.agents.project_chat.services.tool_planner import ToolPlannerService
@@ -32,6 +33,7 @@ _compiled_graph = None
 def build_graph(
     dispatcher: MCPDispatcher,
     tool_specs: list[ToolSpec],
+    hydration_tools: dict[str, str] | None = None,
 ):
     global _compiled_graph
 
@@ -41,6 +43,7 @@ def build_graph(
     retriever = HybridRetriever()
     context_builder = ContextBuilderService()
     scope_builder = ScopeBuilderService()
+    hydrator = EntityHydrator(dispatcher, hydration_tools or {})
 
     workflow = StateGraph(ChatState)
 
@@ -51,7 +54,7 @@ def build_graph(
     workflow.add_node("plan_tools", partial(plan_tools, planner=planner))
     workflow.add_node(
         "execute_tools",
-        partial(execute_tools, dispatcher=dispatcher, retriever=retriever),
+        partial(execute_tools, dispatcher=dispatcher, retriever=retriever, hydrator=hydrator),
     )
     workflow.add_node("build_context", partial(build_context, context_builder=context_builder))
     workflow.add_node("generate_response", partial(generate_response, llm=llm))
