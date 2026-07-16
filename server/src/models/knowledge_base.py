@@ -159,6 +159,16 @@ class ActionItem(AIEntityBase, Base):
         nullable=True,
     )
 
+    jira_assignee_name: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    jira_assignee_email: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
 
 class Decision(AIEntityBase, Base):
     __tablename__ = "decisions"
