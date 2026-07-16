@@ -70,7 +70,7 @@ def register_routes(app: FastAPI) -> None:
 def _build_assistant_graph() -> None:
     from src.agents.project_chat.graph import build_graph
     from src.mcp.server import get_dispatcher
-    from src.mcp.registry import ToolRegistry, TOOL_MODULES
+    from src.mcp.registry import TOOL_MODULES
     import importlib
 
     dispatcher = get_dispatcher()
@@ -81,7 +81,13 @@ def _build_assistant_graph() -> None:
         if hasattr(module, "TOOL_SPECS"):
             specs.extend(module.TOOL_SPECS)
 
-    build_graph(dispatcher, specs)
+    hydration_tools = {
+        spec.entity_type: spec.name
+        for spec in specs
+        if spec.entity_type is not None
+    }
+
+    build_graph(dispatcher, specs, hydration_tools=hydration_tools)
 
 
 app = create_app()
