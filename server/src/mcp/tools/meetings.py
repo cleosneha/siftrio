@@ -39,6 +39,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_meeting",
         description="Get details of a specific meeting by ID, including transcript if available.",
+        entity_type="meeting",
         parameters=[
             ToolParameterSpec(name="meeting_id", type="string", description="The UUID of the meeting to retrieve.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from meeting if not provided.", required=False),

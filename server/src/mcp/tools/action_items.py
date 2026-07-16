@@ -51,6 +51,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_action_item",
         description="Get a specific action item by ID, including assignee, due date, and Jira sync status.",
+        entity_type="action_item",
         parameters=[
             ToolParameterSpec(name="action_item_id", type="string", description="The UUID of the action item.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from action item if not provided.", required=False),

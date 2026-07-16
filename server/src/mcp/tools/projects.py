@@ -38,6 +38,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_project",
         description="Get details of a specific project by ID.",
+        entity_type="project",
         parameters=[
             ToolParameterSpec(name="project_id", type="string", description="The UUID of the project to retrieve.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),

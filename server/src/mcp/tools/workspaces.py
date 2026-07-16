@@ -26,6 +26,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_workspace",
         description="Get details of a specific workspace by ID.",
+        entity_type="workspace",
         parameters=[
             ToolParameterSpec(name="workspace_id", type="string", description="The UUID of the workspace to retrieve", required=True),
         ],
