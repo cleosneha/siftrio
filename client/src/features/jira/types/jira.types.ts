@@ -66,6 +66,8 @@ export interface ActionItemJiraCreateRequest {
   priority: string;
   labels: string[];
   assignee_account_id: string | null;
+  assignee_name: string | null;
+  assignee_email: string | null;
 }
 
 export interface ActionItemJiraCreateResponse {

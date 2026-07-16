@@ -140,24 +140,15 @@ export function AssistantScreen({ threadId }: { threadId: string }) {
                         : "bg-muted/50"
                     }`}
                   >
-                    {msg.role === "assistant" && msg.content ? (
+                    {msg.content ? (
                       <MarkdownRenderer content={msg.content} />
-                    ) : (
-                      <div className="whitespace-pre-wrap">
-                        {msg.content || (
-                          <span className="italic text-muted-foreground">Thinking...</span>
-                        )}
-                      </div>
-                    )}
-                    {msg.role === "assistant" && isLoading &&
-                      msg === messages[messages.length - 1] &&
-                      !msg.content && (
-                        <span className="inline-flex gap-0.5 ml-1">
-                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0ms" }} />
-                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "150ms" }} />
-                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "300ms" }} />
-                        </span>
-                      )}
+                    ) : msg.role === "assistant" && isLoading && msg === messages[messages.length - 1] ? (
+                      <span className="inline-flex gap-0.5">
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0ms" }} />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "150ms" }} />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "300ms" }} />
+                      </span>
+                    ) : null}
                   </div>
 
                   {msg.role === "assistant" && msg.citations && msg.citations.length > 0 && (

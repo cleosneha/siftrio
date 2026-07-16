@@ -162,6 +162,8 @@ function JiraPreviewFormFields({
           .map((l) => l.trim())
           .filter(Boolean),
         assignee_account_id: selectedUser?.account_id ?? null,
+        assignee_name: selectedUser?.display_name ?? null,
+        assignee_email: selectedUser?.email_address ?? null,
       },
     });
     onClose();
