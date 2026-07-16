@@ -220,7 +220,7 @@ function ActionItemsPanel({
         ) : (
           <div className="space-y-3">
             {actionItems.map((ai) => (
-              <div key={ai.id} className="rounded-lg border p-3">
+              <div key={ai.id} className="rounded-lg bg-muted/50 p-3">
                 <div className="mb-1 text-sm font-medium">{ai.title}</div>
                 {ai.description && (
                   <div className="mb-2 text-xs text-muted-foreground">

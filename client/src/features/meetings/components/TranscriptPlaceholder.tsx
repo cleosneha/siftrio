@@ -54,8 +54,8 @@ export function TranscriptPlaceholder({
 
   if (transcriptStatus === "failed") {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-red-300 p-12 text-center mb-6">
-        <h3 className="mb-2 text-lg font-medium text-red-600">
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center mb-6" style={{ borderColor: "var(--status-error-fg)" }}>
+        <h3 className="mb-2 text-lg font-medium" style={{ color: "var(--status-error-fg)" }}>
           Transcript processing failed
         </h3>
         <p className="mb-4 text-sm text-muted-foreground">

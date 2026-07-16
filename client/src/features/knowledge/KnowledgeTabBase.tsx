@@ -205,7 +205,7 @@ export function KnowledgeTabBase({
                         size="xs"
                         onClick={() => handleApproval(item, "approved")}
                       >
-                        <Check className="h-3 w-3 text-green-600" />
+                        <Check className="h-3 w-3" style={{ color: "var(--success)" }} />
                         Approve
                       </Button>
                       <Button
@@ -213,7 +213,7 @@ export function KnowledgeTabBase({
                         size="xs"
                         onClick={() => handleApproval(item, "rejected")}
                       >
-                        <X className="h-3 w-3 text-red-600" />
+                        <X className="h-3 w-3" style={{ color: "var(--destructive)" }} />
                         Reject
                       </Button>
                     </>

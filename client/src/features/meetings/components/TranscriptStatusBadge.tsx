@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 
-const VARIANTS: Record<string, { label: string; className: string }> = {
-  pending: { label: "Pending", className: "bg-yellow-100 text-yellow-800" },
-  processing: { label: "Processing", className: "bg-blue-100 text-blue-800" },
-  completed: { label: "Completed", className: "bg-green-100 text-green-800" },
-  failed: { label: "Failed", className: "bg-red-100 text-red-800" },
+const VARIANTS: Record<string, { label: string; style: React.CSSProperties }> = {
+  pending: { label: "Pending", style: { backgroundColor: "var(--status-pending-bg)", color: "var(--status-pending-fg)" } },
+  processing: { label: "Processing", style: { backgroundColor: "var(--status-progress-bg)", color: "var(--status-progress-fg)" } },
+  completed: { label: "Completed", style: { backgroundColor: "var(--status-done-bg)", color: "var(--status-done-fg)" } },
+  failed: { label: "Failed", style: { backgroundColor: "var(--status-error-bg)", color: "var(--status-error-fg)" } },
 };
 
 export function TranscriptStatusBadge({
@@ -15,10 +15,10 @@ export function TranscriptStatusBadge({
   if (!status) return null;
   const v = VARIANTS[status] || {
     label: status,
-    className: "bg-gray-100 text-gray-800",
+    style: { backgroundColor: "var(--status-default-bg)", color: "var(--status-default-fg)" },
   };
   return (
-    <Badge className={v.className} variant="outline">
+    <Badge style={v.style} variant="outline">
       {v.label}
     </Badge>
   );
