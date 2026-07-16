@@ -41,3 +41,8 @@ class ToolSpec(BaseModel):
     name: str
     description: str
     parameters: list[ToolParameterSpec] = Field(default_factory=list)
+    entity_type: str | None = Field(
+        default=None,
+        description="Entity type this tool hydrates (e.g. 'action_item', 'meeting'). "
+        "Used by the entity hydrator to resolve which tool fetches structured data.",
+    )
