@@ -32,6 +32,7 @@ mcp_server = FastMCP(
     instructions="Siftrio MCP Server - AI Project Memory + SDLC Copilot",
     lifespan=mcp_lifespan,
     token_verifier=ApiKeyVerifier(async_session_factory),
+    streamable_http_path="/",
     auth=AuthSettings(
         issuer_url=AnyHttpUrl(settings.BACKEND_URL),
         resource_server_url=AnyHttpUrl(f"{settings.BACKEND_URL}/mcp"),
