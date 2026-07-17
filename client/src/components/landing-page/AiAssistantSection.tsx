@@ -12,23 +12,20 @@ const EXAMPLE_QUESTIONS = [
 export function AiAssistantSection() {
   return (
     <section
-      className="relative flex items-center"
-      style={{ background: "#08090A" }}
+      className="relative flex items-center bg-background"
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-16 px-6 py-32 md:flex-row md:items-center md:px-12 lg:px-20">
         {/* ── LEFT ── */}
         <div className="flex-1 space-y-8 md:max-w-[40%]">
           <div className="space-y-6">
             <p
-              className="text-[11px] font-medium uppercase tracking-[0.2em]"
-              style={{ color: "#4A4E54" }}
+              className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text"
             >
               AI Assistant
             </p>
 
             <h2
-              className="text-3xl font-semibold leading-[1.15] tracking-tight sm:text-4xl lg:text-5xl"
-              style={{ color: "#FFFFFF" }}
+              className="text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl lg:text-5xl"
             >
               Ask your project
               <br />
@@ -36,8 +33,7 @@ export function AiAssistantSection() {
             </h2>
 
             <p
-              className="max-w-md text-[15px] leading-relaxed sm:text-base"
-              style={{ color: "#6D737C" }}
+              className="max-w-md text-[15px] leading-relaxed sm:text-base text-disabled-text"
             >
               Ask questions about meetings, decisions, action items,
               requirements, risks, project history, Jira, or documentation.
@@ -50,10 +46,9 @@ export function AiAssistantSection() {
             {EXAMPLE_QUESTIONS.map((q) => (
               <span
                 key={q}
-                className="rounded-full px-4 py-2 text-[13px] transition-colors hover:bg-[#17191C]"
+                className="rounded-full px-4 py-2 text-[13px] transition-colors text-disabled-text hover:bg-accent"
                 style={{
-                  color: "#6D737C",
-                  border: "1px solid #1C1E22",
+                  border: "1px solid var(--subtle-border)",
                 }}
               >
                 {q}
@@ -66,7 +61,7 @@ export function AiAssistantSection() {
         <div className="flex flex-1 justify-center md:max-w-[60%]">
           <div
             className="relative w-full overflow-hidden"
-            style={{ aspectRatio: "16 / 9", borderRadius: 10, border: "1px solid #1C1E22" }}
+            style={{ aspectRatio: "16 / 9", borderRadius: 10, border: "1px solid var(--subtle-border)" }}
           >
             <Image
               src="/AI-assistant.png"
@@ -79,7 +74,7 @@ export function AiAssistantSection() {
             <div
               className="pointer-events-none absolute inset-0"
               style={{
-                background: "linear-gradient(to bottom, transparent 60%, #08090A)",
+                background: "linear-gradient(to bottom, transparent 60%, var(--background))",
               }}
             />
           </div>

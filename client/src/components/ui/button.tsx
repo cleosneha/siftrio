@@ -9,13 +9,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-[#F2F2F2] active:bg-[#E5E5E5] cursor-pointer",
+          "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active cursor-pointer",
         outline:
-          "border border-[rgba(255,255,255,0.05)] bg-transparent hover:bg-[#17191C] hover:text-foreground aria-expanded:bg-[#17191C] aria-expanded:text-foreground cursor-pointer",
+          "border border-border bg-transparent hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground cursor-pointer",
         secondary:
-          "bg-transparent text-secondary-foreground hover:bg-[#17191C] aria-expanded:bg-[#17191C] aria-expanded:text-foreground cursor-pointer",
+          "bg-transparent text-secondary-foreground hover:bg-accent aria-expanded:bg-accent aria-expanded:text-foreground cursor-pointer",
         ghost:
-          "bg-transparent hover:bg-[#151719] aria-expanded:bg-[#151719] aria-expanded:text-foreground cursor-pointer",
+          "bg-transparent hover:bg-accent aria-expanded:bg-accent aria-expanded:text-foreground cursor-pointer",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40 cursor-pointer",
         link: "text-primary underline-offset-4 hover:underline cursor-pointer",

@@ -45,7 +45,7 @@ export function SidebarWorkspace({ workspace }: SidebarWorkspaceProps) {
               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
           )}
         >
-          <Box className="h-4 w-4 shrink-0" style={isActive ? { color: "#5C8E8A" } : undefined} />
+          <Box className="h-4 w-4 shrink-0" style={isActive ? { color: "var(--entity-workspace)" } : undefined} />
           <span className="truncate">{workspace.name}</span>
         </Link>
       </div>

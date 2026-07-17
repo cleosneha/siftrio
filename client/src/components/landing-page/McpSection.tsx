@@ -57,21 +57,19 @@ export function McpSection() {
   const hc = hubCenter()
 
   return (
-    <section style={{ background: "#08090A" }} className="relative">
+    <section className="relative bg-background">
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-16 px-6 py-32 md:flex-row md:items-center md:px-12 lg:px-20">
         {/* ── LEFT ── */}
         <div className="flex-1 space-y-8 md:max-w-[40%]">
           <div className="space-y-6">
             <p
-              className="text-[11px] font-medium uppercase tracking-[0.2em]"
-              style={{ color: "#4A4E54" }}
+              className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text"
             >
               MCP Server
             </p>
 
             <h2
-              className="text-3xl font-semibold leading-[1.15] tracking-tight sm:text-4xl lg:text-5xl"
-              style={{ color: "#FFFFFF" }}
+              className="text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl lg:text-5xl"
             >
               Connect your favorite
               <br />
@@ -79,8 +77,7 @@ export function McpSection() {
             </h2>
 
             <p
-              className="max-w-md text-[15px] leading-relaxed sm:text-base"
-              style={{ color: "#6D737C" }}
+              className="max-w-md text-[15px] leading-relaxed sm:text-base text-disabled-text"
             >
               Use Claude Desktop, Cursor, VS Code, Windsurf, or your own AI
               agents with secure access to your Siftrio workspace through the
@@ -89,8 +86,7 @@ export function McpSection() {
           </div>
 
           <p
-            className="text-sm font-medium tracking-wide"
-            style={{ color: "#3A3E44" }}
+            className="text-sm font-medium tracking-wide text-faint-text"
           >
             One protocol. Every project. Unlimited context.
           </p>
@@ -113,7 +109,7 @@ export function McpSection() {
                 <path
                   key={`bg-t-${t.id}`}
                   d={curve(c(t.id), hc)}
-                  stroke="#131416"
+                  style={{ stroke: "var(--svg-bg-track)" }}
                   strokeWidth={1}
                   fill="none"
                 />
@@ -122,7 +118,7 @@ export function McpSection() {
                 <path
                   key={`bg-r-${r.id}`}
                   d={curve(hc, c(r.id))}
-                  stroke="#131416"
+                  style={{ stroke: "var(--svg-bg-track)" }}
                   strokeWidth={1}
                   fill="none"
                 />
@@ -134,7 +130,7 @@ export function McpSection() {
                   <motion.path
                     key={`line-t-${t.id}`}
                     d={curve(c(t.id), hc)}
-                    stroke="#2A2E34"
+                    style={{ stroke: "var(--svg-line)" }}
                     strokeWidth={1}
                     fill="none"
                     initial={{ pathLength: 0 }}
@@ -153,7 +149,7 @@ export function McpSection() {
                   <motion.path
                     key={`line-r-${r.id}`}
                     d={curve(hc, c(r.id))}
-                    stroke="#2A2E34"
+                    style={{ stroke: "var(--svg-line)" }}
                     strokeWidth={1}
                     fill="none"
                     initial={{ pathLength: 0 }}
@@ -175,8 +171,7 @@ export function McpSection() {
                     <motion.circle
                       key={`dot-t-${t.id}`}
                       r={2}
-                      fill="#4A4E54"
-                      style={{ offsetPath: `path('${d}')` }}
+                      style={{ fill: "var(--subtle-text)", offsetPath: `path('${d}')` }}
                       initial={{ offsetDistance: "0%", opacity: 0 }}
                       animate={{
                         offsetDistance: ["0%", "100%"],
@@ -209,8 +204,7 @@ export function McpSection() {
                     <motion.circle
                       key={`dot-r-${r.id}`}
                       r={2}
-                      fill="#4A4E54"
-                      style={{ offsetPath: `path('${d}')` }}
+                      style={{ fill: "var(--subtle-text)", offsetPath: `path('${d}')` }}
                       initial={{ offsetDistance: "0%", opacity: 0 }}
                       animate={{
                         offsetDistance: ["0%", "100%"],
@@ -244,8 +238,8 @@ export function McpSection() {
                 width: HUB.w,
                 height: HUB.h,
                 borderRadius: "50%",
-                background: "#111213",
-                border: "1px solid #1C1E22",
+                background: "var(--muted)",
+                border: "1px solid var(--subtle-border)",
                 boxShadow:
                   "0 1px 0 rgba(255,255,255,0.015), 0 4px 20px rgba(0,0,0,0.3)",
               }}
@@ -270,14 +264,12 @@ export function McpSection() {
             >
               <div className="text-center leading-tight">
                 <span
-                  className="block text-[13px] font-semibold"
-                  style={{ color: "#BCC0C6" }}
+                  className="block text-[13px] font-semibold text-soft-text"
                 >
                   Siftrio
                 </span>
                 <span
-                  className="block text-[11px]"
-                  style={{ color: "#4A4E54" }}
+                  className="block text-[11px] text-subtle-text"
                 >
                   MCP
                 </span>
@@ -296,8 +288,8 @@ export function McpSection() {
                     top: t.y,
                     width: t.w,
                     height: t.h,
-                    background: "#111213",
-                    border: "1px solid #1C1E22",
+                    background: "var(--muted)",
+                    border: "1px solid var(--subtle-border)",
                     borderRadius: 8,
                     boxShadow:
                       "0 1px 0 rgba(255,255,255,0.015), 0 4px 16px rgba(0,0,0,0.3)",
@@ -308,8 +300,7 @@ export function McpSection() {
                   custom={0.8 + i * 0.12}
                 >
                   <motion.span
-                    className="text-[12px] font-medium"
-                    style={{ color: "#BCC0C6" }}
+                    className="text-[12px] font-medium text-soft-text"
                     animate={{ y: [0, floatDir, 0] }}
                     transition={{
                       duration: 5.5 + i * 0.3,
@@ -336,8 +327,8 @@ export function McpSection() {
                     top: r.y,
                     width: r.w,
                     height: r.h,
-                    background: "#111213",
-                    border: "1px solid #1C1E22",
+                    background: "var(--muted)",
+                    border: "1px solid var(--subtle-border)",
                     borderRadius: 8,
                     boxShadow:
                       "0 1px 0 rgba(255,255,255,0.015), 0 4px 16px rgba(0,0,0,0.3)",
@@ -348,8 +339,7 @@ export function McpSection() {
                   custom={3.0 + i * 0.1}
                 >
                   <motion.span
-                    className="text-[11px] font-medium"
-                    style={{ color: "#BCC0C6" }}
+                    className="text-[11px] font-medium text-soft-text"
                     animate={{ y: [0, floatDir, 0] }}
                     transition={{
                       duration: 6 + i * 0.4,

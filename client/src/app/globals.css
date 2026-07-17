@@ -48,6 +48,20 @@
   --color-body-text: var(--body-text);
   --color-secondary-text: var(--secondary-text);
   --color-disabled-text: var(--disabled-text);
+  --color-subtle-text: var(--subtle-text);
+  --color-faint-text: var(--faint-text);
+  --color-soft-text: var(--soft-text);
+  --color-subtle-border: var(--subtle-border);
+  --color-svg-track: var(--svg-track);
+  --color-svg-bg-track: var(--svg-bg-track);
+  --color-svg-line: var(--svg-line);
+  --color-entity-workspace: var(--entity-workspace);
+  --color-entity-client: var(--entity-client);
+  --color-entity-project: var(--entity-project);
+  --color-entity-meeting: var(--entity-meeting);
+  --color-entity-assistant: var(--entity-assistant);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -109,6 +123,26 @@
   --body-text: #D0D3D6;
   --disabled-text: #6D737C;
   --secondary-text: #E8E8E8;
+  --subtle-text: #4A4E54;
+  --faint-text: #3A3E44;
+  --soft-text: #BCC0C6;
+
+  /* Entity icon colors */
+  --entity-workspace: #5C8E8A;
+  --entity-client: #6F84A5;
+  --entity-project: #5E8B6D;
+  --entity-meeting: #857A9A;
+  --entity-assistant: #A56D3F;
+
+  /* Primary button hover/active states */
+  --primary-hover: #F2F2F2;
+  --primary-active: #E5E5E5;
+
+  /* Borders */
+  --subtle-border: #1C1E22;
+  --svg-track: #1A1C1F;
+  --svg-bg-track: #131416;
+  --svg-line: #2A2E34;
 
   /* Scrollbar */
   --scrollbar: #2A2E34;
@@ -191,4 +225,17 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.footer-curve::before {
+  content: "";
+  position: absolute;
+  width: 2200px;
+  height: 700px;
+  background: var(--background);
+  border-radius: 50%;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -520px;
+  pointer-events: none;
 }

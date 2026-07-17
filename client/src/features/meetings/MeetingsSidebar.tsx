@@ -16,7 +16,7 @@ export function MeetingsSidebar() {
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
-      <Video className="h-4 w-4" style={{ color: "#857A9A" }} />
+      <Video className="h-4 w-4" style={{ color: "var(--entity-meeting)" }} />
       {hovering && (
         <div className="absolute left-10 z-50 whitespace-nowrap rounded-md border bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-sm pointer-events-none">
           Show all meetings

@@ -43,7 +43,7 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
             isAssistantActive && "bg-accent font-medium text-accent-foreground",
           )}
         >
-          <Bot className="h-4 w-4" style={isAssistantActive ? { color: "#A56D3F" } : undefined} />
+          <Bot className="h-4 w-4" style={isAssistantActive ? { color: "var(--entity-assistant)" } : undefined} />
           <span>AI Assistant</span>
         </Link>
         <Link

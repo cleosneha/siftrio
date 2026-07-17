@@ -42,15 +42,13 @@ const EASE = [0.25, 0.1, 0.25, 1] as const;
 export function HeroSection() {
   return (
     <section
-      className="relative flex min-h-screen items-center overflow-hidden"
-      style={{ background: "#08090A" }}
+      className="relative flex min-h-screen items-center overflow-hidden bg-background"
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-16 px-6 py-24 md:flex-row md:items-center md:gap-20 md:px-12 lg:px-20">
         {/* ── LEFT ── */}
         <div className="flex-1 space-y-8 md:max-w-[55%]">
           <motion.p
-            className="text-[11px] font-medium uppercase tracking-[0.2em]"
-            style={{ color: "#4A4E54" }}
+            className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, ease: EASE, delay: 0.3 }}
@@ -60,8 +58,7 @@ export function HeroSection() {
 
           <h1 className="text-4xl font-semibold leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">
             <motion.span
-              className="block"
-              style={{ color: "#FFFFFF" }}
+              className="block text-foreground"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, ease: EASE, delay: 0.6 }}
@@ -69,8 +66,7 @@ export function HeroSection() {
               Every project
             </motion.span>
             <motion.span
-              className="block"
-              style={{ color: "#FFFFFF" }}
+              className="block text-foreground"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, ease: EASE, delay: 0.8 }}
@@ -78,8 +74,7 @@ export function HeroSection() {
               has a memory.
             </motion.span>
             <motion.span
-              className="block"
-              style={{ color: "#6D737C" }}
+              className="block text-disabled-text"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.2, ease: EASE, delay: 1.0 }}
@@ -89,8 +84,7 @@ export function HeroSection() {
           </h1>
 
           <motion.p
-            className="max-w-md text-[15px] leading-relaxed sm:text-base"
-            style={{ color: "#6D737C" }}
+            className="max-w-md text-[15px] leading-relaxed sm:text-base text-disabled-text"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, ease: EASE, delay: 1.3 }}
@@ -116,10 +110,10 @@ export function HeroSection() {
                 const dotDelay = 7.5 + i * 1.0;
                 return (
                   <g key={`${c.from}-${c.to}`}>
-                    <path d={d} stroke="#1A1C1F" strokeWidth={1} fill="none" />
+                    <path d={d} style={{ stroke: "var(--svg-track)" }} strokeWidth={1} fill="none" />
                     <motion.path
                       d={d}
-                      stroke="#2A2E34"
+                      style={{ stroke: "var(--svg-line)" }}
                       strokeWidth={1}
                       fill="none"
                       initial={{ pathLength: 0 }}
@@ -132,8 +126,7 @@ export function HeroSection() {
                     />
                     <motion.circle
                       r={2.5}
-                      fill="#3A3E44"
-                      style={{ offsetPath: `path('${d}')` }}
+                      style={{ fill: "var(--faint-text)", offsetPath: `path('${d}')` }}
                       initial={{ offsetDistance: "0%", opacity: 0 }}
                       animate={{
                         offsetDistance: ["0%", "100%"],
@@ -176,8 +169,8 @@ export function HeroSection() {
                   <motion.div
                     className="flex h-full w-full flex-col items-center justify-center gap-1.5"
                     style={{
-                      background: "#111213",
-                      border: "1px solid #1C1E22",
+                      background: "var(--muted)",
+                      border: "1px solid var(--subtle-border)",
                       borderRadius: 8,
                       boxShadow:
                         "0 1px 0 rgba(255,255,255,0.015), 0 4px 16px rgba(0,0,0,0.3)",
@@ -192,12 +185,11 @@ export function HeroSection() {
                     whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
                   >
                     <span
-                      className="text-[13px] font-medium tracking-wide"
-                      style={{ color: "#BCC0C6" }}
+                      className="text-[13px] font-medium tracking-wide text-soft-text"
                     >
                       {card.label}
                     </span>
-                    <span className="text-[10px]" style={{ color: "#3A3E44" }}>
+                    <span className="text-[10px] text-faint-text">
                       ● ● ●
                     </span>
                   </motion.div>
@@ -211,7 +203,7 @@ export function HeroSection() {
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
         style={{
-          background: "linear-gradient(to bottom, transparent, #08090A)",
+          background: "linear-gradient(to bottom, transparent, var(--background))",
         }}
       />
     </section>
