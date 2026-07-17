@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { QueryProvider } from "@/lib/query-provider";
 import { AuthProvider } from "@/features/auth/AuthProvider";
+import { Header } from "@/components/header/Header";
 import "./globals.css";
 
 
@@ -33,7 +34,10 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <Header />
+            {children}
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>
