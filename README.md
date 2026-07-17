@@ -6,7 +6,20 @@
 
 Projects accumulate months of context — meeting decisions, shifting requirements, action items, risks, and stakeholder discussions — scattered across calendars, transcripts, project trackers, and chat. Siftrio brings all of this into one centralized knowledge layer and lets your team reason over it using AI.
 
-Ask *why* a decision was made, *who* requested a feature, or *what* is still pending — and get answers with citations sourced from your actual meetings and documents.
+Ask _why_ a decision was made, _who_ requested a feature, or _what_ is still pending — and get answers with citations sourced from your actual meetings and documents.
+
+---
+
+<p align="center">
+  <img src="client/public/landing-page/hero-section.png" alt="Siftrio AI Assistant" width="100%" />
+</p>
+<p align="center">
+  <img src="client/public/landing-page/product-ss.png" alt="Siftrio Product" width="100%" />
+</p>
+
+<p align="center">
+  <img src="client/public/landing-page/AI-assistant.png" alt="Siftrio AI Assistant" width="100%" />
+</p>
 
 ---
 
@@ -44,18 +57,18 @@ All sources are chunked, embedded, and stored in a vector database. AI agents re
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | FastAPI, Python 3.12+ |
-| Database | PostgreSQL 17 + pgvector |
-| ORM & Migrations | SQLAlchemy 2.0 (Async), Alembic |
-| AI / LLM | LangChain, LangGraph, Mistral AI |
-| Embeddings | Mistral AI Embeddings (pgvector HNSW index) |
-| Auth | JWT + Google OAuth, Atlassian OAuth |
-| Integrations | Fireflies.ai, Jira, Google Calendar |
-| IDE Integration | MCP Server (Model Context Protocol) |
-| Deployment | Vercel (frontend), FastAPI Cloud (backend), Supabase (database) |
+| Layer            | Technology                                                      |
+| ---------------- | --------------------------------------------------------------- |
+| Frontend         | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui             |
+| Backend          | FastAPI, Python 3.12+                                           |
+| Database         | PostgreSQL 17 + pgvector                                        |
+| ORM & Migrations | SQLAlchemy 2.0 (Async), Alembic                                 |
+| AI / LLM         | LangChain, LangGraph, Mistral AI                                |
+| Embeddings       | Mistral AI Embeddings (pgvector HNSW index)                     |
+| Auth             | JWT + Google OAuth, Atlassian OAuth                             |
+| Integrations     | Fireflies.ai, Jira, Google Calendar                             |
+| IDE Integration  | MCP Server (Model Context Protocol)                             |
+| Deployment       | Vercel (frontend), FastAPI Cloud (backend), Supabase (database) |
 
 ---
 
