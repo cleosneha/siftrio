@@ -6,10 +6,10 @@ export default function RootNotFound() {
       <h1 className="text-4xl font-bold">404</h1>
       <p className="text-lg text-muted-foreground">Page not found</p>
       <Link
-        href="/login"
+        href="/"
         className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
       >
-        Go to login
+        Go home
       </Link>
     </div>
   );

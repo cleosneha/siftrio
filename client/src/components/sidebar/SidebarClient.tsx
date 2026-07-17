@@ -42,7 +42,7 @@ export function SidebarClient({ client, projects }: SidebarClientProps) {
               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
           )}
         >
-          <Folder className="h-4 w-4 shrink-0" />
+          <Folder className="h-4 w-4 shrink-0" style={isClientPage ? { color: "#6F84A5" } : undefined} />
           <span className="truncate">{client.name}</span>
         </Link>
       </div>

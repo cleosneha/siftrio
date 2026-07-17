@@ -1,4 +1,5 @@
 import { HeroSection } from "@/components/landing-page/HeroSection"
+import { ProductSection } from "@/components/landing-page/ProductSection"
 import { AuthRedirect } from "@/components/landing-page/AuthRedirect"
 
 export default function Home() {
@@ -6,6 +7,7 @@ export default function Home() {
     <>
       <AuthRedirect />
       <HeroSection />
+      <ProductSection />
     </>
   )
 }

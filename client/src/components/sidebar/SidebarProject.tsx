@@ -24,7 +24,7 @@ export function SidebarProject({ project }: SidebarProjectProps) {
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
-      <FileText className="h-3.5 w-3.5 shrink-0" />
+      <FileText className="h-3.5 w-3.5 shrink-0" style={isActive ? { color: "#5E8B6D" } : undefined} />
       <span className="truncate">{project.name}</span>
     </Link>
   );

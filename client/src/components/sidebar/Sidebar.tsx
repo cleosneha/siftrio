@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Plus, Layers, Bot, Settings, LogOut } from "lucide-react";
+import { Plus, Bot, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -35,20 +35,6 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="px-4 py-3">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 font-medium"
-          >
-            <Layers className="h-5 w-5" />
-            <span className="text-base">Siftrio</span>
-          </Link>
-        </div>
-      </div>
-
-      <Separator />
-
       <div className="px-3 py-2">
         <Link
           href="/assistant"
@@ -57,7 +43,7 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
             isAssistantActive && "bg-accent font-medium text-accent-foreground",
           )}
         >
-          <Bot className="h-4 w-4" />
+          <Bot className="h-4 w-4" style={isAssistantActive ? { color: "#A56D3F" } : undefined} />
           <span>AI Assistant</span>
         </Link>
         <Link
