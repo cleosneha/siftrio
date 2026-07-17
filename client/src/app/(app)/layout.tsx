@@ -33,9 +33,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <ProtectedRoute>
       <AppProvider onOpenCreateWorkspace={() => setShowCreateModal(true)}>
         <MeetingsDrawerProvider>
-          <div className="flex h-screen">
+          <div className="flex h-[calc(100vh-3.5rem)]">
             <Sidebar onCreateWorkspace={() => setShowCreateModal(true)} />
-            <main className="flex flex-1 flex-col overflow-y-auto">
+            <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               {children}
             </main>
             <CreateWorkspaceModal
