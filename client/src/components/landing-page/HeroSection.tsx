@@ -207,6 +207,13 @@ export function HeroSection() {
           </div>
         </div>
       </div>
+
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
+        style={{
+          background: "linear-gradient(to bottom, transparent, #08090A)",
+        }}
+      />
     </section>
   );
 }

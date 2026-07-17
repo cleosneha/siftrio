@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function ProductSection() {
   return (
     <section
@@ -33,26 +35,25 @@ export function ProductSection() {
         </div>
 
         <div
-          className="mt-16 flex w-full max-w-[90%] items-center justify-center"
-          style={{ aspectRatio: "16 / 9" }}
+          className="relative mt-16 w-full max-w-[90%] overflow-hidden"
+          style={{ aspectRatio: "16 / 9", borderRadius: 10 }}
         >
+          <Image
+            src="/product-ss.png"
+            alt="Siftrio product screenshot"
+            fill
+            className="object-cover"
+            priority
+          />
           <div
-            className="flex h-full w-full items-center justify-center"
+            className="pointer-events-none absolute inset-0"
             style={{
-              background: "#111213",
-              border: "1px dashed #1C1E22",
-              borderRadius: 10,
+              background:
+                "linear-gradient(to bottom, transparent 60%, #08090A)",
             }}
-          >
-            <span
-              className="text-sm"
-              style={{ color: "#3A3E44" }}
-            >
-              Product Screenshot
-            </span>
-          </div>
+          />
         </div>
       </div>
     </section>
-  )
+  );
 }
