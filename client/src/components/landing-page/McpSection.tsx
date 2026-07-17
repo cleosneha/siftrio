@@ -1,358 +1,575 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState, useMemo, useCallback } from "react"
 import { motion, useInView } from "framer-motion"
 
-const TOOLS = [
-  { id: "claude", label: "Claude Desktop", x: 30, y: 10, w: 140, h: 56 },
-  { id: "cursor", label: "Cursor", x: 200, y: 0, w: 110, h: 56 },
-  { id: "vscode", label: "VS Code", x: 340, y: 0, w: 110, h: 56 },
-  { id: "windsurf", label: "Windsurf", x: 480, y: 0, w: 120, h: 56 },
-  { id: "agent", label: "Custom Agent", x: 620, y: 10, w: 130, h: 56 },
-] as const
-
-const RESOURCES = [
-  { id: "meetings", label: "Meetings", x: 0, y: 310, w: 110, h: 52 },
-  { id: "knowledge", label: "Knowledge", x: 118, y: 310, w: 118, h: 52 },
-  { id: "projects", label: "Projects", x: 244, y: 310, w: 106, h: 52 },
-  { id: "actions", label: "Action Items", x: 358, y: 310, w: 126, h: 52 },
-  { id: "jira", label: "Jira", x: 492, y: 310, w: 86, h: 52 },
-  { id: "calendar", label: "Google Calendar", x: 586, y: 310, w: 148, h: 52 },
-  { id: "documents", label: "Documents", x: 130, y: 376, w: 118, h: 52 },
-  { id: "requirements", label: "Requirements", x: 400, y: 376, w: 136, h: 52 },
-] as const
-
-const HUB = { x: 290, y: 168, w: 120, h: 120 }
-
-function c(id: string) {
-  const n = [...TOOLS, ...RESOURCES].find((n) => n.id === id)!
-  return { x: n.x + n.w / 2, y: n.y + n.h / 2 }
+interface CardDef {
+  id: string
+  label: string
 }
 
-function hubCenter() {
-  return { x: HUB.x + HUB.w / 2, y: HUB.y + HUB.h / 2 }
-}
+const TOOLS: readonly CardDef[] = [
+  { id: "claude", label: "Claude Desktop" },
+  { id: "cursor", label: "Cursor" },
+  { id: "vscode", label: "VS Code" },
+  { id: "windsurf", label: "Windsurf" },
+  { id: "agent", label: "Custom Agent" },
+]
 
-function curve(a: { x: number; y: number }, b: { x: number; y: number }) {
-  const mx = (a.x + b.x) / 2
-  return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`
-}
+const RESOURCES_ROW1: readonly CardDef[] = [
+  { id: "meetings", label: "Meetings" },
+  { id: "knowledge", label: "Knowledge" },
+  { id: "projects", label: "Projects" },
+  { id: "actions", label: "Action Items" },
+  { id: "jira", label: "Jira" },
+  { id: "calendar", label: "Google Calendar" },
+]
+
+const RESOURCES_ROW2: readonly CardDef[] = [
+  { id: "docs", label: "Documents" },
+  { id: "requirements", label: "Requirements" },
+]
 
 const EASE = [0.25, 0.1, 0.25, 1] as const
-const W = 780
-const H = 450
 
-const cardEntrance = {
-  hidden: { opacity: 0, y: 10 },
-  visible: (d: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.9, ease: EASE, delay: d },
-  }),
+const CARD_W = 140
+const CARD_H = 52
+const CARD_RX = 10
+const CIRCLE_R = 110
+
+const VB_W = 1000
+const VB_H = 760
+const VB_CX = VB_W / 2
+const VB_TOP_Y = 50
+const VB_GAP1 = 120
+const VB_GAP2 = 48
+const VB_CIRCLE_CY = VB_TOP_Y + CARD_H + VB_GAP1 + CIRCLE_R
+const VB_BOT1_Y = VB_CIRCLE_CY + CIRCLE_R + VB_GAP1
+const VB_BOT2_Y = VB_BOT1_Y + CARD_H + VB_GAP2
+
+function rowPositions(
+  count: number,
+  cardW: number,
+  vbW: number,
+  cy: number,
+): { x: number; y: number }[] {
+  const totalW = count * cardW + (count - 1) * 20
+  const startX = (vbW - totalW) / 2
+  return Array.from({ length: count }, (_, i) => ({
+    x: startX + i * (cardW + 20),
+    y: cy,
+  }))
+}
+
+function circleEdgePoint(
+  fromX: number,
+  fromY: number,
+  cx: number,
+  cy: number,
+  r: number,
+): { x: number; y: number } {
+  const dx = cx - fromX
+  const dy = cy - fromY
+  const len = Math.sqrt(dx * dx + dy * dy)
+  if (len === 0) return { x: cx, y: cy - r }
+  return { x: cx - (dx / len) * r, y: cy - (dy / len) * r }
+}
+
+function buildCurve(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): string {
+  const my = (y1 + y2) / 2
+  return `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`
+}
+
+interface ComputedLayout {
+  circleCY: number
+  tools: { id: string; label: string; x: number; y: number }[]
+  resRow1: { id: string; label: string; x: number; y: number }[]
+  resRow2: { id: string; label: string; x: number; y: number }[]
+  edges: {
+    id: string
+    path: string
+    fromX: number
+    fromY: number
+    toX: number
+    toY: number
+  }[]
+}
+
+function computeLayout(): ComputedLayout {
+  const circleCY = VB_CIRCLE_CY
+
+  const tools = rowPositions(TOOLS.length, CARD_W, VB_W, VB_TOP_Y).map(
+    (p, i) => ({ ...TOOLS[i], ...p }),
+  )
+
+  const resRow1 = rowPositions(
+    RESOURCES_ROW1.length,
+    CARD_W,
+    VB_W,
+    VB_BOT1_Y,
+  ).map((p, i) => ({ ...RESOURCES_ROW1[i], ...p }))
+
+  const resRow2 = rowPositions(
+    RESOURCES_ROW2.length,
+    CARD_W,
+    VB_W,
+    VB_BOT2_Y,
+  ).map((p, i) => ({ ...RESOURCES_ROW2[i], ...p }))
+
+  const edges: ComputedLayout["edges"] = []
+
+  for (const t of tools) {
+    const fx = t.x + CARD_W / 2
+    const fy = t.y + CARD_H
+    const ep = circleEdgePoint(fx, fy, VB_CX, circleCY, CIRCLE_R)
+    edges.push({
+      id: `edge-${t.id}`,
+      path: buildCurve(fx, fy, ep.x, ep.y),
+      fromX: fx,
+      fromY: fy,
+      toX: ep.x,
+      toY: ep.y,
+    })
+  }
+
+  for (const r of [...resRow1, ...resRow2]) {
+    const fx = r.x + CARD_W / 2
+    const fy = r.y
+    const ep = circleEdgePoint(fx, fy, VB_CX, circleCY, CIRCLE_R)
+    edges.push({
+      id: `edge-${r.id}`,
+      path: buildCurve(fx, fy, ep.x, ep.y),
+      fromX: fx,
+      fromY: fy,
+      toX: ep.x,
+      toY: ep.y,
+    })
+  }
+
+  return { circleCY, tools, resRow1, resRow2, edges }
 }
 
 export function McpSection() {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true, margin: "-80px" })
-  const hc = hubCenter()
+  const [hovered, setHovered] = useState<string | null>(null)
+  const layout = useMemo(() => computeLayout(), [])
+
+  const nodeOpacity = useCallback(
+    (nodeId: string) => {
+      if (!hovered) return 1
+      if (nodeId === "center" || nodeId === hovered) return 1
+      return layout.edges.some(
+        (e) =>
+          e.id === `edge-${hovered}` &&
+          (e.id === `edge-${nodeId}` || nodeId === "center"),
+      )
+        ? 1
+        : 0.2
+    },
+    [hovered, layout.edges],
+  )
+
+  const edgeOpacity = useCallback(
+    (edgeId: string) => {
+      if (!hovered) return 0.12
+      return edgeId === `edge-${hovered}` ? 0.45 : 0.06
+    },
+    [hovered],
+  )
+
+  const isRelated = useCallback(
+    (nodeId: string) => {
+      if (!hovered) return false
+      if (nodeId === hovered || nodeId === "center") return true
+      return layout.edges.some(
+        (e) =>
+          e.id === `edge-${hovered}` &&
+          (e.id === `edge-${nodeId}` || nodeId === "center"),
+      )
+    },
+    [hovered, layout.edges],
+  )
+
+  const nodeScale = useCallback(
+    (nodeId: string) => {
+      if (!hovered) return 1
+      return nodeId === hovered ? 1.03 : 0.98
+    },
+    [hovered],
+  )
+
+  const SvgCard = ({
+    id,
+    label,
+    x,
+    y,
+    delay,
+  }: {
+    id: string
+    label: string
+    x: number
+    y: number
+    delay: number
+  }) => (
+    <motion.g
+      initial={{ opacity: 0, y: 10 }}
+      animate={
+        inView
+          ? { opacity: nodeOpacity(id), y: 0, scale: nodeScale(id) }
+          : { opacity: 0, y: 10, scale: 1 }
+      }
+      transition={{
+        opacity: { duration: 0.3 },
+        y: { duration: 0.8, ease: EASE, delay },
+        scale: { duration: 0.2, ease: "easeOut" },
+      }}
+      style={{ transformOrigin: `${x + CARD_W / 2}px ${y + CARD_H / 2}px` }}
+      onMouseEnter={() => setHovered(id)}
+      onMouseLeave={() => setHovered(null)}
+      className="cursor-pointer"
+    >
+      <rect
+        x={x}
+        y={y}
+        width={CARD_W}
+        height={CARD_H}
+        rx={CARD_RX}
+        fill="var(--muted)"
+        stroke="var(--subtle-border)"
+        strokeWidth={1}
+        style={{
+          filter: isRelated(id)
+            ? "drop-shadow(0 1px 0 rgba(255,255,255,0.02)) drop-shadow(0 6px 20px rgba(0,0,0,0.35))"
+            : "drop-shadow(0 1px 0 rgba(255,255,255,0.015)) drop-shadow(0 4px 16px rgba(0,0,0,0.3))",
+          transition: "filter 0.2s ease-out, stroke 0.2s ease-out",
+          stroke: isRelated(id) ? "var(--subtle-text)" : "var(--subtle-border)",
+        }}
+      />
+      <text
+        x={x + CARD_W / 2}
+        y={y + CARD_H / 2 + 1}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="var(--soft-text)"
+        fontSize={12}
+        fontWeight={500}
+        fontFamily="var(--font-sans)"
+        pointerEvents="none"
+      >
+        {label}
+      </text>
+    </motion.g>
+  )
 
   return (
-    <section className="relative bg-background">
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-16 px-6 py-32 md:flex-row md:items-center md:px-12 lg:px-20">
-        {/* ── LEFT ── */}
-        <div className="flex-1 space-y-8 md:max-w-[40%]">
-          <div className="space-y-6">
-            <p
-              className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text"
-            >
+    <section className="relative overflow-x-hidden bg-background">
+      {/* Mobile */}
+      <div className="block md:hidden">
+        <div className="mx-auto max-w-3xl px-6 py-24">
+          <div className="mb-12 space-y-6 text-center">
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text">
               MCP Server
             </p>
-
-            <h2
-              className="text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl lg:text-5xl"
-            >
+            <h2 className="text-3xl font-semibold leading-[1.15] tracking-tight text-foreground">
               Connect your favorite
               <br />
               AI tools.
             </h2>
-
-            <p
-              className="max-w-md text-[15px] leading-relaxed sm:text-base text-disabled-text"
-            >
+            <p className="mx-auto max-w-md text-[15px] leading-relaxed text-disabled-text">
               Use Claude Desktop, Cursor, VS Code, Windsurf, or your own AI
               agents with secure access to your Siftrio workspace through the
               Model Context Protocol.
             </p>
           </div>
 
-          <p
-            className="text-sm font-medium tracking-wide text-faint-text"
-          >
-            One protocol. Every project. Unlimited context.
-          </p>
-        </div>
-
-        {/* ── RIGHT ── */}
-        <div
-          ref={ref}
-          className="flex flex-1 justify-center md:max-w-[60%]"
-        >
-          <div className="relative" style={{ width: W, height: H }}>
-            <svg
-              className="absolute inset-0"
-              viewBox={`0 0 ${W} ${H}`}
-              fill="none"
-              style={{ width: W, height: H }}
-            >
-              {/* Background lines */}
-              {TOOLS.map((t) => (
-                <path
-                  key={`bg-t-${t.id}`}
-                  d={curve(c(t.id), hc)}
-                  style={{ stroke: "var(--svg-bg-track)" }}
-                  strokeWidth={1}
-                  fill="none"
-                />
-              ))}
-              {RESOURCES.map((r) => (
-                <path
-                  key={`bg-r-${r.id}`}
-                  d={curve(hc, c(r.id))}
-                  style={{ stroke: "var(--svg-bg-track)" }}
-                  strokeWidth={1}
-                  fill="none"
-                />
-              ))}
-
-              {/* Animated lines — tools → hub */}
-              {inView &&
-                TOOLS.map((t, i) => (
-                  <motion.path
-                    key={`line-t-${t.id}`}
-                    d={curve(c(t.id), hc)}
-                    style={{ stroke: "var(--svg-line)" }}
-                    strokeWidth={1}
-                    fill="none"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{
-                      duration: 0.6,
-                      ease: "easeOut",
-                      delay: 0.5 + i * 0.15,
-                    }}
-                  />
-                ))}
-
-              {/* Animated lines — hub → resources */}
-              {inView &&
-                RESOURCES.map((r, i) => (
-                  <motion.path
-                    key={`line-r-${r.id}`}
-                    d={curve(hc, c(r.id))}
-                    style={{ stroke: "var(--svg-line)" }}
-                    strokeWidth={1}
-                    fill="none"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{
-                      duration: 0.6,
-                      ease: "easeOut",
-                      delay: 2.5 + i * 0.12,
-                    }}
-                  />
-                ))}
-
-              {/* Traveling dots — tools → hub */}
-              {inView &&
-                TOOLS.map((t, i) => {
-                  const d = curve(c(t.id), hc)
-                  const delay = 1.5 + i * 0.15
-                  return (
-                    <motion.circle
-                      key={`dot-t-${t.id}`}
-                      r={2}
-                      style={{ fill: "var(--subtle-text)", offsetPath: `path('${d}')` }}
-                      initial={{ offsetDistance: "0%", opacity: 0 }}
-                      animate={{
-                        offsetDistance: ["0%", "100%"],
-                        opacity: [0, 0.7, 0.7, 0],
-                      }}
-                      transition={{
-                        offsetDistance: {
-                          duration: 2.5,
-                          ease: "linear",
-                          repeat: Infinity,
-                          delay,
-                        },
-                        opacity: {
-                          duration: 2.5,
-                          times: [0, 0.1, 0.85, 1],
-                          repeat: Infinity,
-                          delay,
-                        },
-                      }}
-                    />
-                  )
-                })}
-
-              {/* Traveling dots — hub → resources */}
-              {inView &&
-                RESOURCES.map((r, i) => {
-                  const d = curve(hc, c(r.id))
-                  const delay = 3.5 + i * 0.12
-                  return (
-                    <motion.circle
-                      key={`dot-r-${r.id}`}
-                      r={2}
-                      style={{ fill: "var(--subtle-text)", offsetPath: `path('${d}')` }}
-                      initial={{ offsetDistance: "0%", opacity: 0 }}
-                      animate={{
-                        offsetDistance: ["0%", "100%"],
-                        opacity: [0, 0.7, 0.7, 0],
-                      }}
-                      transition={{
-                        offsetDistance: {
-                          duration: 2.5,
-                          ease: "linear",
-                          repeat: Infinity,
-                          delay,
-                        },
-                        opacity: {
-                          duration: 2.5,
-                          times: [0, 0.1, 0.85, 1],
-                          repeat: Infinity,
-                          delay,
-                        },
-                      }}
-                    />
-                  )
-                })}
-            </svg>
-
-            {/* Hub */}
-            <motion.div
-              className="absolute flex items-center justify-center"
-              style={{
-                left: HUB.x,
-                top: HUB.y,
-                width: HUB.w,
-                height: HUB.h,
-                borderRadius: "50%",
-                background: "var(--muted)",
-                border: "1px solid var(--subtle-border)",
-                boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.015), 0 4px 20px rgba(0,0,0,0.3)",
-              }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={
-                inView
-                  ? {
-                      opacity: 1,
-                      scale: [1, 1.03, 1],
-                    }
-                  : { opacity: 0, scale: 0.9 }
-              }
-              transition={{
-                opacity: { duration: 0.9, ease: EASE, delay: 0.3 },
-                scale: {
-                  duration: 4,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  delay: 2,
-                },
-              }}
-            >
-              <div className="text-center leading-tight">
-                <span
-                  className="block text-[13px] font-semibold text-soft-text"
-                >
-                  Siftrio
-                </span>
-                <span
-                  className="block text-[11px] text-subtle-text"
-                >
-                  MCP
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Tool cards */}
-            {TOOLS.map((t, i) => {
-              const floatDir = i % 2 === 0 ? -1.5 : 1.5
-              return (
-                <motion.div
-                  key={t.id}
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    left: t.x,
-                    top: t.y,
-                    width: t.w,
-                    height: t.h,
-                    background: "var(--muted)",
-                    border: "1px solid var(--subtle-border)",
-                    borderRadius: 8,
-                    boxShadow:
-                      "0 1px 0 rgba(255,255,255,0.015), 0 4px 16px rgba(0,0,0,0.3)",
-                  }}
-                  variants={cardEntrance}
-                  initial="hidden"
-                  animate={inView ? "visible" : "hidden"}
-                  custom={0.8 + i * 0.12}
-                >
-                  <motion.span
-                    className="text-[12px] font-medium text-soft-text"
-                    animate={{ y: [0, floatDir, 0] }}
-                    transition={{
-                      duration: 5.5 + i * 0.3,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                      delay: 2 + i * 0.2,
-                    }}
+          <div className="space-y-6">
+            <div className="space-y-3 text-center">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-faint-text">
+                AI Clients
+              </span>
+              <div className="flex flex-wrap justify-center gap-2">
+                {[...TOOLS].map((t) => (
+                  <span
+                    key={t.id}
+                    className="rounded-lg border border-subtle-border bg-muted px-3 py-2 text-[12px] font-medium text-soft-text"
                   >
                     {t.label}
-                  </motion.span>
-                </motion.div>
-              )
-            })}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-            {/* Resource cards */}
-            {RESOURCES.map((r, i) => {
-              const floatDir = i % 2 === 0 ? 1.5 : -1.5
-              return (
-                <motion.div
-                  key={r.id}
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    left: r.x,
-                    top: r.y,
-                    width: r.w,
-                    height: r.h,
-                    background: "var(--muted)",
-                    border: "1px solid var(--subtle-border)",
-                    borderRadius: 8,
-                    boxShadow:
-                      "0 1px 0 rgba(255,255,255,0.015), 0 4px 16px rgba(0,0,0,0.3)",
-                  }}
-                  variants={cardEntrance}
-                  initial="hidden"
-                  animate={inView ? "visible" : "hidden"}
-                  custom={3.0 + i * 0.1}
-                >
-                  <motion.span
-                    className="text-[11px] font-medium text-soft-text"
-                    animate={{ y: [0, floatDir, 0] }}
-                    transition={{
-                      duration: 6 + i * 0.4,
-                      ease: "easeInOut",
-                      repeat: Infinity,
-                      delay: 4 + i * 0.15,
-                    }}
+            <div className="flex justify-center">
+              <div
+                className="flex h-24 w-24 items-center justify-center rounded-full border border-subtle-border bg-muted"
+                style={{
+                  boxShadow:
+                    "0 1px 0 rgba(255,255,255,0.015), 0 4px 20px rgba(0,0,0,0.3)",
+                }}
+              >
+                <div className="text-center leading-tight">
+                  <span className="block text-[11px] font-semibold text-soft-text">
+                    Siftrio
+                  </span>
+                  <span className="block text-[9px] text-subtle-text">
+                    MCP
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-center">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-faint-text">
+                Knowledge Sources
+              </span>
+              <div className="flex flex-wrap justify-center gap-2">
+                {[...RESOURCES_ROW1, ...RESOURCES_ROW2].map((r) => (
+                  <span
+                    key={r.id}
+                    className="rounded-lg border border-subtle-border bg-muted px-3 py-2 text-[11px] font-medium text-soft-text"
                   >
                     {r.label}
-                  </motion.span>
-                </motion.div>
-              )
-            })}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 rounded-lg border border-subtle-border bg-muted/50 p-4 text-center">
+            <p className="text-[13px] text-subtle-text">
+              One protocol. Every project. Unlimited context.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop / Tablet */}
+      <div className="hidden md:block">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-16 px-6 py-32 md:flex-row md:items-center md:px-12 lg:px-20">
+          {/* Left — Text */}
+          <div className="flex-1 space-y-8 md:max-w-[40%]">
+            <div className="space-y-6">
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text">
+                MCP Server
+              </p>
+              <h2 className="text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Connect your favorite
+                <br />
+                AI tools.
+              </h2>
+              <p className="max-w-md text-[15px] leading-relaxed text-disabled-text sm:text-base">
+                Use Claude Desktop, Cursor, VS Code, Windsurf, or your own AI
+                agents with secure access to your Siftrio workspace through the
+                Model Context Protocol.
+              </p>
+            </div>
+            <p className="text-sm font-medium tracking-wide text-faint-text">
+              One protocol. Every project. Unlimited context.
+            </p>
+          </div>
+
+          {/* Right — Diagram */}
+          <div
+            ref={ref}
+            className="flex flex-1 justify-center overflow-hidden md:max-w-[60%]"
+          >
+            <svg
+              className="h-auto w-full"
+              viewBox={`0 0 ${VB_W} ${VB_H}`}
+              fill="none"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="var(--svg-line)" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="var(--svg-line)" stopOpacity={0} />
+                </radialGradient>
+              </defs>
+
+              {/* Background track lines */}
+              {layout.edges.map((edge) => (
+                <path
+                  key={`bg-${edge.id}`}
+                  d={edge.path}
+                  stroke="var(--svg-bg-track)"
+                  strokeWidth={1.5}
+                  fill="none"
+                />
+              ))}
+
+              {/* Animated edge lines */}
+              {inView &&
+                layout.edges.map((edge, i) => (
+                  <motion.path
+                    key={edge.id}
+                    d={edge.path}
+                    stroke="var(--svg-line)"
+                    strokeWidth={1.5}
+                    fill="none"
+                    initial={{ pathLength: 0 }}
+                    animate={{
+                      pathLength: 1,
+                      strokeOpacity: edgeOpacity(edge.id),
+                    }}
+                    transition={{
+                      pathLength: {
+                        duration: 0.8,
+                        ease: "easeOut",
+                        delay: 0.4 + i * 0.06,
+                      },
+                      strokeOpacity: { duration: 0.25 },
+                    }}
+                  />
+                ))}
+
+              {/* Data-flow dots: top → center (tools) */}
+              {inView &&
+                layout.edges.slice(0, TOOLS.length).map((edge, i) => (
+                    <circle
+                      key={`dot-${edge.id}`}
+                      r={2.5}
+                      fill="var(--subtle-text)"
+                      opacity={0}
+                      className="dataflow-dot"
+                      style={{
+                        offsetPath: `path('${edge.path}')`,
+                        ["--df-duration" as string]: "5s",
+                        ["--df-delay" as string]: `${1.0 + i * 0.5}s`,
+                      }}
+                    />
+                  ),
+                )}
+
+              {/* Data-flow dots: center → bottom (resources) */}
+              {inView &&
+                layout.edges.slice(TOOLS.length).map((edge, i) => (
+                    <circle
+                      key={`dot-${edge.id}`}
+                      r={2.5}
+                      fill="var(--subtle-text)"
+                      opacity={0}
+                      className="dataflow-dot"
+                      style={{
+                        offsetPath: `path('${edge.path}')`,
+                        ["--df-duration" as string]: "6s",
+                        ["--df-delay" as string]: `${2.0 + i * 0.4}s`,
+                      }}
+                    />
+                  ),
+                )}
+
+              {/* Center circle */}
+              <motion.g
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={
+                  inView
+                    ? {
+                        opacity: nodeOpacity("center"),
+                        scale: nodeScale("center"),
+                      }
+                    : { opacity: 0, scale: 0.92 }
+                }
+                transition={{
+                  opacity: { duration: 0.9, ease: EASE, delay: 0.2 },
+                  scale: { duration: 0.25, ease: "easeOut" },
+                }}
+                style={{
+                  transformOrigin: `${VB_CX}px ${layout.circleCY}px`,
+                }}
+                onMouseEnter={() => setHovered("center")}
+                onMouseLeave={() => setHovered(null)}
+                className="cursor-pointer"
+              >
+                <circle
+                  cx={VB_CX}
+                  cy={layout.circleCY}
+                  r={CIRCLE_R + 40}
+                  fill="url(#centerGlow)"
+                  pointerEvents="none"
+                />
+                <circle
+                  cx={VB_CX}
+                  cy={layout.circleCY}
+                  r={CIRCLE_R}
+                  fill="var(--muted)"
+                  stroke="var(--subtle-border)"
+                  strokeWidth={1}
+                  style={{
+                    filter:
+                      "drop-shadow(0 1px 0 rgba(255,255,255,0.015)) drop-shadow(0 4px 20px rgba(0,0,0,0.3))",
+                    transition: "stroke 0.2s ease-out",
+                    stroke: isRelated("center")
+                      ? "var(--subtle-text)"
+                      : "var(--subtle-border)",
+                  }}
+                />
+                <text
+                  x={VB_CX}
+                  y={layout.circleCY - 8}
+                  textAnchor="middle"
+                  fill="var(--soft-text)"
+                  fontSize={18}
+                  fontWeight={600}
+                  fontFamily="var(--font-sans)"
+                  pointerEvents="none"
+                >
+                  Siftrio
+                </text>
+                <text
+                  x={VB_CX}
+                  y={layout.circleCY + 14}
+                  textAnchor="middle"
+                  fill="var(--subtle-text)"
+                  fontSize={12}
+                  fontFamily="var(--font-sans)"
+                  pointerEvents="none"
+                >
+                  MCP
+                </text>
+              </motion.g>
+
+              {/* Top row — AI Clients */}
+              {layout.tools.map((t, i) => (
+                <SvgCard
+                  key={t.id}
+                  id={t.id}
+                  label={t.label}
+                  x={t.x}
+                  y={t.y}
+                  delay={0.7 + i * 0.1}
+                />
+              ))}
+
+              {/* Bottom row 1 */}
+              {layout.resRow1.map((r, i) => (
+                <SvgCard
+                  key={r.id}
+                  id={r.id}
+                  label={r.label}
+                  x={r.x}
+                  y={r.y}
+                  delay={1.8 + i * 0.08}
+                />
+              ))}
+
+              {/* Bottom row 2 */}
+              {layout.resRow2.map((r, i) => (
+                <SvgCard
+                  key={r.id}
+                  id={r.id}
+                  label={r.label}
+                  x={r.x}
+                  y={r.y}
+                  delay={2.4 + i * 0.08}
+                />
+              ))}
+            </svg>
           </div>
         </div>
       </div>
