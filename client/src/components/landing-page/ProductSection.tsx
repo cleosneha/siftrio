@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import Image from "next/image";
 
@@ -38,7 +38,7 @@ export function ProductSection() {
 
         <div
           className="relative mt-16 w-full max-w-[90%] select-none overflow-hidden"
-          style={{ aspectRatio: "16 / 9", borderRadius: 10, border: "1px solid #1C1E22" }}
+          style={{ aspectRatio: "16 / 9", borderRadius: 10 }}
           onContextMenu={(e) => e.preventDefault()}
           onDragStart={(e) => e.preventDefault()}
         >
