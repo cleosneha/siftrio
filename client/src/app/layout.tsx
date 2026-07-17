@@ -5,8 +5,6 @@ import { AuthProvider } from "@/features/auth/AuthProvider";
 import { Header } from "@/components/header/Header";
 import "./globals.css";
 
-
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -19,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Siftrio - AI Project Memory",
-  description: "AI Project Memory + SDLC Copilot",
+  description:
+    "Siftrio is an AI-powered SDLC copilot that connects Google Calendar, Jira, GitHub, meeting transcripts, and documentation to help software teams manage projects.",
 };
 
 export default function RootLayout({
