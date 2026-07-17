@@ -8,20 +8,19 @@ const EASE = [0.25, 0.1, 0.25, 1] as const;
 
 const SECTIONS = [
   { id: "introduction", label: "Introduction" },
-  { id: "acceptance-of-terms", label: "Acceptance of Terms" },
   { id: "eligibility", label: "Eligibility" },
-  { id: "user-accounts", label: "User Accounts" },
-  { id: "use-of-the-service", label: "Use of the Service" },
-  { id: "google-integrations", label: "Google Integrations" },
-  { id: "third-party-services", label: "Third-Party Services" },
+  { id: "account-registration", label: "Account Registration" },
+  { id: "ai-features", label: "AI Features and Summaries" },
+  { id: "google-calendar", label: "Google Calendar Integration" },
+  { id: "mcp-protocol", label: "MCP Protocol Integration" },
+  { id: "user-content", label: "User Content and Data" },
   { id: "user-responsibilities", label: "User Responsibilities" },
   { id: "intellectual-property", label: "Intellectual Property" },
   { id: "subscriptions-and-billing", label: "Subscriptions and Billing" },
   { id: "termination", label: "Termination" },
   { id: "disclaimers", label: "Disclaimers" },
   { id: "limitation-of-liability", label: "Limitation of Liability" },
-  { id: "changes-to-the-terms", label: "Changes to the Terms" },
-  { id: "governing-law", label: "Governing Law" },
+  { id: "indemnification", label: "Indemnification" },
   { id: "contact-information", label: "Contact Information" },
 ];
 
@@ -162,10 +161,16 @@ export default function TermsAndConditions() {
             <p>
               By creating an account, accessing, or using the Services, you
               acknowledge that you have read, understood, and agree to be bound
-              by these Terms and our Privacy Policy. If you are using the
-              Services on behalf of an organization, you represent and warrant
-              that you have the authority to bind that organization to these
-              Terms.
+              by these Terms and our{" "}
+              <Link
+                href="/privacy"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+              >
+                Privacy Policy
+              </Link>
+              . If you are using the Services on behalf of an organization, you
+              represent and warrant that you have the authority to bind that
+              organization to these Terms.
             </p>
           </Section>
 
@@ -273,7 +278,9 @@ export default function TermsAndConditions() {
                 Google Account Permissions
               </a>{" "}
               settings. Revoking access will disable Google-related features
-              within Siftrio.
+              within Siftrio but will not delete your Siftrio account or data.
+              To request account deletion, contact{" "}
+              <span className="text-foreground">siftriosupport@gmail.com</span>.
             </p>
             <p className="font-medium text-soft-text">Compliance</p>
             <p>
@@ -357,7 +364,7 @@ export default function TermsAndConditions() {
               process your uploaded content solely for the purpose of providing
               the requested features, including AI-powered summaries, insights,
               and assistant functionality. This license terminates when you
-              delete your content or account.
+              request deletion of your content or account.
             </p>
           </Section>
 
@@ -389,16 +396,15 @@ export default function TermsAndConditions() {
           {/* 11 Termination */}
           <Section id="termination" number="11" title="Termination">
             <p>
-              You may terminate your account at any time by contacting us or
-              through the account settings within the Services. Upon
-              termination, your right to use the Services ceases immediately.
+              You may request account termination at any time by contacting us
+              at siftriosupport@gmail.com. Upon termination, your right to use
+              the Services ceases immediately.
             </p>
             <p>
               We may suspend or terminate your access to the Services at our
               discretion, with or without cause, including but not limited to
-              violations of these Terms. Upon termination, we will make
-              commercially reasonable efforts to provide you with access to
-              export your data.
+              violations of these Terms. Upon termination, we will provide your
+              data in a commonly used format upon request.
             </p>
             <p>
               Sections of these Terms that by their nature should survive
@@ -471,21 +477,10 @@ export default function TermsAndConditions() {
             </p>
           </Section>
 
-          {/* 15 Governing Law */}
-          <Section id="governing-law" number="15" title="Governing Law">
-            <p>
-              These Terms are governed by and construed in accordance with the
-              laws of the State of California, United States, without regard to
-              its conflict of law principles. Any disputes arising under these
-              Terms shall be resolved in the state or federal courts located in
-              California.
-            </p>
-          </Section>
-
-          {/* 16 Contact Information */}
+          {/* 15 Contact Information */}
           <Section
             id="contact-information"
-            number="16"
+            number="15"
             title="Contact Information"
           >
             <p>
@@ -495,7 +490,7 @@ export default function TermsAndConditions() {
             <div className="mt-6 space-y-3">
               <div>
                 <span className="text-[13px] text-subtle-text">Email</span>
-                <p className="text-foreground">cleosneha@gmail.com</p>
+                <p className="text-foreground">appsbysneha@gmail.com</p>
               </div>
               <div>
                 <span className="text-[13px] text-subtle-text">Website</span>

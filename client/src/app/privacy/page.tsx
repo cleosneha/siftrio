@@ -10,11 +10,13 @@ const SECTIONS = [
   { id: "introduction", label: "Introduction" },
   { id: "information-we-collect", label: "Information We Collect" },
   { id: "how-we-use-information", label: "How We Use Information" },
+  { id: "legal-basis", label: "Legal Basis for Processing" },
   { id: "google-account-data", label: "Google Account Data" },
   { id: "third-party-integrations", label: "Third-Party Integrations" },
   { id: "data-storage", label: "Data Storage" },
   { id: "data-sharing", label: "Data Sharing" },
   { id: "data-security", label: "Data Security" },
+  { id: "cookies-and-tracking", label: "Cookies and Session Management" },
   { id: "your-rights", label: "Your Rights" },
   { id: "childrens-privacy", label: "Children's Privacy" },
   { id: "changes-to-this-policy", label: "Changes to this Policy" },
@@ -146,7 +148,15 @@ export default function PrivacyPolicy() {
             <p>
               We believe in transparency and want you to understand exactly what
               data we collect, why we collect it, and how it is used. This
-              policy is designed to be clear and straightforward.
+              policy is designed to be clear and straightforward. For the terms
+              governing your use of the Services, please review our{" "}
+              <Link
+                href="/terms"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+              >
+                Terms &amp; Conditions
+              </Link>
+              .
             </p>
           </Section>
 
@@ -205,16 +215,68 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 04 Google Account Data */}
+          {/* 04 Legal Basis for Processing */}
+          <Section
+            id="legal-basis"
+            number="04"
+            title="Legal Basis for Processing"
+          >
+            <p>
+              We process your personal data under the following legal bases as
+              defined by the General Data Protection Regulation (GDPR):
+            </p>
+            <ul>
+              <li>
+                <strong>Contractual necessity</strong> — Processing is necessary
+                to provide the Services you have requested, including account
+                management, project management, and AI-powered features
+              </li>
+              <li>
+                <strong>Legitimate interests</strong> — Processing is necessary
+                for our legitimate interest in securing the Services, preventing
+                fraud, and improving the platform
+              </li>
+              <li>
+                <strong>User consent</strong> — Where you have given explicit
+                consent, such as connecting Google Calendar or third-party
+                integrations like Jira
+              </li>
+            </ul>
+          </Section>
+
+          {/* 05 Google Account Data */}
           <Section
             id="google-account-data"
-            number="04"
+            number="05"
             title="Google Account Data"
           >
             <p>
               Siftrio uses Google OAuth for authentication and may access
               certain Google account data to provide specific features.
             </p>
+            <p className="font-medium text-soft-text">
+              Google OAuth Scopes Requested
+            </p>
+            <p>Siftrio requests the following Google OAuth scopes:</p>
+            <ul>
+              <li>
+                <strong>openid</strong> — Authenticates your identity through
+                Google Sign-In
+              </li>
+              <li>
+                <strong>email</strong> — Accesses your email address to identify
+                your account
+              </li>
+              <li>
+                <strong>profile</strong> — Accesses your name and profile
+                picture for display within the application
+              </li>
+              <li>
+                <strong>calendar.events</strong> — Reads and creates calendar
+                events on your primary calendar to manage meeting scheduling and
+                generate Google Meet links
+              </li>
+            </ul>
             <p className="font-medium text-soft-text">
               Google Account Information Accessed
             </p>
@@ -223,12 +285,14 @@ export default function PrivacyPolicy() {
               and profile picture. This is used solely for authentication and
               account identification.
             </p>
-            <p className="font-medium text-soft-text">Google Workspace Data</p>
+            <p className="font-medium text-soft-text">Google Calendar Data</p>
             <p>
               If you choose to connect Google Calendar, Siftrio accesses your
-              calendar data to display and manage meeting information within the
-              application. This access is limited to what is necessary to
-              provide the requested feature.
+              primary calendar to read existing events and create new calendar
+              events on your behalf, including events with Google Meet
+              conference links. Siftrio requests read and write access to
+              calendar events to enable meeting scheduling and synchronization
+              features within the application.
             </p>
             <p className="font-medium text-soft-text">
               How Google Data Is Used
@@ -238,8 +302,8 @@ export default function PrivacyPolicy() {
                 Google account information is used only for authentication
               </li>
               <li>
-                Google Calendar data is used only to display and manage your
-                meetings within Siftrio
+                Google Calendar data is used only to read, create, and
+                synchronize calendar events within Siftrio
               </li>
               <li>
                 Google Workspace APIs are only used to provide features you have
@@ -253,6 +317,18 @@ export default function PrivacyPolicy() {
                 Siftrio never sells your Google user data to any third party
               </li>
             </ul>
+            <p className="font-medium text-soft-text">
+              AI and Machine Learning
+            </p>
+            <p>
+              Siftrio uses artificial intelligence to generate summaries,
+              insights, and assistant features within the application. Google
+              user data obtained through Google OAuth and Google Workspace APIs
+              is never used to train, fine-tune, develop, or improve generalized
+              artificial intelligence or machine learning models. Google data is
+              processed solely to provide the specific features you have
+              requested within the Services.
+            </p>
             <p className="font-medium text-soft-text">Revoking Access</p>
             <p>
               You can revoke Siftrio&apos;s access to your Google account at any
@@ -266,14 +342,16 @@ export default function PrivacyPolicy() {
                 Google Account Permissions
               </a>
               . Revoking access will disable Google-related features but will
-              not delete your existing Siftrio account or data.
+              not delete your existing Siftrio account or data. To request
+              deletion of your Siftrio account and associated data, contact{" "}
+              <span className="text-foreground">siftriosupport@gmail.com</span>.
             </p>
           </Section>
 
-          {/* 05 Third-Party Integrations */}
+          {/* 06 Third-Party Integrations */}
           <Section
             id="third-party-integrations"
-            number="05"
+            number="06"
             title="Third-Party Integrations"
           >
             <p>
@@ -290,8 +368,8 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 06 Data Storage */}
-          <Section id="data-storage" number="06" title="Data Storage">
+          {/* 07 Data Storage */}
+          <Section id="data-storage" number="07" title="Data Storage">
             <p>
               Your data is stored on secure cloud infrastructure. We implement
               industry-standard security measures to protect your information,
@@ -299,14 +377,16 @@ export default function PrivacyPolicy() {
             </p>
             <p>
               We retain your data for as long as your account is active or as
-              needed to provide the Services. If you delete your account, we
-              will remove your personal data within a reasonable timeframe,
-              except where required by law.
+              needed to provide the Services. If you request account deletion by
+              contacting siftriosupport@gmail.com, we will remove your personal
+              data within thirty (30) days, except where required by law. Google
+              user data obtained through OAuth is deleted within thirty (30)
+              days of account deletion.
             </p>
           </Section>
 
-          {/* 07 Data Sharing */}
-          <Section id="data-sharing" number="07" title="Data Sharing">
+          {/* 08 Data Sharing */}
+          <Section id="data-sharing" number="08" title="Data Sharing">
             <p>
               Siftrio does not sell, trade, or rent your personal information to
               third parties. We may share information only in the following
@@ -328,8 +408,8 @@ export default function PrivacyPolicy() {
             </ul>
           </Section>
 
-          {/* 08 Data Security */}
-          <Section id="data-security" number="08" title="Data Security">
+          {/* 09 Data Security */}
+          <Section id="data-security" number="09" title="Data Security">
             <p>
               We take the security of your data seriously. We implement
               appropriate technical and organizational measures to protect your
@@ -344,8 +424,26 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 09 Your Rights */}
-          <Section id="your-rights" number="09" title="Your Rights">
+          {/* 10 Cookies and Session Management */}
+          <Section
+            id="cookies-and-tracking"
+            number="10"
+            title="Cookies and Session Management"
+          >
+            <p>
+              Siftrio uses cookies and similar session technologies to maintain
+              your session, authenticate your account, and ensure security.
+              These technologies are strictly necessary for the operation of the
+              Services and cannot be disabled.
+            </p>
+            <p>
+              We do not use advertising cookies, cross-site tracking cookies, or
+              any analytics technologies that track users across websites.
+            </p>
+          </Section>
+
+          {/* 11 Your Rights */}
+          <Section id="your-rights" number="11" title="Your Rights">
             <p>You have the right to:</p>
             <ul>
               <li>Access the personal data we hold about you</li>
@@ -356,14 +454,14 @@ export default function PrivacyPolicy() {
             </ul>
             <p>
               To exercise any of these rights, please contact us at{" "}
-              <span className="text-foreground">privacy@siftrio.com</span>.
+              <span className="text-foreground">siftriosupport@gmail.com</span>.
             </p>
           </Section>
 
-          {/* 10 Children's Privacy */}
+          {/* 12 Children's Privacy */}
           <Section
             id="childrens-privacy"
-            number="10"
+            number="12"
             title="Children's Privacy"
           >
             <p>
@@ -374,10 +472,10 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 11 Changes to this Policy */}
+          {/* 13 Changes to this Policy */}
           <Section
             id="changes-to-this-policy"
-            number="11"
+            number="13"
             title="Changes to this Policy"
           >
             <p>
@@ -388,8 +486,8 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 12 Contact Us */}
-          <Section id="contact-us" number="12" title="Contact Us">
+          {/* 14 Contact Us */}
+          <Section id="contact-us" number="14" title="Contact Us">
             <p>
               If you have any questions about this Privacy Policy or our data
               practices, please contact us:
@@ -397,7 +495,7 @@ export default function PrivacyPolicy() {
             <div className="mt-6 space-y-3">
               <div>
                 <span className="text-[13px] text-subtle-text">Email</span>
-                <p className="text-foreground">cleosneha@gmail.com</p>
+                <p className="text-foreground">appsbysneha@gmail.com</p>
               </div>
               <div>
                 <span className="text-[13px] text-subtle-text">Website</span>
