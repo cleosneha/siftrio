@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD") or ""
     SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL") or "noreply@siftrio.com"
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME") or "SiftRio"
+    CRON_SECRET: str = os.getenv("CRON_SECRET") or ""
 
     CORS_ORIGINS: list[str] = [
         o.strip()

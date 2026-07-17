@@ -50,3 +50,9 @@ class Workspace(UUIDMixin, TimestampMixin, Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+
+    jira_users = relationship(
+        "JiraUser",
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )

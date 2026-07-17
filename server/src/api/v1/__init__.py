@@ -18,6 +18,7 @@ from src.api.v1.workspace_jira import router as workspace_jira_router
 from src.api.v1.project_jira import router as project_jira_router
 from src.api.v1.action_item_jira import router as action_item_jira_router
 from src.api.v1.api_keys import router as api_keys_router
+from src.api.v1.privacy_cron import router as privacy_cron_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
@@ -38,3 +39,4 @@ api_router.include_router(workspace_jira_router)
 api_router.include_router(project_jira_router)
 api_router.include_router(action_item_jira_router)
 api_router.include_router(api_keys_router)
+api_router.include_router(privacy_cron_router)

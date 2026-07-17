@@ -159,15 +159,14 @@ class ActionItem(AIEntityBase, Base):
         nullable=True,
     )
 
-    jira_assignee_name: Mapped[str | None] = mapped_column(
+    jira_assignee_account_id: Mapped[str | None] = mapped_column(
         String(255),
+        ForeignKey("jira_users.account_id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
 
-    jira_assignee_email: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
-    )
+    jira_assignee = relationship("JiraUser", foreign_keys=[jira_assignee_account_id], primaryjoin="ActionItem.jira_assignee_account_id == JiraUser.account_id")
 
 
 class Decision(AIEntityBase, Base):

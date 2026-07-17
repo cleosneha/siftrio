@@ -6,17 +6,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.integrations.atlassian.client import JiraClient
+from src.models.jira_user import JiraUser
 from src.models.knowledge_base import ActionItemSyncStatus
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.project_jira_repository import ProjectJiraRepository
 from src.repositories.project_repository import ProjectRepository
+from src.repositories.jira_user_repository import JiraUserRepository
 from src.schemas.jira_schema import (
     ActionItemJiraCreateRequest,
     ActionItemJiraCreateResponse,
     ActionItemJiraPreview,
     JiraIssueDetailsResponse,
     JiraIssueType,
-    JiraUser,
+    JiraUser as JiraUserSchema,
 )
 from src.services.workspace_jira_service import WorkspaceJiraService
 
@@ -29,6 +31,7 @@ class ActionItemJiraService:
         self.project_repo = ProjectRepository(db)
         self.project_jira_repo = ProjectJiraRepository(db)
         self.knowledge_repo = KnowledgeRepository(db)
+        self.jira_user_repo = JiraUserRepository(db)
         self.workspace_jira_service = WorkspaceJiraService(db)
 
     async def _resolve_jira_integration(self, project_id: UUID) -> tuple[str, str, str, str]:
@@ -69,6 +72,20 @@ class ActionItemJiraService:
             access_token,
             project_jira.jira_project_id,
             project_jira.jira_project_key,
+        )
+
+    async def _get_or_create_jira_user(
+        self,
+        account_id: str,
+        display_name: str | None,
+        email_address: str | None,
+        workspace_id: UUID,
+    ) -> JiraUser:
+        return await self.jira_user_repo.get_or_create(
+            account_id=account_id,
+            workspace_id=workspace_id,
+            display_name=display_name,
+            email_address=email_address,
         )
 
     async def get_preview(self, action_item_id: UUID) -> ActionItemJiraPreview:
@@ -175,12 +192,12 @@ class ActionItemJiraService:
 
     async def search_users(
         self, project_id: UUID, query: str,
-    ) -> list[JiraUser]:
+    ) -> list[JiraUserSchema]:
         cloud_id, access_token, _jira_project_id, jira_project_key = await self._resolve_jira_integration(project_id)
         client = JiraClient(cloud_id, access_token)
         raw = await client.search_users(query, project=jira_project_key)
         return [
-            JiraUser(
+            JiraUserSchema(
                 account_id=u["accountId"],
                 display_name=u.get("displayName", ""),
                 email_address=u.get("emailAddress"),
@@ -241,7 +258,22 @@ class ActionItemJiraService:
         issue_key = str(result.get("key", ""))
         issue_url = f"https://{site_url or 'your-domain.atlassian.net'}/browse/{issue_key}" if site_url else ""
 
-        from datetime import datetime, timezone
+        project = await self.project_repo.get_by_id(entity.project_id)
+        if project is None:
+            raise BaseAPIException(message="Project not found", status_code=404)
+
+        from src.models.client import Client
+        client_obj = await self.db.get(Client, project.client_id)
+        if client_obj is None:
+            raise BaseAPIException(message="Client not found", status_code=404)
+
+        jira_user = await self._get_or_create_jira_user(
+            account_id=request.assignee_account_id,
+            display_name=request.assignee_name,
+            email_address=request.assignee_email,
+            workspace_id=client_obj.workspace_id,
+        )
+
         updated = await self.knowledge_repo.update_action_item(
             action_item_id,
             jira_issue_id=issue_id,
@@ -250,8 +282,7 @@ class ActionItemJiraService:
             jira_issue_type=request.issue_type_id,
             jira_synced_at=datetime.now(timezone.utc),
             sync_status=ActionItemSyncStatus.SYNCED.value,
-            jira_assignee_name=request.assignee_name,
-            jira_assignee_email=request.assignee_email,
+            jira_assignee_account_id=jira_user.account_id,
         )
         if updated is None:
             raise BaseAPIException(
