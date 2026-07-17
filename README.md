@@ -1,79 +1,105 @@
-# siftrio
+# Siftrio
 
-AI Project Memory + SDLC Copilot.
-
-A project accumulates memory over months — meetings, decisions, requirements, code — and AI reasons over that memory.
+**AI Project Memory + SDLC Copilot**
 
 ---
 
-## Architecture
+Projects accumulate months of context — meeting decisions, shifting requirements, action items, risks, and stakeholder discussions — scattered across calendars, transcripts, project trackers, and chat. Siftrio brings all of this into one centralized knowledge layer and lets your team reason over it using AI.
+
+Ask *why* a decision was made, *who* requested a feature, or *what* is still pending — and get answers with citations sourced from your actual meetings and documents.
+
+---
+
+## How It Works
 
 ```
 Workspace
   └── Clients
         └── Projects
               └── Knowledge Sources
-                    ├── Meetings
+                    ├── Meetings & Transcripts
                     ├── Documents
-                    ├── GitHub
                     ├── Jira
-                    ├── Slack
-                    ├── Notion
-                    └── Emails
+                    └── More coming soon...
 ```
 
-All sources feed into a centralized knowledge layer — chunked, embedded, and stored in pgvector.
+All sources are chunked, embedded, and stored in a vector database. AI agents retrieve relevant context and generate grounded responses — not hallucinations.
 
 ---
 
 ## Features
 
-- **Workspaces & Projects** — Multi-tenant, client-bound project structure
-- **Meeting Ingestion** — Upload transcripts or recordings, AI extracts requirements, decisions, action items, risks, and dependencies
-- **Approval Queue** — Nothing ships automatically. Review, edit, approve, or reject before anything takes effect
-- **Actions Layer** — Push approved items to GitHub Issues, Jira tickets, or roadmap
-- **Project Memory** — Ask why something was built, who requested it, or what's pending. AI answers with citations from meetings and documents
-- **Timeline Engine** — Auto-generated project history from discovery call to release
-- **MCP Server** — Cursor/IDE integration. Query pending work, context, or decisions without leaving the editor
-- **RAG Chat** — Semantic search across all project knowledge
+- **Multi-tenant Workspaces & Projects** — Hierarchical structure: Workspace > Client > Project, with role-based access and team invitations
+- **Meeting Ingestion** — Upload transcripts manually or auto-fetch via Fireflies.ai; Google Calendar integration for automatic meeting linking
+- **AI Meeting Analysis** — Extracts structured insights: summary, outcomes, blockers, requirements, action items, decisions, risks, and follow-up suggestions
+- **Knowledge Entity Management** — Normalized tracking for requirements, action items, decisions, risks, and questions — each linked to its source
+- **Approval Queue** — Nothing goes live automatically. Review, edit, approve, or reject extracted items before they take effect
+- **Project Memory (RAG Chat)** — Ask questions in natural language and get AI-generated answers with citations from your meetings and documents
+- **Jira Integration** — Connect Jira via OAuth, map projects, and sync action items as Jira issues
+- **Google Calendar Integration** — Create calendar events and Google Meet links directly from the platform
+- **MCP Server** — Query your project's knowledge base from Cursor, VS Code, or any MCP-compatible IDE without leaving your editor
+- **Dark-themed Dashboard** — Clean, responsive UI built for daily use
 
 ---
 
 ## Tech Stack
 
-| Layer      | Stack                    |
-| ---------- | ------------------------ |
-| API        | FastAPI (Python 3.12+)   |
-| Database   | PostgreSQL 17 + pgvector |
-| ORM        | SQLAlchemy 2.0 (Async)   |
-| Migrations | Alembic                  |
-| Validation | Pydantic                 |
-| AI         | LangChain / OpenAI       |
-| Embeddings | OpenAI / pgvector        |
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend | FastAPI, Python 3.12+ |
+| Database | PostgreSQL 17 + pgvector |
+| ORM & Migrations | SQLAlchemy 2.0 (Async), Alembic |
+| AI / LLM | LangChain, LangGraph, Mistral AI |
+| Embeddings | Mistral AI Embeddings (pgvector HNSW index) |
+| Auth | JWT + Google OAuth, Atlassian OAuth |
+| Integrations | Fireflies.ai, Jira, Google Calendar |
+| IDE Integration | MCP Server (Model Context Protocol) |
+| Deployment | Vercel (frontend), FastAPI Cloud (backend), Supabase (database) |
 
 ---
 
 ## Getting Started
 
+### Prerequisites
+
+- Python 3.12+
+- Node.js 18+
+- Docker (for local PostgreSQL)
+
+### Setup
+
 ```bash
-# Start PostgreSQL
+# Clone the repository
+git clone https://github.com/your-org/siftrio.git
+cd siftrio
+
+# Start PostgreSQL (with pgvector)
 docker compose up -d
 
-# Copy env
-cp .env.example .env
-
-# Run migrations
+# Backend setup
+cd server
+cp .env.example .env   # Configure your environment variables
+pip install -r requirements.txt
 alembic upgrade head
-
-# Generate new migration (after model changes)
-alembic revision --autogenerate -m "description"
-
-# Start server
 uvicorn src.main:app --reload
 
-python -m ensurepip --upgrade
+# Frontend setup
+cd ../client
+pnpm install
+pnpm dev
 ```
+
+The frontend runs at `http://localhost:3000` and the API at `http://localhost:8000`.
 
 ---
 
-**Status: Under Progress**
+## Project Status
+
+Siftrio is under active development. New integrations, features, and capabilities are being added regularly. The platform is production-deployed and evolving based on real-world usage.
+
+---
+
+## License
+
+Proprietary. All rights reserved.
