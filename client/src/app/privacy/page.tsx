@@ -1,0 +1,462 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+const EASE = [0.25, 0.1, 0.25, 1] as const;
+
+const SECTIONS = [
+  { id: "introduction", label: "Introduction" },
+  { id: "information-we-collect", label: "Information We Collect" },
+  { id: "how-we-use-information", label: "How We Use Information" },
+  { id: "google-account-data", label: "Google Account Data" },
+  { id: "third-party-integrations", label: "Third-Party Integrations" },
+  { id: "data-storage", label: "Data Storage" },
+  { id: "data-sharing", label: "Data Sharing" },
+  { id: "data-security", label: "Data Security" },
+  { id: "your-rights", label: "Your Rights" },
+  { id: "childrens-privacy", label: "Children's Privacy" },
+  { id: "changes-to-this-policy", label: "Changes to this Policy" },
+  { id: "contact-us", label: "Contact Us" },
+];
+
+export default function PrivacyPolicy() {
+  const [activeId, setActiveId] = useState(SECTIONS[0].id);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    const headings = SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      Boolean,
+    );
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveId(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px" },
+    );
+
+    headings.forEach((el) => {
+      if (el) observerRef.current?.observe(el);
+    });
+
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* ── Nav ── */}
+      <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-[820px] items-center justify-between px-6">
+          <Link
+            href="/"
+            className="text-sm text-disabled-text transition-colors hover:text-foreground"
+          >
+            &larr; Back to Home
+          </Link>
+          <span className="text-lg font-semibold text-foreground">Siftrio</span>
+          <span className="w-[120px]" />
+        </div>
+      </nav>
+
+      {/* ── Content ── */}
+      <div className="mx-auto max-w-[820px] px-6">
+        {/* ── Hero ── */}
+        <motion.div
+          className="pt-24 pb-20"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE }}
+        >
+          <h1 className="text-[40px] font-semibold leading-tight tracking-tight text-foreground">
+            Privacy Policy
+          </h1>
+
+          <div className="mt-6 flex gap-10 text-[13px] text-disabled-text">
+            <div>
+              <span className="block text-subtle-text">Effective Date</span>
+              July 17, 2026
+            </div>
+            <div>
+              <span className="block text-subtle-text">Last Updated</span>
+              July 17, 2026
+            </div>
+          </div>
+
+          <p className="mt-10 max-w-[640px] text-[17px] leading-[1.8] text-disabled-text">
+            This Privacy Policy explains how Siftrio collects, uses, stores, and
+            protects your information when you use our services.
+          </p>
+        </motion.div>
+
+        {/* ── Table of Contents ── */}
+        <motion.div
+          className="border-t border-border pb-20 pt-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, ease: EASE, delay: 0.15 }}
+        >
+          <p className="mb-6 text-[11px] font-medium uppercase tracking-[0.2em] text-subtle-text">
+            Contents
+          </p>
+          <nav className="flex flex-col gap-1">
+            {SECTIONS.map((s, i) => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-left text-[14px] transition-colors ${
+                  activeId === s.id
+                    ? "bg-accent text-foreground"
+                    : "text-disabled-text hover:text-soft-text"
+                }`}
+              >
+                <span className="w-5 text-right text-[12px] text-faint-text">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {s.label}
+              </button>
+            ))}
+          </nav>
+        </motion.div>
+
+        {/* ── Document ── */}
+        <div className="border-t border-border pt-20">
+          {/* 01 Introduction */}
+          <Section id="introduction" number="01" title="Introduction">
+            <p>
+              Siftrio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is
+              committed to protecting your privacy. This Privacy Policy applies
+              to all users of our website, applications, and services
+              (collectively, the &quot;Services&quot;). By using our Services,
+              you agree to the collection and use of information as described in
+              this policy.
+            </p>
+            <p>
+              We believe in transparency and want you to understand exactly what
+              data we collect, why we collect it, and how it is used. This
+              policy is designed to be clear and straightforward.
+            </p>
+          </Section>
+
+          {/* 02 Information We Collect */}
+          <Section
+            id="information-we-collect"
+            number="02"
+            title="Information We Collect"
+          >
+            <p>We collect the following types of information:</p>
+            <p className="font-medium text-soft-text">Account Information</p>
+            <p>
+              When you sign in using Google OAuth, we receive your name, email
+              address, and profile picture. This information is used solely to
+              identify you within the application and to provide our services.
+            </p>
+            <p className="font-medium text-soft-text">Project Data</p>
+            <p>
+              Siftrio stores information you create or upload within the
+              application, including workspace details, project documentation,
+              meeting notes, action items, and AI-generated summaries. This data
+              is created by you and stored to power the features of the
+              application.
+            </p>
+            <p className="font-medium text-soft-text">Usage Data</p>
+            <p>
+              We collect basic usage analytics such as pages visited, features
+              used, and interaction patterns within the application. This data
+              is used to improve the product and is not shared with third
+              parties for advertising purposes.
+            </p>
+          </Section>
+
+          {/* 03 How We Use Information */}
+          <Section
+            id="how-we-use-information"
+            number="03"
+            title="How We Use Information"
+          >
+            <p>We use the information we collect to:</p>
+            <ul>
+              <li>Provide, operate, and maintain the Siftrio platform</li>
+              <li>Authenticate users and manage account access</li>
+              <li>
+                Power AI-generated summaries, insights, and assistant features
+              </li>
+              <li>
+                Improve and optimize the application based on usage patterns
+              </li>
+              <li>Communicate with you about updates, features, or support</li>
+              <li>Ensure the security and integrity of our Services</li>
+            </ul>
+            <p>
+              We do not use your data for advertising, profiling, or selling to
+              third parties.
+            </p>
+          </Section>
+
+          {/* 04 Google Account Data */}
+          <Section
+            id="google-account-data"
+            number="04"
+            title="Google Account Data"
+          >
+            <p>
+              Siftrio uses Google OAuth for authentication and may access
+              certain Google account data to provide specific features.
+            </p>
+            <p className="font-medium text-soft-text">
+              Google Account Information Accessed
+            </p>
+            <p>
+              When you sign in with Google, we receive your name, email address,
+              and profile picture. This is used solely for authentication and
+              account identification.
+            </p>
+            <p className="font-medium text-soft-text">Google Workspace Data</p>
+            <p>
+              If you choose to connect Google Calendar, Siftrio accesses your
+              calendar data to display and manage meeting information within the
+              application. This access is limited to what is necessary to
+              provide the requested feature.
+            </p>
+            <p className="font-medium text-soft-text">
+              How Google Data Is Used
+            </p>
+            <ul>
+              <li>
+                Google account information is used only for authentication
+              </li>
+              <li>
+                Google Calendar data is used only to display and manage your
+                meetings within Siftrio
+              </li>
+              <li>
+                Google Workspace APIs are only used to provide features you have
+                explicitly requested
+              </li>
+              <li>
+                Your Google data is never used for advertising or marketing
+                purposes
+              </li>
+              <li>
+                Siftrio never sells your Google user data to any third party
+              </li>
+            </ul>
+            <p className="font-medium text-soft-text">Revoking Access</p>
+            <p>
+              You can revoke Siftrio&apos;s access to your Google account at any
+              time by visiting{" "}
+              <a
+                href="https://myaccount.google.com/permissions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+              >
+                Google Account Permissions
+              </a>
+              . Revoking access will disable Google-related features but will
+              not delete your existing Siftrio account or data.
+            </p>
+          </Section>
+
+          {/* 05 Third-Party Integrations */}
+          <Section
+            id="third-party-integrations"
+            number="05"
+            title="Third-Party Integrations"
+          >
+            <p>
+              Siftrio may integrate with third-party services such as Jira to
+              provide enhanced features. When you connect a third-party service,
+              we only access the data necessary to provide the feature you have
+              requested.
+            </p>
+            <p>
+              Third-party integrations are subject to their own privacy
+              policies. We encourage you to review the privacy policies of any
+              third-party service you connect to Siftrio. We are not responsible
+              for the practices of third-party services.
+            </p>
+          </Section>
+
+          {/* 06 Data Storage */}
+          <Section id="data-storage" number="06" title="Data Storage">
+            <p>
+              Your data is stored on secure cloud infrastructure. We implement
+              industry-standard security measures to protect your information,
+              including encryption in transit and at rest.
+            </p>
+            <p>
+              We retain your data for as long as your account is active or as
+              needed to provide the Services. If you delete your account, we
+              will remove your personal data within a reasonable timeframe,
+              except where required by law.
+            </p>
+          </Section>
+
+          {/* 07 Data Sharing */}
+          <Section id="data-sharing" number="07" title="Data Sharing">
+            <p>
+              Siftrio does not sell, trade, or rent your personal information to
+              third parties. We may share information only in the following
+              circumstances:
+            </p>
+            <ul>
+              <li>With your explicit consent</li>
+              <li>
+                To comply with legal obligations or respond to lawful requests
+              </li>
+              <li>
+                To protect the rights, property, or safety of Siftrio, our
+                users, or the public
+              </li>
+              <li>
+                With service providers who assist in operating our platform,
+                subject to strict data protection obligations
+              </li>
+            </ul>
+          </Section>
+
+          {/* 08 Data Security */}
+          <Section id="data-security" number="08" title="Data Security">
+            <p>
+              We take the security of your data seriously. We implement
+              appropriate technical and organizational measures to protect your
+              personal information against unauthorized access, alteration,
+              disclosure, or destruction.
+            </p>
+            <p>
+              These measures include encrypted communications (TLS), secure
+              authentication via OAuth, access controls, and regular security
+              reviews. While we strive to protect your data, no method of
+              transmission or storage is 100% secure.
+            </p>
+          </Section>
+
+          {/* 09 Your Rights */}
+          <Section id="your-rights" number="09" title="Your Rights">
+            <p>You have the right to:</p>
+            <ul>
+              <li>Access the personal data we hold about you</li>
+              <li>Request correction of inaccurate data</li>
+              <li>Request deletion of your personal data</li>
+              <li>Export your data in a portable format</li>
+              <li>Object to or restrict certain processing of your data</li>
+            </ul>
+            <p>
+              To exercise any of these rights, please contact us at{" "}
+              <span className="text-foreground">privacy@siftrio.com</span>.
+            </p>
+          </Section>
+
+          {/* 10 Children's Privacy */}
+          <Section
+            id="childrens-privacy"
+            number="10"
+            title="Children's Privacy"
+          >
+            <p>
+              Siftrio is not intended for use by individuals under the age of
+              16. We do not knowingly collect personal information from
+              children. If we become aware that we have collected data from a
+              child, we will take steps to delete that information promptly.
+            </p>
+          </Section>
+
+          {/* 11 Changes to this Policy */}
+          <Section
+            id="changes-to-this-policy"
+            number="11"
+            title="Changes to this Policy"
+          >
+            <p>
+              We may update this Privacy Policy from time to time. When we make
+              material changes, we will notify you by updating the &quot;Last
+              Updated&quot; date at the top of this page. We encourage you to
+              review this policy periodically.
+            </p>
+          </Section>
+
+          {/* 12 Contact Us */}
+          <Section id="contact-us" number="12" title="Contact Us">
+            <p>
+              If you have any questions about this Privacy Policy or our data
+              practices, please contact us:
+            </p>
+            <div className="mt-6 space-y-3">
+              <div>
+                <span className="text-[13px] text-subtle-text">Email</span>
+                <p className="text-foreground">cleosneha@gmail.com</p>
+              </div>
+              <div>
+                <span className="text-[13px] text-subtle-text">Website</span>
+                <p className="text-foreground">siftrio.vercel.app</p>
+              </div>
+            </div>
+          </Section>
+        </div>
+
+        {/* ── Footer ── */}
+        <footer className="border-t border-border py-10">
+          <div className="flex flex-col items-center gap-4 text-[13px] text-disabled-text">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/privacy"
+                className="transition-colors hover:text-soft-text"
+              >
+                Privacy Policy
+              </Link>
+              <span>·</span>
+              <Link
+                href="/terms"
+                className="transition-colors hover:text-soft-text"
+              >
+                Terms &amp; Conditions
+              </Link>
+            </div>
+            <p className="text-faint-text">&copy; 2026 Siftrio</p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  id,
+  number,
+  title,
+  children,
+}: {
+  id: string;
+  number: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 pb-20">
+      <div className="mb-6">
+        <span className="block text-[13px] font-medium text-faint-text">
+          {number}
+        </span>
+        <h2 className="mt-1 text-[30px] font-semibold leading-tight tracking-tight text-foreground">
+          {title}
+        </h2>
+      </div>
+      <div className="space-y-6 text-[17px] leading-[1.8] text-disabled-text [&_li]:pl-1 [&_li]:marker:text-faint-text [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
+        {children}
+      </div>
+    </section>
+  );
+}
