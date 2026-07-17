@@ -186,6 +186,11 @@ body {
   font-family: var(--font-sans, Arial, Helvetica, sans-serif);
 }
 
+::selection {
+  background: var(--entity-workspace);
+  color: #fff;
+}
+
 /* Card shadow for elevated surfaces */
 .card-shadow {
   box-shadow:

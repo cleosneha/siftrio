@@ -380,7 +380,7 @@ export function McpSection() {
             className="flex flex-1 justify-center overflow-hidden md:max-w-[60%]"
           >
             <svg
-              className="h-auto w-full"
+              className="h-auto w-full select-none"
               viewBox={`0 0 ${VB_W} ${VB_H}`}
               fill="none"
               preserveAspectRatio="xMidYMid meet"

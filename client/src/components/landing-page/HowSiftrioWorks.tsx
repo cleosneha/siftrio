@@ -183,6 +183,7 @@ export function HowSiftrioWorks() {
             animate={inView ? "visible" : "hidden"}
             variants={fadeUp}
             custom={0.2}
+            className="select-none"
           >
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.2em] text-faint-text">
               Step 1
@@ -248,6 +249,7 @@ export function HowSiftrioWorks() {
             animate={inView ? "visible" : "hidden"}
             variants={fadeUp}
             custom={0.5}
+            className="select-none"
           >
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.2em] text-faint-text">
               Step 2
@@ -310,6 +312,7 @@ export function HowSiftrioWorks() {
             animate={inView ? "visible" : "hidden"}
             variants={fadeUp}
             custom={0.7}
+            className="select-none"
           >
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.2em] text-faint-text">
               Step 3
