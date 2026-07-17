@@ -22,11 +22,11 @@ export function Header() {
         {!loading && (
           <>
             {user ? (
-              <Button render={<Link href="/dashboard" />} size="sm">
+              <Button render={<Link href="/dashboard" />} nativeButton={false} size="sm">
                 Open App
               </Button>
             ) : (
-              <Button nativeButton={false} size="sm" onClick={handleGetStarted}>
+              <Button size="sm" onClick={handleGetStarted}>
                 Get Started
               </Button>
             )}

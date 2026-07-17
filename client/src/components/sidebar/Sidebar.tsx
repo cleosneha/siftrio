@@ -2,13 +2,14 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Plus, Layers, Bot, Settings } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { Plus, Layers, Bot, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useWorkspaces } from "@/features/workspaces/hooks/useWorkspaces";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
 import { SidebarWorkspace } from "./SidebarWorkspace";
@@ -20,8 +21,10 @@ interface SidebarProps {
 
 export function Sidebar({ onCreateWorkspace }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { sidebarOpen, setSidebarOpen } = useAppContext();
   const { data: workspacesData } = useWorkspaces();
+  const { logout } = useAuth();
   const workspaces: Workspace[] = workspacesData?.data ?? [];
   const isAssistantActive = pathname === "/assistant";
   const isSettingsActive = pathname === "/settings";
@@ -90,6 +93,21 @@ export function Sidebar({ onCreateWorkspace }: SidebarProps) {
         <Button onClick={onCreateWorkspace} className="w-full">
           <Plus className="h-4 w-4" />
           New Workspace
+        </Button>
+      </div>
+
+      <Separator />
+
+      <div className="p-3">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            logout().then(() => router.push("/"));
+          }}
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
         </Button>
       </div>
     </div>
