@@ -31,10 +31,11 @@ class PersonalDataReportingService:
         all_users = await self._get_all_jira_users()
 
         if not all_users:
-            logger.info("[PRIVACY] No Jira users to report")
+            logger.info("[PRIVACY] Reporting run started — no Jira users stored")
             return {"reported": 0, "closed": 0, "updated": 0, "errors": 0}
 
         grouped = self._group_by_workspace(all_users)
+        logger.info("[PRIVACY] Reporting run started — %d Jira users across %d workspaces", len(all_users), len(grouped))
 
         reported = 0
         closed = 0
@@ -82,8 +83,8 @@ class PersonalDataReportingService:
 
                     except ReportingAPIError as exc:
                         logger.error(
-                            "[PRIVACY] Reporting API error for workspace %s: %s",
-                            workspace_id, exc,
+                            "[PRIVACY] Reporting API error for workspace %s: HTTP %d",
+                            workspace_id, exc.status_code,
                         )
                         errors += 1
 
@@ -137,9 +138,9 @@ class PersonalDataReportingService:
         if user:
             await self.jira_user_repo.delete(user)
 
-        logger.info(
-            "[PRIVACY] Erased user %s (anonymized %d action items)",
-            account_id, len(items),
+        logger.warning(
+            "[PRIVACY] Erased account ...%s (anonymized %d action items)",
+            account_id[-4:], len(items),
         )
 
     async def _refresh_user(
@@ -169,9 +170,10 @@ class PersonalDataReportingService:
                 display_name=user_data.get("displayName"),
                 email_address=user_data.get("emailAddress"),
             )
+            logger.warning("[PRIVACY] Refreshed account ...%s in workspace %s", account_id[-4:], workspace_id)
 
         except Exception as exc:
             logger.error(
-                "[PRIVACY] Failed to refresh user %s: %s",
-                account_id, exc,
+                "[PRIVACY] Failed to refresh account ...%s in workspace %s: %s",
+                account_id[-4:], workspace_id, exc,
             )

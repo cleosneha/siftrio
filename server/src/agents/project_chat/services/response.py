@@ -76,26 +76,6 @@ class ChatService:
 
         elapsed = perf_counter() - start
 
-        parsed_query = result.get("parsed_query")
-        retrieval_scope = result.get("retrieval_scope")
-        retrieved_chunks = result.get("retrieved_chunks", [])
-        meeting_analysis = result.get("meeting_analysis", [])
-        knowledge_entities = result.get("knowledge_entities", [])
-        context = result.get("context") or ""
-
-        logger.info("Assistant incoming question: %s", question)
-        logger.info(
-            "Assistant parsed query: %s",
-            parsed_query.model_dump() if parsed_query else None,
-        )
-        logger.info(
-            "Assistant retrieval scope: %s",
-            retrieval_scope.model_dump() if retrieval_scope else None,
-        )
-        logger.info("Assistant retrieved transcript chunks: %s", len(retrieved_chunks))
-        logger.info("Assistant retrieved meetings: %s", len(meeting_analysis))
-        logger.info("Assistant retrieved knowledge entities: %s", len(knowledge_entities))
-        logger.info("Assistant context length: %s chars", len(context))
         logger.info("Assistant query completed in: %.2fs", elapsed)
 
         answer = result.get("answer", "")

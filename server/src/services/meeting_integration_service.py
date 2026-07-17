@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 import uuid
@@ -60,8 +59,6 @@ class MeetingIntegrationService:
                 status_code=400,
             )
 
-        logger.info("Google access token obtained for user %s", user_id)
-
         result = await self._create_calendar_event(
             access_token=access_token,
             title=title,
@@ -84,30 +81,11 @@ class MeetingIntegrationService:
         guest_emails: list[str] | None = None,
         user_email: str | None = None,
     ) -> dict:
-        logger.info("=== RFC3339 VALIDATION ===")
-        if start_time:
-            st_diag = _validate_rfc3339(start_time)
-            logger.info("start_time diagnostics: %s", json.dumps(st_diag, indent=2))
-        if end_time:
-            et_diag = _validate_rfc3339(end_time)
-            logger.info("end_time diagnostics: %s", json.dumps(et_diag, indent=2))
-
         client = create_oauth_client()
         client.token = {"access_token": access_token, "token_type": "Bearer"}
 
-        if start_time:
-            event_start_dt = start_time
-            logger.info("Using start_time: %s", event_start_dt)
-        else:
-            event_start_dt = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            logger.info("No start_time provided, defaulting to now UTC: %s", event_start_dt)
-
-        if end_time:
-            event_end_dt = end_time
-            logger.info("Using end_time: %s", event_end_dt)
-        else:
-            event_end_dt = (datetime.now(timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            logger.info("No end_time provided, defaulting to: %s", event_end_dt)
+        event_start_dt = start_time or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        event_end_dt = end_time or (datetime.now(timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         event_start = {"dateTime": event_start_dt}
         event_end = {"dateTime": event_end_dt}
@@ -136,11 +114,6 @@ class MeetingIntegrationService:
 
         url = settings.GOOGLE_CALENDAR_API_URL
 
-        logger.info("=== ACTUAL REQUEST ===")
-        logger.info("URL: %s", url)
-        logger.info("Headers (sensitive redacted): Authorization: Bearer %s...", access_token[:20])
-        logger.info("Payload: %s", json.dumps(body, indent=2, default=str))
-
         try:
             resp = await client.post(url, json=body)
         except Exception as e:
@@ -148,11 +121,6 @@ class MeetingIntegrationService:
                 message=f"Failed to connect to Google Calendar API: {e}",
                 status_code=500,
             )
-
-        logger.info("=== ACTUAL RESPONSE ===")
-        logger.info("Status code: %s", resp.status_code)
-        logger.info("Response headers: %s", dict(resp.headers))
-        logger.info("Response body: %s", resp.text)
 
         if resp.status_code != 200:
             raise BaseAPIException(

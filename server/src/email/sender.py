@@ -31,11 +31,11 @@ class EmailSender:
         text_body: str | None = None,
     ) -> bool:
         if not self.host or not self.username:
-            logger.warning("SMTP not configured. Skipping email to %s", to_email)
+            logger.warning("SMTP not configured. Skipping email")
             return False
 
         if not HAS_AIOSMTP:
-            logger.warning("aiosmtplib not installed. Skipping email to %s", to_email)
+            logger.warning("aiosmtplib not installed. Skipping email")
             return False
 
         message = MIMEMultipart("alternative")
@@ -57,10 +57,10 @@ class EmailSender:
                 password=self.password,
                 start_tls=True,
             )
-            logger.info("Email sent to %s", to_email)
+            logger.info("Email sent successfully")
             return True
         except Exception as exc:
-            logger.error("Failed to send email to %s: %s", to_email, exc)
+            logger.error("Failed to send email: %s", exc)
             return False
 
 

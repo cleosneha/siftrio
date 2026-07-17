@@ -31,9 +31,6 @@ async def fireflies_webhook(request: Request) -> dict:
     body = await request.body()
 
     signature = request.headers.get("x-hub-signature", "")
-    logger.info("Fireflies raw signature header: %s", signature[:40] + "..." if len(signature) > 40 else signature)
-    logger.info("Fireflies raw body: %s", body.decode("utf-8"))
-    logger.info("Fireflies all headers: %s", dict(request.headers))
 
     if not verify_webhook_signature(body, signature):
         logger.warning("Invalid Fireflies webhook signature")
@@ -55,12 +52,7 @@ async def fireflies_webhook(request: Request) -> dict:
         or payload.get("data", {}).get("transcriptId")
     )
 
-    logger.info(
-        "Fireflies webhook received - event: %s, fireflies_meeting_id: %s, payload: %s",
-        event,
-        fireflies_meeting_id,
-        json.dumps(payload),
-    )
+    logger.info("Fireflies webhook received — event: %s", event)
 
     if event not in TRANSCRIPTION_EVENTS:
         logger.info("Ignoring Fireflies event: %s (accepted events: %s)", event, TRANSCRIPTION_EVENTS)

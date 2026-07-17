@@ -172,21 +172,11 @@ class WorkspaceJiraService:
 
         expires_at = integration.token_expires_at
         now_ts = datetime.now(timezone.utc).timestamp()
-        logger.warning(
-            "[JIRA-TOKEN-DEBUG] workspace=%s token_expires_at=%s now=%s has_refresh_token=%s",
-            workspace_id, expires_at, now_ts, bool(integration.refresh_token),
-        )
-        if expires_at is not None:
-            logger.warning(
-                "[JIRA-TOKEN-DEBUG] expires_at.timestamp()=%s diff_seconds=%s",
-                expires_at.timestamp(), expires_at.timestamp() - now_ts,
-            )
 
         should_refresh = (
             expires_at is None
             or is_token_expired(expires_at.timestamp())
         )
-        logger.warning("[JIRA-TOKEN-DEBUG] should_refresh=%s", should_refresh)
 
         if should_refresh:
             if not integration.refresh_token:
@@ -194,38 +184,26 @@ class WorkspaceJiraService:
                     message="Jira token expired and no refresh token available. Reconnect.",
                     status_code=400,
                 )
-            logger.warning("[JIRA-TOKEN-DEBUG] calling refresh_access_token...")
             token_data = await refresh_access_token(integration.refresh_token)
             if token_data is None:
-                logger.error("[JIRA-TOKEN-DEBUG] refresh_access_token returned None!")
+                logger.error("[JIRA] Token refresh failed for workspace %s", workspace_id)
                 raise BaseAPIException(
                     message="Failed to refresh Jira token. Reconnect.",
                     status_code=400,
                 )
-            logger.warning(
-                "[JIRA-TOKEN-DEBUG] refresh succeeded, new_access_token=%.10s... expires_at=%s",
-                token_data.get("access_token", ""),
-                token_data.get("expires_at"),
-            )
             expires_at_ts = token_data.get("expires_at")
             new_expires_at = (
                 datetime.fromtimestamp(expires_at_ts, tz=timezone.utc)
                 if isinstance(expires_at_ts, (int, float))
                 else expires_at_ts
             )
-            old_token = integration.access_token
             integration = await self.repo.update(
                 integration,
                 access_token=token_data["access_token"],
                 refresh_token=token_data.get("refresh_token") or integration.refresh_token,
                 token_expires_at=new_expires_at,
             )
-            logger.warning(
-                "[JIRA-TOKEN-DEBUG] old_token=%.10s... new_token=%.10s... new_expires_at=%s",
-                old_token, integration.access_token, new_expires_at,
-            )
             await self.db.commit()
-            logger.warning("[JIRA-TOKEN-DEBUG] commit done")
 
         return integration.access_token
 

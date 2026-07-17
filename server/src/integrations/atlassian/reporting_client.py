@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
@@ -12,7 +11,7 @@ class ReportingAPIError(Exception):
     def __init__(self, status_code: int, body: str) -> None:
         self.status_code = status_code
         self.body = body
-        super().__init__(f"Reporting API error {status_code}: {body[:300]}")
+        super().__init__(f"HTTP {status_code}")
 
 
 class AtlassianReportingClient:
@@ -26,6 +25,7 @@ class AtlassianReportingClient:
     ) -> dict:
         payload = {"accounts": accounts}
         resp = await self._client.post(REPORTING_API_URL, json=payload)
+        logger.info("[PRIVACY] Atlassian report-accounts responded with HTTP %d", resp.status_code)
 
         if resp.status_code == 200:
             body = resp.json()
