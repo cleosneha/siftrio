@@ -23,7 +23,7 @@ class AuthController:
         except ValueError:
             return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=true")
 
-        response = RedirectResponse(url=settings.FRONTEND_URL)
+        response = RedirectResponse(url=f"{settings.FRONTEND_URL}/dashboard")
         response.set_cookie(
             key="access_token",
             value=access_token,
