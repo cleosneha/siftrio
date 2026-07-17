@@ -1,43 +1,43 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
+import { motion } from "framer-motion";
 
 const CARDS = [
-  { id: "meeting", label: "Meeting", delay: 0 },
-  { id: "decision", label: "Decision", delay: 0.8 },
-  { id: "action", label: "Action Item", delay: 1.6 },
-  { id: "jira", label: "Jira", delay: 2.4 },
-  { id: "assistant", label: "AI Assistant", delay: 3.2 },
-] as const
+  { id: "meeting", label: "Meeting", delay: 0.8 },
+  { id: "decision", label: "Decision", delay: 1.6 },
+  { id: "action", label: "Action Item", delay: 2.4 },
+  { id: "jira", label: "Jira", delay: 3.2 },
+  { id: "assistant", label: "AI Assistant", delay: 4.0 },
+] as const;
 
 const CONNECTIONS = [
   { from: "meeting", to: "decision" },
   { from: "decision", to: "action" },
   { from: "action", to: "jira" },
   { from: "jira", to: "assistant" },
-] as const
+] as const;
 
 const NODES: Record<string, { x: number; y: number; w: number; h: number }> = {
-  meeting:   { x: 16,  y: 30,  w: 120, h: 64 },
-  decision:  { x: 260, y: 90,  w: 120, h: 64 },
-  action:    { x: 16,  y: 170, w: 140, h: 64 },
-  jira:      { x: 220, y: 250, w: 100, h: 64 },
+  meeting: { x: 16, y: 30, w: 120, h: 64 },
+  decision: { x: 260, y: 90, w: 120, h: 64 },
+  action: { x: 16, y: 170, w: 140, h: 64 },
+  jira: { x: 220, y: 250, w: 100, h: 64 },
   assistant: { x: 100, y: 340, w: 140, h: 64 },
-}
+};
 
 function getCenter(id: string) {
-  const n = NODES[id]
-  return { x: n.x + n.w / 2, y: n.y + n.h / 2 }
+  const n = NODES[id];
+  return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
 }
 
 function buildPath(from: string, to: string) {
-  const a = getCenter(from)
-  const b = getCenter(to)
-  const mx = (a.x + b.x) / 2
-  return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`
+  const a = getCenter(from);
+  const b = getCenter(to);
+  const mx = (a.x + b.x) / 2;
+  return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`;
 }
 
-const EASE = [0.25, 0.1, 0.25, 1] as const
+const EASE = [0.25, 0.1, 0.25, 1] as const;
 
 export function HeroSection() {
   return (
@@ -53,7 +53,7 @@ export function HeroSection() {
             style={{ color: "#4A4E54" }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: EASE, delay: 0.1 }}
+            transition={{ duration: 1.2, ease: EASE, delay: 0.3 }}
           >
             Siftrio
           </motion.p>
@@ -64,7 +64,7 @@ export function HeroSection() {
               style={{ color: "#FFFFFF" }}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: EASE, delay: 0.25 }}
+              transition={{ duration: 1.2, ease: EASE, delay: 0.6 }}
             >
               Every project
             </motion.span>
@@ -73,7 +73,7 @@ export function HeroSection() {
               style={{ color: "#FFFFFF" }}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: EASE, delay: 0.35 }}
+              transition={{ duration: 1.2, ease: EASE, delay: 0.8 }}
             >
               has a memory.
             </motion.span>
@@ -82,7 +82,7 @@ export function HeroSection() {
               style={{ color: "#6D737C" }}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: EASE, delay: 0.45 }}
+              transition={{ duration: 1.2, ease: EASE, delay: 1.0 }}
             >
               Siftrio gives it one.
             </motion.span>
@@ -93,10 +93,10 @@ export function HeroSection() {
             style={{ color: "#6D737C" }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: EASE, delay: 0.6 }}
+            transition={{ duration: 1.2, ease: EASE, delay: 1.3 }}
           >
-            Turn conversations into knowledge that both your team and AI can
-            understand.
+            Connect every decision, discussion, and task into one intelligent
+            workspace.
           </motion.p>
         </div>
 
@@ -111,9 +111,9 @@ export function HeroSection() {
               style={{ width: 420, height: 410 }}
             >
               {CONNECTIONS.map((c, i) => {
-                const d = buildPath(c.from, c.to)
-                const lineDelay = 4.0 + i * 0.8
-                const dotDelay = 6.0 + i * 0.8
+                const d = buildPath(c.from, c.to);
+                const lineDelay = 5.5 + i * 1.0;
+                const dotDelay = 7.5 + i * 1.0;
                 return (
                   <g key={`${c.from}-${c.to}`}>
                     <path d={d} stroke="#1A1C1F" strokeWidth={1} fill="none" />
@@ -124,7 +124,11 @@ export function HeroSection() {
                       fill="none"
                       initial={{ pathLength: 0 }}
                       animate={{ pathLength: 1 }}
-                      transition={{ duration: 0.8, ease: "easeOut", delay: lineDelay }}
+                      transition={{
+                        duration: 1.2,
+                        ease: "easeOut",
+                        delay: lineDelay,
+                      }}
                     />
                     <motion.circle
                       r={2.5}
@@ -136,20 +140,30 @@ export function HeroSection() {
                         opacity: [0, 0.8, 0.8, 0],
                       }}
                       transition={{
-                        offsetDistance: { duration: 3.5, ease: "linear", repeat: Infinity, delay: dotDelay },
-                        opacity: { duration: 3.5, times: [0, 0.08, 0.85, 1], repeat: Infinity, delay: dotDelay },
+                        offsetDistance: {
+                          duration: 5.0,
+                          ease: "linear",
+                          repeat: Infinity,
+                          delay: dotDelay,
+                        },
+                        opacity: {
+                          duration: 5.0,
+                          times: [0, 0.08, 0.85, 1],
+                          repeat: Infinity,
+                          delay: dotDelay,
+                        },
                       }}
                     />
                   </g>
-                )
+                );
               })}
             </svg>
 
             {/* Cards */}
             {CARDS.map((card) => {
-              const n = NODES[card.id]
-              const floatY = card.delay % 2 === 0 ? -2 : 2
-              const floatDuration = 5 + card.delay * 0.4
+              const n = NODES[card.id];
+              const floatY = card.delay % 2 === 0 ? -2 : 2;
+              const floatDuration = 7 + card.delay * 0.5;
               return (
                 <motion.div
                   key={card.id}
@@ -157,7 +171,7 @@ export function HeroSection() {
                   style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: EASE, delay: card.delay }}
+                  transition={{ duration: 1.2, ease: EASE, delay: card.delay }}
                 >
                   <motion.div
                     className="flex h-full w-full flex-col items-center justify-center gap-1.5"
@@ -183,19 +197,16 @@ export function HeroSection() {
                     >
                       {card.label}
                     </span>
-                    <span
-                      className="text-[10px]"
-                      style={{ color: "#3A3E44" }}
-                    >
+                    <span className="text-[10px]" style={{ color: "#3A3E44" }}>
                       ● ● ●
                     </span>
                   </motion.div>
                 </motion.div>
-              )
+              );
             })}
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }
