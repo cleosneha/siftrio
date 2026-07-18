@@ -494,7 +494,7 @@ export default function TermsAndConditions() {
               </div>
               <div>
                 <span className="text-[13px] text-subtle-text">Website</span>
-                <p className="text-foreground">siftrio.vercel.app</p>
+                <p className="text-foreground">siftrio.tech</p>
               </div>
             </div>
           </Section>
