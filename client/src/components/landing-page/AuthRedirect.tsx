@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/features/auth/AuthProvider"
 
 export function AuthRedirect() {
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && user) {
+    if (user) {
       router.replace("/dashboard")
     }
-  }, [user, loading, router])
+  }, [user, router])
 
   return null
 }

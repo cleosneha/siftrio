@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
 
 export function Header() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   const handleGetStarted = () => {
     const backendUrl =
@@ -27,22 +27,18 @@ export function Header() {
           />
           <span className="text-lg font-semibold text-foreground">Siftrio</span>
         </Link>
-        {!loading && (
-          <>
-            {user ? (
-              <Button
-                render={<Link href="/dashboard" />}
-                nativeButton={false}
-                size="sm"
-              >
-                Open App
-              </Button>
-            ) : (
-              <Button size="sm" onClick={handleGetStarted}>
-                Get Started
-              </Button>
-            )}
-          </>
+        {user ? (
+          <Button
+            render={<Link href="/dashboard" />}
+            nativeButton={false}
+            size="sm"
+          >
+            Open App
+          </Button>
+        ) : (
+          <Button size="sm" onClick={handleGetStarted}>
+            Get Started
+          </Button>
         )}
       </div>
     </header>
