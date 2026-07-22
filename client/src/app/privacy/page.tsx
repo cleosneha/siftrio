@@ -93,7 +93,7 @@ export default function PrivacyPolicy() {
             </div>
             <div>
               <span className="block text-subtle-text">Last Updated</span>
-              July 17, 2026
+              July 22, 2026
             </div>
           </div>
 
@@ -183,10 +183,11 @@ export default function PrivacyPolicy() {
             </p>
             <p className="font-medium text-soft-text">Usage Data</p>
             <p>
-              We collect basic usage analytics such as pages visited, features
-              used, and interaction patterns within the application. This data
-              is used to improve the product and is not shared with third
-              parties for advertising purposes.
+              We collect aggregated and anonymized product usage information,
+              such as feature adoption and application performance metrics, to
+              improve the reliability, security, and usability of Siftrio. This
+              information does not include Google user data obtained through
+              Google APIs.
             </p>
           </Section>
 
@@ -204,14 +205,18 @@ export default function PrivacyPolicy() {
                 Power AI-generated summaries, insights, and assistant features
               </li>
               <li>
-                Improve and optimize the application based on usage patterns
+                Improve and optimize the application based on aggregated or
+                anonymized usage patterns
               </li>
               <li>Communicate with you about updates, features, or support</li>
               <li>Ensure the security and integrity of our Services</li>
             </ul>
             <p>
               We do not use your data for advertising, profiling, or selling to
-              third parties.
+              third parties. Google user data obtained through Google APIs is
+              not used for analytics, product improvement, advertising,
+              profiling, or any purpose beyond providing the features you have
+              explicitly requested.
             </p>
           </Section>
 
@@ -233,8 +238,8 @@ export default function PrivacyPolicy() {
               </li>
               <li>
                 <strong>Legitimate interests</strong> — Processing is necessary
-                for our legitimate interest in securing the Services, preventing
-                fraud, and improving the platform
+                for our legitimate interest in securing the Services and
+                preventing fraud
               </li>
               <li>
                 <strong>User consent</strong> — Where you have given explicit
@@ -316,6 +321,61 @@ export default function PrivacyPolicy() {
               <li>
                 Siftrio never sells your Google user data to any third party
               </li>
+              <li>
+                Your Google data is never used for profiling or to build
+                advertising profiles
+              </li>
+              <li>
+                Your Google data is never used to train, fine-tune, or improve
+                generalized AI or machine learning models
+              </li>
+              <li>
+                Siftrio&apos;s use and transfer of information received from
+                Google APIs adheres to the{" "}
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+                >
+                  Google API Services User Data Policy
+                </a>
+                , including the Limited Use requirements. Google user data is
+                accessed and processed only to provide or improve user-facing
+                features that you explicitly request
+              </li>
+            </ul>
+            <p className="font-medium text-soft-text">
+              Google API Services User Data Policy Compliance
+            </p>
+            <p>
+              Siftrio&apos;s use of Google user data is subject to the Google
+              API Services User Data Policy. Specifically:
+            </p>
+            <ul>
+              <li>
+                Google user data is used solely to provide the features
+                explicitly requested by the user
+              </li>
+              <li>
+                Google user data is never used for advertising, marketing,
+                profiling, or sold to third parties
+              </li>
+              <li>
+                Google user data is never used to train, fine-tune, or improve
+                generalized AI or machine learning models
+              </li>
+              <li>
+                Google user data is processed only for the functionality
+                requested by the user
+              </li>
+              <li>
+                Siftrio&apos;s use and transfer of information received from
+                Google APIs adheres to the Google API Services User Data Policy,
+                including the Limited Use requirements. Google user data is
+                accessed and processed only to provide or improve user-facing
+                features that you explicitly request
+              </li>
             </ul>
             <p className="font-medium text-soft-text">
               AI and Machine Learning
@@ -323,11 +383,12 @@ export default function PrivacyPolicy() {
             <p>
               Siftrio uses artificial intelligence to generate summaries,
               insights, and assistant features within the application. Google
-              user data obtained through Google OAuth and Google Workspace APIs
-              is never used to train, fine-tune, develop, or improve generalized
-              artificial intelligence or machine learning models. Google data is
-              processed solely to provide the specific features you have
-              requested within the Services.
+              Workspace API data is processed only to provide the requested
+              functionality. Google user data obtained through Google OAuth and
+              Google Workspace APIs is never used to train, fine-tune, develop,
+              or improve generalized artificial intelligence or machine learning
+              models. Google data is never used outside the scope of the
+              user&apos;s requested feature.
             </p>
             <p className="font-medium text-soft-text">Revoking Access</p>
             <p>
@@ -344,7 +405,7 @@ export default function PrivacyPolicy() {
               . Revoking access will disable Google-related features but will
               not delete your existing Siftrio account or data. To request
               deletion of your Siftrio account and associated data, contact{" "}
-              <span className="text-foreground">siftriosupport@gmail.com</span>.
+              <span className="text-foreground">appsbysneha@gmail.com</span>.
             </p>
           </Section>
 
@@ -378,7 +439,7 @@ export default function PrivacyPolicy() {
             <p>
               We retain your data for as long as your account is active or as
               needed to provide the Services. If you request account deletion by
-              contacting siftriosupport@gmail.com, we will remove your personal
+              contacting appsbysneha@gmail.com, we will remove your personal
               data within thirty (30) days, except where required by law. Google
               user data obtained through OAuth is deleted within thirty (30)
               days of account deletion.
@@ -454,7 +515,7 @@ export default function PrivacyPolicy() {
             </ul>
             <p>
               To exercise any of these rights, please contact us at{" "}
-              <span className="text-foreground">siftriosupport@gmail.com</span>.
+              <span className="text-foreground">appsbysneha@gmail.com</span>.
             </p>
           </Section>
 

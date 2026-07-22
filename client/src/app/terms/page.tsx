@@ -280,7 +280,7 @@ export default function TermsAndConditions() {
               settings. Revoking access will disable Google-related features
               within Siftrio but will not delete your Siftrio account or data.
               To request account deletion, contact{" "}
-              <span className="text-foreground">siftriosupport@gmail.com</span>.
+              <span className="text-foreground">appsbysneha@gmail.com</span>.
             </p>
             <p className="font-medium text-soft-text">Compliance</p>
             <p>
@@ -397,8 +397,8 @@ export default function TermsAndConditions() {
           <Section id="termination" number="11" title="Termination">
             <p>
               You may request account termination at any time by contacting us
-              at siftriosupport@gmail.com. Upon termination, your right to use
-              the Services ceases immediately.
+              at appsbysneha@gmail.com. Upon termination, your right to use the
+              Services ceases immediately.
             </p>
             <p>
               We may suspend or terminate your access to the Services at our
