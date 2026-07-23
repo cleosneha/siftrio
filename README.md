@@ -33,7 +33,7 @@ Workspace
                     ├── Meetings & Transcripts
                     ├── Documents
                     ├── Jira
-                    └── More coming soon...
+                    └── More coming soon....
 ```
 
 All sources are chunked, embedded, and stored in a vector database. AI agents retrieve relevant context and generate grounded responses — not hallucinations.
