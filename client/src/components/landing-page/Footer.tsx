@@ -82,6 +82,13 @@ export function Footer() {
             >
               Terms &amp; Conditions
             </Link>
+            <span>•</span>
+            <Link
+              href="/compliance"
+              className="transition-colors duration-200 hover:text-soft-text"
+            >
+              Compliance
+            </Link>
           </motion.div>
 
           <motion.div

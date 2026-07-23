@@ -517,6 +517,13 @@ export default function TermsAndConditions() {
               >
                 Terms &amp; Conditions
               </Link>
+              <span>·</span>
+              <Link
+                href="/compliance"
+                className="transition-colors hover:text-soft-text"
+              >
+                Compliance
+              </Link>
             </div>
             <p className="text-faint-text">&copy; 2026 Siftrio</p>
           </div>

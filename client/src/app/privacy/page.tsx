@@ -10,6 +10,7 @@ const SECTIONS = [
   { id: "introduction", label: "Introduction" },
   { id: "information-we-collect", label: "Information We Collect" },
   { id: "how-we-use-information", label: "How We Use Information" },
+  { id: "ai-services", label: "AI and Machine Learning Services" },
   { id: "legal-basis", label: "Legal Basis for Processing" },
   { id: "google-account-data", label: "Google Account Data" },
   { id: "third-party-integrations", label: "Third-Party Integrations" },
@@ -93,7 +94,7 @@ export default function PrivacyPolicy() {
             </div>
             <div>
               <span className="block text-subtle-text">Last Updated</span>
-              July 22, 2026
+              July 23, 2026
             </div>
           </div>
 
@@ -220,10 +221,114 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 04 Legal Basis for Processing */}
+          {/* 04 AI and Machine Learning Services */}
+          <Section
+            id="ai-services"
+            number="04"
+            title="AI and Machine Learning Services"
+          >
+            <p>
+              Siftrio uses artificial intelligence to generate meeting
+              summaries, extract structured insights, and power an assistant
+              chat feature. The following describes our AI/ML integrations and
+              how user data interacts with these services.
+            </p>
+            <p className="font-medium text-soft-text">
+              Third-Party AI Provider
+            </p>
+            <p>
+              Siftrio integrates with Mistral AI (api.mistral.ai) as its sole
+              AI/ML service provider. Mistral AI is a French company operating
+              primarily from EU-based infrastructure. Mistral AI is used for:
+            </p>
+            <ul>
+              <li>
+                Meeting transcript analysis — extracting summaries, action items,
+                decisions, risks, and other structured insights from transcripts
+              </li>
+              <li>
+                Embedding generation — creating vector representations of
+                transcript chunks for semantic search
+              </li>
+              <li>
+                RAG chat responses — generating answers to user questions based
+                on retrieved project knowledge
+              </li>
+            </ul>
+            <p className="font-medium text-soft-text">
+              What Data Is Sent to Mistral AI
+            </p>
+            <p>
+              Only meeting transcript text is sent to Mistral AI. This
+              transcript data is provided by the user via manual upload or
+              received through Fireflies.ai transcription webhooks.
+            </p>
+            <p className="font-medium text-soft-text">
+              What Data Is Never Sent to Any AI Service
+            </p>
+            <ul>
+              <li>
+                Google OAuth profile data (name, email, profile picture)
+              </li>
+              <li>
+                Google Calendar data (event IDs, Google Meet URLs, attendee
+                information)
+              </li>
+              <li>
+                Google account credentials or authentication tokens
+              </li>
+            </ul>
+            <p className="font-medium text-soft-text">
+              Model Training
+            </p>
+            <p>
+              Siftrio&apos;s use of Mistral AI does not contribute to model
+              training. Training on API inputs and outputs is explicitly opted
+              out via Mistral AI&apos;s Admin Console Privacy settings. Mistral
+              AI&apos;s paid API tiers are excluded from model training by
+              default; the opt-out on our free tier provides equivalent
+              protection. For full details, see our{" "}
+              <Link
+                href="/compliance"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+              >
+                Data Safety &amp; Compliance
+              </Link>{" "}
+              page and Mistral AI&apos;s{" "}
+              <a
+                href="https://legal.mistral.ai/terms/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+              >
+                Privacy Policy
+              </a>
+              .
+            </p>
+            <p className="font-medium text-soft-text">
+              Transcription Service
+            </p>
+            <p>
+              Siftrio also integrates with Fireflies.ai for automated meeting
+              transcription. Fireflies.ai transcribes meeting audio and
+              provides transcripts to Siftrio via API and webhook. No Google
+              user data is shared with Fireflies.ai through Siftrio. For more
+              details on our AI integrations and data isolation practices, see
+              our{" "}
+              <Link
+                href="/compliance"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-soft-text"
+              >
+                Data Safety &amp; Compliance
+              </Link>{" "}
+              page.
+            </p>
+          </Section>
+
+          {/* 05 Legal Basis for Processing */}
           <Section
             id="legal-basis"
-            number="04"
+            number="05"
             title="Legal Basis for Processing"
           >
             <p>
@@ -249,10 +354,10 @@ export default function PrivacyPolicy() {
             </ul>
           </Section>
 
-          {/* 05 Google Account Data */}
+          {/* 06 Google Account Data */}
           <Section
             id="google-account-data"
-            number="05"
+            number="06"
             title="Google Account Data"
           >
             <p>
@@ -409,10 +514,10 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 06 Third-Party Integrations */}
+          {/* 07 Third-Party Integrations */}
           <Section
             id="third-party-integrations"
-            number="06"
+            number="07"
             title="Third-Party Integrations"
           >
             <p>
@@ -429,8 +534,8 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 07 Data Storage */}
-          <Section id="data-storage" number="07" title="Data Storage">
+          {/* 08 Data Storage */}
+          <Section id="data-storage" number="08" title="Data Storage">
             <p>
               Your data is stored on secure cloud infrastructure. We implement
               industry-standard security measures to protect your information,
@@ -446,8 +551,8 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 08 Data Sharing */}
-          <Section id="data-sharing" number="08" title="Data Sharing">
+          {/* 09 Data Sharing */}
+          <Section id="data-sharing" number="09" title="Data Sharing">
             <p>
               Siftrio does not sell, trade, or rent your personal information to
               third parties. We may share information only in the following
@@ -469,8 +574,8 @@ export default function PrivacyPolicy() {
             </ul>
           </Section>
 
-          {/* 09 Data Security */}
-          <Section id="data-security" number="09" title="Data Security">
+          {/* 10 Data Security */}
+          <Section id="data-security" number="10" title="Data Security">
             <p>
               We take the security of your data seriously. We implement
               appropriate technical and organizational measures to protect your
@@ -485,10 +590,10 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 10 Cookies and Session Management */}
+          {/* 11 Cookies and Session Management */}
           <Section
             id="cookies-and-tracking"
-            number="10"
+            number="11"
             title="Cookies and Session Management"
           >
             <p>
@@ -503,8 +608,8 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 11 Your Rights */}
-          <Section id="your-rights" number="11" title="Your Rights">
+          {/* 12 Your Rights */}
+          <Section id="your-rights" number="12" title="Your Rights">
             <p>You have the right to:</p>
             <ul>
               <li>Access the personal data we hold about you</li>
@@ -519,10 +624,10 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 12 Children's Privacy */}
+          {/* 13 Children's Privacy */}
           <Section
             id="childrens-privacy"
-            number="12"
+            number="13"
             title="Children's Privacy"
           >
             <p>
@@ -533,10 +638,10 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 13 Changes to this Policy */}
+          {/* 14 Changes to this Policy */}
           <Section
             id="changes-to-this-policy"
-            number="13"
+            number="14"
             title="Changes to this Policy"
           >
             <p>
@@ -547,8 +652,8 @@ export default function PrivacyPolicy() {
             </p>
           </Section>
 
-          {/* 14 Contact Us */}
-          <Section id="contact-us" number="14" title="Contact Us">
+          {/* 15 Contact Us */}
+          <Section id="contact-us" number="15" title="Contact Us">
             <p>
               If you have any questions about this Privacy Policy or our data
               practices, please contact us:
@@ -582,6 +687,13 @@ export default function PrivacyPolicy() {
                 className="transition-colors hover:text-soft-text"
               >
                 Terms &amp; Conditions
+              </Link>
+              <span>·</span>
+              <Link
+                href="/compliance"
+                className="transition-colors hover:text-soft-text"
+              >
+                Compliance
               </Link>
             </div>
             <p className="text-faint-text">&copy; 2026 Siftrio</p>
