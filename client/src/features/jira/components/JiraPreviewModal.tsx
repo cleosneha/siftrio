@@ -198,7 +198,7 @@ function JiraPreviewFormFields({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium">Issue Type</label>
-            <Select value={issueTypeId} onValueChange={setIssueTypeId}>
+            <Select value={issueTypeId} onValueChange={(value) => value && setIssueTypeId(value)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>

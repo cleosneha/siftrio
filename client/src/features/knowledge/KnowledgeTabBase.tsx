@@ -134,7 +134,7 @@ export function KnowledgeTabBase({
             className="pl-8"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(value) => value && setStatusFilter(value)}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
