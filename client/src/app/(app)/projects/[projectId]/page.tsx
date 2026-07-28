@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, notFound } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,10 @@ import { useRemoveProjectMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
 import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
+import { MeetingsListModal } from "@/features/meetings/components/MeetingsListModal";
 import { KnowledgeSection } from "@/features/knowledge/KnowledgeSection";
-import { MeetingsSidebar } from "@/features/meetings/MeetingsSidebar";
 import { MembersSection } from "@/features/members/MembersSection";
 import { JiraIntegrationSection } from "@/features/jira/components/JiraIntegrationSection";
-import { useMeetingsDrawer } from "@/features/meetings/meetings-drawer-store";
 
 export default function ProjectPage() {
   const params = useParams();
@@ -27,7 +26,7 @@ export default function ProjectPage() {
   const { setSidebarOpen } = useAppContext();
   const { user } = useAuth();
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
-  const { setMeetings } = useMeetingsDrawer();
+  const [showMeetingsList, setShowMeetingsList] = useState(false);
 
   const { data: projectData, isLoading: projectLoading } = useProject(projectId);
   const { data: meetingsData } = useMeetingsByProject(projectId);
@@ -42,10 +41,6 @@ export default function ProjectPage() {
   if (!projectLoading && !project) {
     notFound();
   }
-
-  useEffect(() => {
-    setMeetings(meetingsData?.data ?? []);
-  }, [meetingsData?.data, setMeetings]);
 
   const statusVariant: Record<
     string,
@@ -99,8 +94,14 @@ export default function ProjectPage() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mb-3 flex items-center gap-2">
-            <MeetingsSidebar />
+          <div className="mb-4 flex justify-center">
+            <Button
+              variant="outline"
+              className="bg-elevated text-foreground hover:bg-hover-surface"
+              onClick={() => setShowMeetingsList(true)}
+            >
+              Show Meetings
+            </Button>
           </div>
           <div className="mb-6">
             <h2 className="mb-4 text-lg font-medium">Knowledge</h2>
@@ -132,6 +133,12 @@ export default function ProjectPage() {
         onClose={() => setShowCreateMeeting(false)}
         clientId={project?.client_id ?? ""}
         defaultProjectId={projectId}
+      />
+
+      <MeetingsListModal
+        open={showMeetingsList}
+        onClose={() => setShowMeetingsList(false)}
+        meetings={meetingsData?.data ?? []}
       />
     </>
   );

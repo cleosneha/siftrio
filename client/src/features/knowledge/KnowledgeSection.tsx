@@ -25,19 +25,14 @@ export function KnowledgeSection({ projectId }: { projectId: string }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-1 border-b">
+      <div className="mb-4 flex gap-1 rounded-lg border p-1">
         {tabs.map((tab) => (
           <Button
             key={tab.key}
             variant={activeTab === tab.key ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab(tab.key)}
-            className="rounded-none data-[slot='button']:rounded-none"
-            style={
-              activeTab === tab.key
-                ? { borderBottom: "2px solid var(--primary)" }
-                : { borderBottom: "2px solid transparent" }
-            }
+            className="flex-1 rounded-md"
           >
             {tab.label}
           </Button>
