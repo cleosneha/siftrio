@@ -23,6 +23,14 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 interface FieldConfig {
   key: string;
   label: string;
@@ -126,18 +134,19 @@ export function KnowledgeTabBase({
             className="pl-8"
           />
         </div>
-        <select
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">All Status</option>
-          {config.statusOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            {config.statusOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
@@ -245,20 +254,24 @@ export function KnowledgeTabBase({
                     }
                   />
                 ) : field.type === "select" ? (
-                  <select
-                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+                  <Select
                     value={editForm[field.key] ?? ""}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, [field.key]: e.target.value }))
+                    onValueChange={(v) =>
+                      setEditForm((f) => ({ ...f, [field.key]: v }))
                     }
                   >
-                    <option value="">None</option>
-                    {field.options?.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {field.options?.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : field.type === "date" ? (
                   <Input
                     type="date"
@@ -279,19 +292,23 @@ export function KnowledgeTabBase({
             ))}
             <div>
               <label className="mb-1 block text-sm font-medium">Status</label>
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+              <Select
                 value={editForm.status ?? ""}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, status: e.target.value }))
+                onValueChange={(v) =>
+                  setEditForm((f) => ({ ...f, status: v }))
                 }
               >
-                {config.statusOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {config.statusOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

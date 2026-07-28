@@ -24,6 +24,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCreateMeeting } from "@/features/meetings/hooks/useMeetings";
 import { projectService } from "@/features/projects/services/project.service";
 import { cn } from "@/lib/utils";
@@ -252,20 +259,21 @@ export function CreateMeetingModal({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Project</FormLabel>
-                        <FormControl>
-                          <select
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <option value="">Select a project</option>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a project" />
+                          </SelectTrigger>
+                          <SelectContent>
                             {projects.map((p: { id: string; name: string }) => (
-                              <option key={p.id} value={p.id}>
+                              <SelectItem key={p.id} value={p.id}>
                                 {p.name}
-                              </option>
+                              </SelectItem>
                             ))}
-                          </select>
-                        </FormControl>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -299,20 +307,21 @@ export function CreateMeetingModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Project</FormLabel>
-                      <FormControl>
-                        <select
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="">Select a project</option>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                        <SelectContent>
                           {projects.map((p: { id: string; name: string }) => (
-                            <option key={p.id} value={p.id}>
+                            <SelectItem key={p.id} value={p.id}>
                               {p.name}
-                            </option>
+                            </SelectItem>
                           ))}
-                        </select>
-                      </FormControl>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

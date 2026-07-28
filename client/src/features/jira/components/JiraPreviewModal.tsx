@@ -14,6 +14,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   useActionItemJiraPreview,
   useActionItemJiraIssueTypes,
   useCreateActionItemJiraIssue,
@@ -191,18 +198,18 @@ function JiraPreviewFormFields({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium">Issue Type</label>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
-              value={issueTypeId}
-              onChange={(e) => setIssueTypeId(e.target.value)}
-            >
-              <option value="">Select type...</option>
-              {issueTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            <Select value={issueTypeId} onValueChange={setIssueTypeId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select type..." />
+              </SelectTrigger>
+              <SelectContent>
+                {issueTypes.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
