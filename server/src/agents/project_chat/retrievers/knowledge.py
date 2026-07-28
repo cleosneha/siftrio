@@ -119,7 +119,7 @@ class KnowledgeRetriever:
                 entity_type=entity_type,
                 title=e.title,
                 description=e.description,
-                status=e.status,
+                status=e.status.value,
                 meeting_id=str(e.meeting.id) if e.meeting else None,
                 meeting_title=e.meeting.title if e.meeting else None,
             )

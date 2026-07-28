@@ -1,12 +1,10 @@
-from enum import Enum
 from uuid import UUID
 
 from sqlalchemy import Enum as SQLEnum, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base, TimestampMixin, UUIDMixin
-from src.models.workspace_member import MemberRole
+from src.models.base import Base, MemberRole, TimestampMixin, UUIDMixin
 
 
 class ProjectMember(UUIDMixin, TimestampMixin, Base):

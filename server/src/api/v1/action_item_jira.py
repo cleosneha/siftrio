@@ -71,7 +71,7 @@ async def create_jira_issue_from_action_item(
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ActionItemJiraService(db)
 
-    from src.repositories.workspace_jira_repository import WorkspaceJiraRepository
+    from src.repositories.workspace_integration_repository import WorkspaceIntegrationRepository
     from src.models.client import Client
     from src.repositories.project_repository import ProjectRepository
     project = await ProjectRepository(db).get_by_id(project_id)
@@ -80,9 +80,9 @@ async def create_jira_issue_from_action_item(
     client = await db.get(Client, project.client_id)
     site_url = None
     if client:
-        integration = await WorkspaceJiraRepository(db).get_by_workspace(client.workspace_id)
+        integration = await WorkspaceIntegrationRepository(db).get_by_workspace_and_provider(client.workspace_id, "jira")
         if integration:
-            site_url = integration.site_url
+            site_url = (integration.config or {}).get("site_url")
 
     data = await service.create_issue(action_item_id, body, site_url=site_url)
     return BaseResponse(message="Jira issue created", data=data)

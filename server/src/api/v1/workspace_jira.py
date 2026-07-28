@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from src.core.config import settings
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
-from src.repositories.project_jira_repository import ProjectJiraRepository
+from src.repositories.project_integration_repository import ProjectIntegrationRepository
 from src.schemas.base_response import BaseResponse
 from src.services.membership_service import MembershipService
 from src.services.workspace_jira_service import WorkspaceJiraService
@@ -124,11 +124,11 @@ async def disconnect_workspace_jira(
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
 
     service = WorkspaceJiraService(db)
-    project_jira_repo = ProjectJiraRepository(db)
+    project_integration_repo = ProjectIntegrationRepository(db)
 
-    project_mappings = await project_jira_repo.list_by_workspace(workspace_id)
+    project_mappings = await project_integration_repo.list_by_workspace(workspace_id)
     for mapping in project_mappings:
-        await project_jira_repo.delete(mapping)
+        await project_integration_repo.delete(mapping)
 
     await service.disconnect(workspace_id)
     await db.commit()

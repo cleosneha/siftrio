@@ -15,10 +15,10 @@ class ClientRepository:
         self._db = db
 
     async def create(
-        self, workspace_id: UUID, name: str, description: str | None = None
+        self, workspace_id: UUID, name: str, description: str | None = None, created_by: UUID | None = None
     ) -> Client:
         logger.debug(f"Creating client in workspace {workspace_id} with name '{name}'")
-        client = Client(workspace_id=workspace_id, name=name, description=description)
+        client = Client(workspace_id=workspace_id, name=name, description=description, created_by=created_by)
         self._db.add(client)
         await self._db.flush()
         await self._db.refresh(client)

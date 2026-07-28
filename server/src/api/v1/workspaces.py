@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
-from src.models.workspace_member import MemberRole
+from src.models.base import MemberRole
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.base_response import BaseResponse

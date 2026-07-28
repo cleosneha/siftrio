@@ -74,24 +74,15 @@ class MeetingAnalysisService:
             )
         )
 
-        decisions_str = [d.title for d in result.structured_decisions]
-        action_items_str = [a.title for a in result.structured_action_items]
-        risks_str = [r.title for r in result.structured_risks]
-        answered = [q.title for q in result.structured_questions if q.answer]
-        unanswered = [q.title for q in result.structured_questions if not q.answer]
+        raw_response = result.model_dump()
 
         analysis = await self.repo.upsert(
             meeting_id=meeting_id,
             summary=result.summary,
             goal=result.goal,
             outcomes=result.outcomes,
-            decisions=decisions_str,
-            action_items=action_items_str,
-            answered_questions=answered,
-            unanswered_questions=unanswered,
-            risks=risks_str,
             blockers=result.blockers,
-            future_meetings=result.future_meetings,
+            raw_ai_response=raw_response,
         )
 
         await self.knowledge_service.extract_from_analysis(

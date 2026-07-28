@@ -1,10 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models.workspace_member import MemberRole, WorkspaceMember
+from src.models.base import MemberRole
+from src.models.workspace_member import WorkspaceMember
+
 
 
 class WorkspaceMemberRepository:
@@ -22,6 +24,23 @@ class WorkspaceMemberRepository:
         await self._db.flush()
         await self._db.refresh(member)
         return member
+
+    async def count_by_workspace(self, workspace_id: UUID) -> int:
+        result = await self._db.execute(
+            select(func.count(WorkspaceMember.id)).where(
+                WorkspaceMember.workspace_id == workspace_id
+            )
+        )
+        return result.scalar() or 0
+
+    async def count_by_workspace_and_user(self, workspace_id: UUID, user_id: UUID) -> int:
+        result = await self._db.execute(
+            select(func.count(WorkspaceMember.id)).where(
+                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.user_id == user_id,
+            )
+        )
+        return result.scalar() or 0
 
     async def get_by_workspace(self, workspace_id: UUID) -> list[WorkspaceMember]:
         result = await self._db.execute(
@@ -57,6 +76,14 @@ class WorkspaceMemberRepository:
             .where(WorkspaceMember.user_id == user_id)
         )
         return result.scalars().first()
+
+    async def list_workspace_ids_by_user(self, user_id: UUID) -> list[UUID]:
+        result = await self._db.execute(
+            select(WorkspaceMember.workspace_id).where(
+                WorkspaceMember.user_id == user_id
+            )
+        )
+        return [row[0] for row in result.all()]
 
     async def delete(self, workspace_id: UUID, user_id: UUID) -> None:
         await self._db.execute(

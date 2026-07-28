@@ -19,7 +19,7 @@ class Project(UUIDMixin, TimestampMixin, Base):
 
     created_by: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -69,10 +69,9 @@ class Project(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
 
-    jira_integration = relationship(
-        "ProjectJira",
+    integrations = relationship(
+        "ProjectIntegration",
         back_populates="project",
-        uselist=False,
         cascade="all, delete-orphan",
     )
 

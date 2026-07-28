@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Index, Integer, Text
+from sqlalchemy import ForeignKey, Index, Integer, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
@@ -13,24 +13,6 @@ class MeetingChunk(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True),
         ForeignKey("meetings.id", ondelete="CASCADE"),
         nullable=False,
-    )
-
-    workspace_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("workspaces.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-
-    client_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("clients.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-
-    project_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="SET NULL"),
-        nullable=True,
     )
 
     chunk_index: Mapped[int] = mapped_column(
@@ -59,17 +41,8 @@ class MeetingChunk(UUIDMixin, TimestampMixin, Base):
         back_populates="chunks",
     )
 
-    workspace = relationship("Workspace")
-
-    client = relationship("Client")
-
-    project = relationship("Project")
-
     __table_args__ = (
-        Index("idx_chunk_meeting_id", "meeting_id"),
-        Index("idx_chunk_workspace_id", "workspace_id"),
-        Index("idx_chunk_client_id", "client_id"),
-        Index("idx_chunk_project_id", "project_id"),
+        UniqueConstraint("meeting_id", "chunk_index", name="uq_chunk_meeting_index"),
         Index(
             "idx_chunk_embedding_hnsw",
             embedding,

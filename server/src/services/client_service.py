@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.repositories.client_repository import ClientRepository
-from src.models.workspace_member import MemberRole
+from src.models.base import MemberRole
 from src.repositories.client_member_repository import ClientMemberRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.client_schema import ClientResponse
@@ -38,7 +38,7 @@ class ClientService:
                 status_code=404,
             )
 
-        client = await self.repo.create(ws_id, name, description)
+        client = await self.repo.create(ws_id, name, description, created_by=user_id)
         if user_id:
             await self.client_member_repo.create(client.id, user_id, role=MemberRole.OWNER)
         await self.db.commit()

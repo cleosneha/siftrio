@@ -6,12 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.integrations.atlassian.client import JiraClient
-from src.models.jira_user import JiraUser
-from src.models.knowledge_base import ActionItemSyncStatus
+from src.models.knowledge_base import ActionItemStatus
+from src.repositories.entity_integration_repository import EntityIntegrationRepository
 from src.repositories.knowledge_repository import KnowledgeRepository
-from src.repositories.project_jira_repository import ProjectJiraRepository
 from src.repositories.project_repository import ProjectRepository
-from src.repositories.jira_user_repository import JiraUserRepository
+from src.repositories.external_user_repository import ExternalUserRepository
 from src.schemas.jira_schema import (
     ActionItemJiraCreateRequest,
     ActionItemJiraCreateResponse,
@@ -29,9 +28,9 @@ class ActionItemJiraService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.project_repo = ProjectRepository(db)
-        self.project_jira_repo = ProjectJiraRepository(db)
+        self.entity_integration_repo = EntityIntegrationRepository(db)
         self.knowledge_repo = KnowledgeRepository(db)
-        self.jira_user_repo = JiraUserRepository(db)
+        self.external_user_repo = ExternalUserRepository(db)
         self.workspace_jira_service = WorkspaceJiraService(db)
 
     async def _resolve_jira_integration(self, project_id: UUID) -> tuple[str, str, str, str]:
@@ -45,44 +44,35 @@ class ActionItemJiraService:
             raise BaseAPIException(message="Client not found", status_code=404)
 
         workspace_id = client.workspace_id
-        integration = await self.workspace_jira_service.repo.get_by_workspace(workspace_id)
-        if integration is None or not integration.cloud_id:
-            raise BaseAPIException(
-                message="Workspace is not connected to Jira. Connect Jira first.",
-                status_code=400,
-            )
-
-        if not integration.access_token:
-            raise BaseAPIException(
-                message="Jira access token is missing. Reconnect Jira.",
-                status_code=400,
-            )
-
         access_token = await self.workspace_jira_service.get_valid_access_token(workspace_id)
+        cloud_id = await self.workspace_jira_service.get_cloud_id(workspace_id)
 
-        project_jira = await self.project_jira_repo.get_by_project(project_id)
-        if project_jira is None:
+        from src.repositories.project_integration_repository import ProjectIntegrationRepository
+        project_integration_repo = ProjectIntegrationRepository(self.db)
+        project_integration = await project_integration_repo.get_by_project_and_provider(project_id, "jira")
+        if project_integration is None:
             raise BaseAPIException(
                 message="Project is not connected to a Jira project. Connect a Jira project first.",
                 status_code=400,
             )
 
         return (
-            integration.cloud_id,
+            cloud_id,
             access_token,
-            project_jira.jira_project_id,
-            project_jira.jira_project_key,
+            project_integration.external_project_id,
+            project_integration.external_project_key or "",
         )
 
-    async def _get_or_create_jira_user(
+    async def _get_or_create_external_user(
         self,
         account_id: str,
         display_name: str | None,
         email_address: str | None,
         workspace_id: UUID,
-    ) -> JiraUser:
-        return await self.jira_user_repo.get_or_create(
-            account_id=account_id,
+    ):
+        return await self.external_user_repo.get_or_create(
+            external_id=account_id,
+            provider="jira",
             workspace_id=workspace_id,
             display_name=display_name,
             email_address=email_address,
@@ -106,8 +96,8 @@ class ActionItemJiraService:
         if due:
             desc_lines.append("")
             desc_lines.append(f"Due Date: {due}")
-        if entity.assignee:
-            desc_lines.append(f"Assignee: {entity.assignee}")
+        if entity.assignee_name:
+            desc_lines.append(f"Assignee: {entity.assignee_name}")
 
         return ActionItemJiraPreview(
             summary=entity.title,
@@ -115,7 +105,7 @@ class ActionItemJiraService:
             issue_type="Task",
             priority="Medium",
             labels=["action-item"],
-            assignee=entity.assignee,
+            assignee=entity.assignee_name,
         )
 
     async def get_issue_details(
@@ -125,7 +115,12 @@ class ActionItemJiraService:
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
 
-        if not entity.jira_issue_id:
+        integration = await self.entity_integration_repo.get(
+            entity_type="action_item",
+            entity_id=action_item_id,
+            provider="jira",
+        )
+        if integration is None or not integration.external_id:
             raise BaseAPIException(
                 message="Action item has no linked Jira issue",
                 status_code=400,
@@ -133,7 +128,7 @@ class ActionItemJiraService:
 
         cloud_id, access_token, _jira_project_id, _jira_project_key = await self._resolve_jira_integration(project_id)
         client = JiraClient(cloud_id, access_token)
-        raw = await client.get_issue(entity.jira_issue_key or entity.jira_issue_id)
+        raw = await client.get_issue(integration.external_key or integration.external_id)
 
         fields = raw.get("fields", {})
 
@@ -171,7 +166,7 @@ class ActionItemJiraService:
             labels=fields.get("labels", []),
             created=fields.get("created"),
             updated=fields.get("updated"),
-            url=entity.jira_issue_url or "",
+            url=integration.external_url or "",
         )
 
     async def get_issue_types(
@@ -215,7 +210,12 @@ class ActionItemJiraService:
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
 
-        if entity.jira_issue_id is not None:
+        existing = await self.entity_integration_repo.get(
+            entity_type="action_item",
+            entity_id=action_item_id,
+            provider="jira",
+        )
+        if existing is not None:
             raise BaseAPIException(
                 message="Action item already has a linked Jira issue",
                 status_code=409,
@@ -267,27 +267,30 @@ class ActionItemJiraService:
         if client_obj is None:
             raise BaseAPIException(message="Client not found", status_code=404)
 
-        jira_user = await self._get_or_create_jira_user(
-            account_id=request.assignee_account_id,
+        await self._get_or_create_external_user(
+            account_id=request.assignee_account_id or "",
             display_name=request.assignee_name,
             email_address=request.assignee_email,
             workspace_id=client_obj.workspace_id,
         )
 
-        updated = await self.knowledge_repo.update_action_item(
-            action_item_id,
-            jira_issue_id=issue_id,
-            jira_issue_key=issue_key,
-            jira_issue_url=issue_url,
-            jira_issue_type=request.issue_type_id,
-            jira_synced_at=datetime.now(timezone.utc),
-            sync_status=ActionItemSyncStatus.SYNCED.value,
-            jira_assignee_account_id=jira_user.account_id,
+        await self.entity_integration_repo.upsert(
+            entity_type="action_item",
+            entity_id=action_item_id,
+            provider="jira",
+            external_id=issue_id,
+            external_key=issue_key,
+            external_url=issue_url,
+            external_type=request.issue_type_id,
+            sync_status="synced",
+            synced_at=datetime.now(timezone.utc),
+            external_assignee_id=request.assignee_account_id,
         )
-        if updated is None:
-            raise BaseAPIException(
-                message="Action item not found during update",
-                status_code=404,
+
+        if request.assignee_account_id:
+            await self.knowledge_repo.update_action_item(
+                action_item_id,
+                status=ActionItemStatus.IN_PROGRESS,
             )
 
         await self.db.commit()

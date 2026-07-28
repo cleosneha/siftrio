@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.models.client_member import ClientMember
-from src.models.workspace_member import MemberRole
+from src.models.base import MemberRole
 
 
 class ClientMemberRepository:
@@ -23,6 +23,14 @@ class ClientMemberRepository:
         await self._db.flush()
         await self._db.refresh(member)
         return member
+
+    async def count_by_client(self, client_id: UUID) -> int:
+        result = await self._db.execute(
+            select(func.count(ClientMember.id)).where(
+                ClientMember.client_id == client_id
+            )
+        )
+        return result.scalar() or 0
 
     async def get_by_client(self, client_id: UUID) -> list[ClientMember]:
         result = await self._db.execute(
@@ -42,6 +50,14 @@ class ClientMemberRepository:
             )
         )
         return result.scalar_one_or_none()
+
+    async def list_client_ids_by_user(self, user_id: UUID) -> list[UUID]:
+        result = await self._db.execute(
+            select(ClientMember.client_id).where(
+                ClientMember.user_id == user_id
+            )
+        )
+        return [row[0] for row in result.all()]
 
     async def delete(self, client_id: UUID, user_id: UUID) -> None:
         await self._db.execute(

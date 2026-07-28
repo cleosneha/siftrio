@@ -1,7 +1,7 @@
 from datetime import date, time
 from enum import Enum
 
-from sqlalchemy import Date, Enum as SQLEnum, Float, ForeignKey, String, Text, Time
+from sqlalchemy import Date, Enum as SQLEnum, Float, ForeignKey, Index, String, Text, Time
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -68,4 +68,10 @@ class MeetingSuggestion(UUIDMixin, TimestampMixin, Base):
     meeting = relationship(
         "Meeting",
         back_populates="suggestions",
+    )
+
+    __table_args__ = (
+        Index("idx_suggestion_meeting_id", "meeting_id"),
+        Index("idx_suggestion_status", "status"),
+        Index("idx_suggestion_suggested_date", "suggested_date"),
     )

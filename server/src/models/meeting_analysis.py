@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Text, func
+from sqlalchemy import Float, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,46 +31,20 @@ class MeetingAnalysis(UUIDMixin, TimestampMixin, Base):
         default=list,
     )
 
-    decisions: Mapped[list] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=list,
-    )
-
-    action_items: Mapped[list] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=list,
-    )
-
-    answered_questions: Mapped[list] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=list,
-    )
-
-    unanswered_questions: Mapped[list] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=list,
-    )
-
-    risks: Mapped[list] = mapped_column(
-        JSONB,
-        nullable=False,
-        default=list,
-    )
-
     blockers: Mapped[list] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
     )
 
-    future_meetings: Mapped[list] = mapped_column(
+    confidence: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    raw_ai_response: Mapped[dict | None] = mapped_column(
         JSONB,
-        nullable=False,
-        default=list,
+        nullable=True,
     )
 
     meeting = relationship(

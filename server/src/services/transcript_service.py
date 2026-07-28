@@ -60,19 +60,12 @@ class TranscriptService:
         chunks = self.text_splitter.split_text(transcript_text)
         embeddings_list = await self.embeddings.embed_documents(chunks)
 
-        workspace_id = client.workspace_id if client else None
-        client_id = meeting.client_id
-        project_id = meeting.project_id
-
         for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings_list)):
             await self.chunk_repo.create(
                 meeting_id=meeting_id,
                 chunk_index=i,
                 chunk_text=chunk_text,
                 embedding=embedding,
-                workspace_id=workspace_id,
-                client_id=client_id,
-                project_id=project_id,
                 chunk_metadata={
                     "chunk_size": len(chunk_text),
                     "meeting_title": meeting.title,

@@ -10,13 +10,9 @@ class MeetingAnalysisCreate(BaseModel):
     summary: str | None = None
     goal: str | None = None
     outcomes: list = []
-    decisions: list = []
-    action_items: list = []
-    answered_questions: list = []
-    unanswered_questions: list = []
-    risks: list = []
     blockers: list = []
-    future_meetings: list = []
+    confidence: float | None = None
+    raw_ai_response: dict | None = None
 
 
 class MeetingAnalysisResponse(BaseModel):
@@ -27,15 +23,11 @@ class MeetingAnalysisResponse(BaseModel):
     summary: str | None = None
     goal: str | None = None
     outcomes: list = []
-    decisions: list = []
-    action_items: list = []
-    answered_questions: list = []
-    unanswered_questions: list = []
-    risks: list = []
     blockers: list = []
-    future_meetings: list = []
+    confidence: float | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
 
 class RequirementItem(BaseModel):
     title: str = Field(description="Requirement title")

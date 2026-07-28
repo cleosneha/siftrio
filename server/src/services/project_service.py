@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.repositories.client_repository import ClientRepository
-from src.models.workspace_member import MemberRole
+from src.models.base import MemberRole
 from src.repositories.client_member_repository import ClientMemberRepository
 from src.repositories.project_member_repository import ProjectMemberRepository
 from src.repositories.project_repository import ProjectRepository

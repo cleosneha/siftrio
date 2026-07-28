@@ -1,13 +1,16 @@
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import exists, and_
+from sqlalchemy import delete, exists, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.client import Client
 from src.models.client_member import ClientMember
 from src.models.project import Project
 from src.models.project_member import ProjectMember
-from src.models.workspace_member import MemberRole, WorkspaceMember
+from src.models.workspace import Workspace
+from src.models.base import MemberRole
+from src.models.workspace_member import WorkspaceMember
 from src.repositories.client_member_repository import ClientMemberRepository
 from src.repositories.project_member_repository import ProjectMemberRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
@@ -86,21 +89,112 @@ class MembershipService:
         member = await self.ws_member_repo.get_by_user_and_workspace(workspace_id, user_id)
         if member and member.role == MemberRole.OWNER:
             raise HTTPException(status_code=403, detail="Cannot remove an owner")
+
+        member_count = await self.ws_member_repo.count_by_workspace(workspace_id)
         await self.ws_member_repo.delete(workspace_id, user_id)
-        await self.db.flush()
+
+        if member_count <= 1:
+            await self._delete_workspace_cascade(workspace_id)
+        else:
+            await self.db.flush()
 
     async def remove_client_member(self, client_id: UUID, user_id: UUID) -> None:
         member = await self.client_member_repo.get_by_user_and_client(client_id, user_id)
         if member and member.role == MemberRole.OWNER:
             raise HTTPException(status_code=403, detail="Cannot remove an owner")
+
+        member_count = await self.client_member_repo.count_by_client(client_id)
         await self.client_member_repo.delete(client_id, user_id)
-        await self.db.flush()
+
+        if member_count <= 1:
+            await self._delete_client_cascade(client_id)
+        else:
+            await self.db.flush()
 
     async def remove_project_member(self, project_id: UUID, user_id: UUID) -> None:
         member = await self.project_member_repo.get_by_user_and_project(project_id, user_id)
         if member and member.role == MemberRole.OWNER:
             raise HTTPException(status_code=403, detail="Cannot remove an owner")
+
+        member_count = await self.project_member_repo.count_by_project(project_id)
         await self.project_member_repo.delete(project_id, user_id)
+
+        if member_count <= 1:
+            await self._delete_project_cascade(project_id)
+        else:
+            await self.db.flush()
+
+    async def _delete_workspace_cascade(self, workspace_id: UUID) -> None:
+        from src.models.external_user import ExternalUser
+        from src.models.workspace_integration import WorkspaceIntegration
+
+        await self.db.execute(
+            delete(WorkspaceIntegration).where(
+                WorkspaceIntegration.workspace_id == workspace_id
+            )
+        )
+        await self.db.execute(
+            delete(ExternalUser).where(
+                ExternalUser.workspace_id == workspace_id
+            )
+        )
+        await self.db.execute(
+            delete(Workspace).where(Workspace.id == workspace_id)
+        )
+        await self.db.flush()
+
+    async def _delete_client_cascade(self, client_id: UUID) -> None:
+        from src.models.meeting import Meeting
+        from src.models.project_integration import ProjectIntegration
+        from src.models.project_member import ProjectMember
+
+        project_ids_result = await self.db.execute(
+            select(Project.id).where(Project.client_id == client_id)
+        )
+        project_ids = [row[0] for row in project_ids_result.all()]
+
+        if project_ids:
+            await self.db.execute(
+                delete(ProjectMember).where(
+                    ProjectMember.project_id.in_(project_ids)
+                )
+            )
+            await self.db.execute(
+                delete(ProjectIntegration).where(
+                    ProjectIntegration.project_id.in_(project_ids)
+                )
+            )
+            await self.db.execute(
+                delete(Project).where(Project.id.in_(project_ids))
+            )
+
+        await self.db.execute(
+            delete(Meeting).where(Meeting.client_id == client_id)
+        )
+        await self.db.execute(delete(Client).where(Client.id == client_id))
+        await self.db.flush()
+
+    async def _delete_project_cascade(self, project_id: UUID) -> None:
+        from src.models.meeting import Meeting
+        from src.models.project_integration import ProjectIntegration
+        from src.models.project_member import ProjectMember
+
+        await self.db.execute(
+            delete(ProjectIntegration).where(
+                ProjectIntegration.project_id == project_id
+            )
+        )
+        await self.db.execute(
+            delete(ProjectMember).where(
+                ProjectMember.project_id == project_id
+            )
+        )
+        await self.db.execute(
+            delete(Meeting).where(Meeting.project_id == project_id)
+        )
+        await self.db.execute(
+            delete(Project).where(Project.id == project_id)
+        )
         await self.db.flush()
 
     def _to_response(self, member) -> dict:

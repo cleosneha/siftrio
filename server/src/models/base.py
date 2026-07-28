@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from uuid import uuid4
 
 from sqlalchemy import DateTime, func
@@ -8,6 +9,25 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
+
+
+class MemberRole(str, Enum):
+    OWNER = "owner"
+    MEMBER = "member"
+
+
+class Priority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class SyncStatus(str, Enum):
+    PENDING = "pending"
+    SYNCED = "synced"
+    FAILED = "failed"
+    CONFLICT = "conflict"
 
 
 class UUIDMixin:

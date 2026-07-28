@@ -1,20 +1,26 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class JiraUser(UUIDMixin, TimestampMixin, Base):
-    __tablename__ = "jira_users"
+class ExternalUser(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "external_users"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "provider", "external_id", name="uq_external_user"),
+    )
 
-    account_id: Mapped[str] = mapped_column(
+    external_id: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        unique=True,
-        index=True,
+    )
+
+    provider: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
     )
 
     display_name: Mapped[str | None] = mapped_column(
@@ -40,4 +46,4 @@ class JiraUser(UUIDMixin, TimestampMixin, Base):
         nullable=False,
     )
 
-    workspace = relationship("Workspace", back_populates="jira_users")
+    workspace = relationship("Workspace", back_populates="external_users")

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,24 +44,35 @@ export function CreateClientModal({
   workspaceId,
 }: CreateClientModalProps) {
   const createClient = useCreateClient();
-
+  const router = useRouter();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", description: "" },
   });
 
   const onSubmit = async (values: FormValues) => {
-    await createClient.mutateAsync({
+    const result = await createClient.mutateAsync({
       workspace_id: workspaceId,
       name: values.name,
       description: values.description || null,
     });
     form.reset();
     onClose();
+    if (result?.data?.id) {
+      router.push(`/clients/${result.data.id}`);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) { form.reset(); onClose(); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) {
+          form.reset();
+          onClose();
+        }
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Client</DialogTitle>
@@ -104,7 +116,14 @@ export function CreateClientModal({
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { form.reset(); onClose(); }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                  onClose();
+                }}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={createClient.isPending}>

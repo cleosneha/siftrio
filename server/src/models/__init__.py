@@ -18,9 +18,10 @@ from src.models.workspace_member import WorkspaceMember
 from src.models.client_member import ClientMember
 from src.models.project_member import ProjectMember
 from src.models.member_invitation import MemberInvitation
-from src.models.workspace_jira import WorkspaceJira
-from src.models.project_jira import ProjectJira
-from src.models.jira_user import JiraUser
+from src.models.workspace_integration import WorkspaceIntegration
+from src.models.project_integration import ProjectIntegration
+from src.models.external_user import ExternalUser
+from src.models.entity_integration import EntityIntegration
 from src.models.api_key import ApiKey
 
 __all__ = [
@@ -42,8 +43,9 @@ __all__ = [
     "ClientMember",
     "ProjectMember",
     "MemberInvitation",
-    "WorkspaceJira",
-    "ProjectJira",
-    "JiraUser",
+    "WorkspaceIntegration",
+    "ProjectIntegration",
+    "ExternalUser",
+    "EntityIntegration",
     "ApiKey",
 ]

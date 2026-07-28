@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.project_chat.schemas import RetrievedChunk
+from src.models.client import Client
 from src.models.meeting import Meeting
 from src.models.meeting_chunk import MeetingChunk
 
@@ -47,19 +48,34 @@ class KeywordRetriever:
 
     @staticmethod
     def _apply_filters(stmt, filters: dict):
+        joined_meeting = False
+
         workspace_ids = filters.get("workspace_ids") or []
         if workspace_ids:
-            stmt = stmt.where(MeetingChunk.workspace_id.in_([UUID(wid) for wid in workspace_ids]))
+            stmt = stmt.join(Meeting, MeetingChunk.meeting_id == Meeting.id)
+            stmt = stmt.join(Client, Meeting.client_id == Client.id)
+            stmt = stmt.where(Client.workspace_id.in_([UUID(wid) for wid in workspace_ids]))
+            joined_meeting = True
+
         if filters.get("client_ids"):
-            stmt = stmt.where(MeetingChunk.client_id.in_([UUID(cid) for cid in filters["client_ids"]]))
+            if not joined_meeting:
+                stmt = stmt.join(Meeting, MeetingChunk.meeting_id == Meeting.id)
+                joined_meeting = True
+            stmt = stmt.where(Meeting.client_id.in_([UUID(cid) for cid in filters["client_ids"]]))
+
         if filters.get("project_ids"):
-            stmt = stmt.where(MeetingChunk.project_id.in_([UUID(pid) for pid in filters["project_ids"]]))
+            if not joined_meeting:
+                stmt = stmt.join(Meeting, MeetingChunk.meeting_id == Meeting.id)
+                joined_meeting = True
+            stmt = stmt.where(Meeting.project_id.in_([UUID(pid) for pid in filters["project_ids"]]))
+
         if filters.get("meeting_ids"):
             stmt = stmt.where(MeetingChunk.meeting_id.in_([UUID(mid) for mid in filters["meeting_ids"]]))
 
         date_range = filters.get("date_range")
         if date_range and (date_range.get("start") or date_range.get("end")):
-            stmt = stmt.join(Meeting, MeetingChunk.meeting_id == Meeting.id)
+            if not joined_meeting:
+                stmt = stmt.join(Meeting, MeetingChunk.meeting_id == Meeting.id)
             if date_range.get("start"):
                 stmt = stmt.where(Meeting.meeting_date >= date_range["start"])
             if date_range.get("end"):

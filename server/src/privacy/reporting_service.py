@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -10,9 +9,9 @@ from src.integrations.atlassian.reporting_client import (
     ReportingAPIError,
 )
 from src.integrations.atlassian.client import JiraClient
-from src.models.jira_user import JiraUser
-from src.repositories.jira_user_repository import JiraUserRepository
-from src.repositories.workspace_jira_repository import WorkspaceJiraRepository
+from src.models.external_user import ExternalUser
+from src.repositories.external_user_repository import ExternalUserRepository
+from src.repositories.workspace_integration_repository import WorkspaceIntegrationRepository
 from src.services.workspace_jira_service import WorkspaceJiraService
 
 logger = logging.getLogger(__name__)
@@ -23,8 +22,8 @@ MAX_BATCH_SIZE = 90
 class PersonalDataReportingService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
-        self.workspace_jira_repo = WorkspaceJiraRepository(db)
-        self.jira_user_repo = JiraUserRepository(db)
+        self.workspace_integration_repo = WorkspaceIntegrationRepository(db)
+        self.external_user_repo = ExternalUserRepository(db)
         self.workspace_jira_service = WorkspaceJiraService(db)
 
     async def report_and_process(self) -> dict:
@@ -44,7 +43,7 @@ class PersonalDataReportingService:
 
         for workspace_id, users in grouped.items():
             try:
-                integration = await self.workspace_jira_repo.get_by_workspace(workspace_id)
+                integration = await self.workspace_integration_repo.get_by_workspace_and_provider(workspace_id, "jira")
                 if integration is None:
                     continue
 
@@ -55,7 +54,7 @@ class PersonalDataReportingService:
                     batch = users[batch_start : batch_start + MAX_BATCH_SIZE]
                     accounts = [
                         {
-                            "accountId": user.account_id,
+                            "accountId": user.external_id,
                             "updatedAt": user.last_refreshed_at.strftime(
                                 "%Y-%m-%dT%H:%M:%S.000Z",
                             ),
@@ -109,34 +108,42 @@ class PersonalDataReportingService:
             "errors": errors,
         }
 
-    async def _get_all_jira_users(self) -> list[JiraUser]:
-        result = await self.db.execute(select(JiraUser))
+    async def _get_all_jira_users(self) -> list[ExternalUser]:
+        result = await self.db.execute(
+            select(ExternalUser).where(ExternalUser.provider == "jira")
+        )
         return list(result.scalars().all())
 
     def _group_by_workspace(
-        self, users: list[JiraUser],
-    ) -> dict[UUID, list[JiraUser]]:
-        grouped: dict[UUID, list[JiraUser]] = {}
+        self, users: list[ExternalUser],
+    ) -> dict[UUID, list[ExternalUser]]:
+        grouped: dict[UUID, list[ExternalUser]] = {}
         for user in users:
             grouped.setdefault(user.workspace_id, []).append(user)
         return grouped
 
     async def _erase_user(self, account_id: str) -> None:
-        from src.models.knowledge_base import ActionItem
+        from src.models.entity_integration import EntityIntegration
 
         result = await self.db.execute(
-            select(ActionItem).where(
-                ActionItem.jira_assignee_account_id == account_id,
+            select(EntityIntegration).where(
+                EntityIntegration.entity_type == "action_item",
+                EntityIntegration.provider == "jira",
+                EntityIntegration.external_assignee_id == account_id,
             ),
         )
         items = result.scalars().all()
 
         for item in items:
-            item.jira_assignee_account_id = None
+            item.external_assignee_id = None
 
-        user = await self.jira_user_repo.get_by_account_id(account_id)
-        if user:
-            await self.jira_user_repo.delete(user)
+        from sqlalchemy import delete
+        await self.db.execute(
+            delete(ExternalUser).where(
+                ExternalUser.external_id == account_id,
+                ExternalUser.provider == "jira",
+            )
+        )
 
         logger.warning(
             "[PRIVACY] Erased account ...%s (anonymized %d action items)",
@@ -146,13 +153,18 @@ class PersonalDataReportingService:
     async def _refresh_user(
         self, account_id: str, workspace_id: UUID,
     ) -> None:
-        integration = await self.workspace_jira_repo.get_by_workspace(workspace_id)
-        if integration is None or not integration.cloud_id:
+        integration = await self.workspace_integration_repo.get_by_workspace_and_provider(workspace_id, "jira")
+        if integration is None:
+            return
+
+        config = integration.config or {}
+        cloud_id = config.get("cloud_id")
+        if not cloud_id:
             return
 
         try:
             access_token = await self.workspace_jira_service.get_valid_access_token(workspace_id)
-            client = JiraClient(integration.cloud_id, access_token)
+            client = JiraClient(cloud_id, access_token)
 
             raw = await client.search_users(account_id, global_search=True)
             user_data = None
@@ -164,8 +176,9 @@ class PersonalDataReportingService:
             if user_data is None:
                 return
 
-            await self.jira_user_repo.get_or_create(
-                account_id=account_id,
+            await self.external_user_repo.get_or_create(
+                external_id=account_id,
+                provider="jira",
                 workspace_id=workspace_id,
                 display_name=user_data.get("displayName"),
                 email_address=user_data.get("emailAddress"),

@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
+from src.models.base import Priority
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
@@ -13,6 +14,17 @@ from src.schemas.knowledge_schema import (
     RequirementResponse,
     RiskResponse,
 )
+
+
+def _to_priority(value: str | Priority | None) -> Priority | None:
+    if value is None:
+        return None
+    if isinstance(value, Priority):
+        return value
+    try:
+        return Priority(value.lower())
+    except (ValueError, AttributeError):
+        return None
 
 
 class KnowledgeService:
@@ -56,7 +68,7 @@ class KnowledgeService:
                     meeting_id=meeting_id,
                     title=item.get("title", ""),
                     description=item.get("description"),
-                    priority=item.get("priority"),
+                    priority=_to_priority(item.get("priority")),
                 )
 
         if action_items:
@@ -66,7 +78,7 @@ class KnowledgeService:
                     meeting_id=meeting_id,
                     title=item.get("title", ""),
                     description=item.get("description"),
-                    assignee=item.get("assignee"),
+                    assignee_name=item.get("assignee"),
                     due_date=item.get("due_date"),
                 )
 

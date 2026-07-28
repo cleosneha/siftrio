@@ -7,10 +7,15 @@ from sqlalchemy.orm import joinedload
 
 from src.models.knowledge_base import (
     ActionItem,
+    ActionItemStatus,
     Decision,
+    DecisionStatus,
     Question,
+    QuestionStatus,
     Requirement,
+    RequirementStatus,
     Risk,
+    RiskStatus,
 )
 
 
@@ -34,7 +39,7 @@ class KnowledgeRepository:
             title=title,
             description=description,
             priority=priority,
-            status="pending",
+            status=RequirementStatus.PROPOSED,
         )
         self._db.add(entity)
         await self._db.flush()
@@ -48,7 +53,7 @@ class KnowledgeRepository:
         title: str,
         source_chunk_id: UUID | None = None,
         description: str | None = None,
-        assignee: str | None = None,
+        assignee_name: str | None = None,
         due_date: str | None = None,
     ) -> ActionItem:
         parsed_due = datetime.fromisoformat(due_date) if due_date else None
@@ -58,9 +63,9 @@ class KnowledgeRepository:
             source_chunk_id=source_chunk_id,
             title=title,
             description=description,
-            assignee=assignee,
+            assignee_name=assignee_name,
             due_date=parsed_due,
-            status="pending",
+            status=ActionItemStatus.TODO,
         )
         self._db.add(entity)
         await self._db.flush()
@@ -84,7 +89,7 @@ class KnowledgeRepository:
             title=title,
             description=description,
             decision_date=parsed_date,
-            status="active",
+            status=DecisionStatus.PROPOSED,
         )
         self._db.add(entity)
         await self._db.flush()
@@ -109,7 +114,7 @@ class KnowledgeRepository:
             description=description,
             severity=severity,
             mitigation=mitigation,
-            status="open",
+            status=RiskStatus.OPEN,
         )
         self._db.add(entity)
         await self._db.flush()
@@ -125,7 +130,7 @@ class KnowledgeRepository:
         description: str | None = None,
         answer: str | None = None,
     ) -> Question:
-        status = "answered" if answer else "pending"
+        status = QuestionStatus.ANSWERED if answer else QuestionStatus.OPEN
         entity = Question(
             project_id=project_id,
             meeting_id=meeting_id,

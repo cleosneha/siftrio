@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.exceptions.base import BaseAPIException
 from src.mcp.context import MCPContext
 from src.mcp.schemas.common import ToolParameterSpec, ToolResult, ToolSpec
-from src.repositories.project_jira_repository import ProjectJiraRepository
-from src.repositories.workspace_jira_repository import WorkspaceJiraRepository
+from src.repositories.project_integration_repository import ProjectIntegrationRepository
+from src.repositories.workspace_integration_repository import WorkspaceIntegrationRepository
 
 if TYPE_CHECKING:
     from src.mcp.dispatcher import MCPDispatcher
@@ -29,19 +29,20 @@ async def _get_jira_integration_status(
         )
 
     ws_id = auth.resolved_workspace.workspace_id
-    repo = WorkspaceJiraRepository(db)
-    integration = await repo.get_by_workspace(ws_id)
+    repo = WorkspaceIntegrationRepository(db)
+    integration = await repo.get_by_workspace_and_provider(ws_id, "jira")
     if integration is None:
         return ToolResult(
             data={"connected": False, "workspace_name": auth.resolved_workspace.workspace_name},
             message="Jira is not connected for this workspace",
         )
+    config = integration.config or {}
     return ToolResult(
         data={
             "connected": True,
             "workspace_name": auth.resolved_workspace.workspace_name,
-            "cloud_name": integration.cloud_name,
-            "site_url": integration.site_url,
+            "cloud_name": config.get("cloud_name"),
+            "site_url": config.get("site_url"),
             "connected_at": (
                 integration.connected_at.isoformat()
                 if integration.connected_at
@@ -70,20 +71,21 @@ async def _get_project_jira_mapping(
     db: AsyncSession, auth: MCPContext, project_id: str
 ) -> ToolResult:
     proj_id = UUID(project_id)
-    repo = ProjectJiraRepository(db)
-    mapping = await repo.get_by_project(proj_id)
+    repo = ProjectIntegrationRepository(db)
+    mapping = await repo.get_by_project_and_provider(proj_id, "jira")
     if mapping is None:
         return ToolResult(
             data={"mapped": False},
             message="No Jira project mapped to this Siftrio project",
         )
+    config = mapping.config or {}
     return ToolResult(
         data={
             "mapped": True,
-            "jira_project_id": mapping.jira_project_id,
-            "jira_project_key": mapping.jira_project_key,
-            "jira_project_name": mapping.jira_project_name,
-            "jira_project_type": mapping.jira_project_type,
+            "jira_project_id": mapping.external_project_id,
+            "jira_project_key": mapping.external_project_key,
+            "jira_project_name": mapping.external_project_name,
+            "jira_project_type": config.get("jira_project_type"),
         },
         message="Jira project mapping found",
     )

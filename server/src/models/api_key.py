@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,3 +45,11 @@ class ApiKey(UUIDMixin, TimestampMixin, Base):
     )
 
     user = relationship("User", back_populates="api_keys")
+
+    __table_args__ = (
+        Index(
+            "idx_api_keys_active",
+            "user_id",
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )

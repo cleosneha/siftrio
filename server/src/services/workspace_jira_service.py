@@ -12,8 +12,7 @@ from src.integrations.atlassian import (
     is_token_expired,
     refresh_access_token,
 )
-from src.repositories.project_jira_repository import ProjectJiraRepository
-from src.repositories.workspace_jira_repository import WorkspaceJiraRepository
+from src.repositories.workspace_integration_repository import WorkspaceIntegrationRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.jira_schema import WorkspaceJiraResponse
 
@@ -23,20 +22,19 @@ logger = logging.getLogger(__name__)
 class WorkspaceJiraService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
-        self.repo = WorkspaceJiraRepository(db)
+        self.repo = WorkspaceIntegrationRepository(db)
         self.workspace_repo = WorkspaceRepository(db)
-        self.project_jira_repo = ProjectJiraRepository(db)
 
     async def get_integration(self, workspace_id: UUID) -> dict | None:
-        integration = await self.repo.get_by_workspace(workspace_id)
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if integration is None:
             return None
         await self.get_valid_access_token(workspace_id)
-        integration = await self.repo.get_by_workspace(workspace_id)
-        return WorkspaceJiraResponse.model_validate(integration).model_dump()
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
+        return self._to_response(integration)
 
     async def get_or_create_oauth_url(self, workspace_id: UUID, user_id: UUID) -> str:
-        integration = await self.repo.get_by_workspace(workspace_id)
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if integration is not None:
             if not is_token_expired(integration.token_expires_at.timestamp() if integration.token_expires_at else None):
                 raise BaseAPIException(
@@ -99,35 +97,38 @@ class WorkspaceJiraService:
         cloud_name = resources[0].get("name", "")
         site_url = resources[0].get("url", "")
 
-        existing = await self.repo.get_by_workspace(workspace_id)
+        config = {
+            "cloud_id": cloud_id,
+            "cloud_name": cloud_name,
+            "site_url": site_url,
+        }
+
+        existing = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if existing:
             integration = await self.repo.update(
                 existing,
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_expires_at=expires_at,
-                cloud_id=cloud_id,
-                cloud_name=cloud_name,
-                site_url=site_url,
+                config=config,
                 connected_by=user_id,
             )
         else:
             integration = await self.repo.create(
                 workspace_id=workspace_id,
+                provider="jira",
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_expires_at=expires_at,
-                cloud_id=cloud_id,
-                cloud_name=cloud_name,
-                site_url=site_url,
+                config=config,
                 connected_by=user_id,
             )
 
         await self.db.commit()
-        return WorkspaceJiraResponse.model_validate(integration).model_dump()
+        return self._to_response(integration)
 
     async def refresh_token(self, workspace_id: UUID) -> dict:
-        integration = await self.repo.get_by_workspace(workspace_id)
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if integration is None:
             raise BaseAPIException(
                 message="Workspace has no Jira integration",
@@ -160,10 +161,10 @@ class WorkspaceJiraService:
             token_expires_at=expires_at,
         )
         await self.db.commit()
-        return WorkspaceJiraResponse.model_validate(integration).model_dump()
+        return self._to_response(integration)
 
     async def get_valid_access_token(self, workspace_id: UUID) -> str:
-        integration = await self.repo.get_by_workspace(workspace_id)
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if integration is None:
             raise BaseAPIException(
                 message="Workspace has no Jira integration",
@@ -171,7 +172,6 @@ class WorkspaceJiraService:
             )
 
         expires_at = integration.token_expires_at
-        now_ts = datetime.now(timezone.utc).timestamp()
 
         should_refresh = (
             expires_at is None
@@ -207,6 +207,22 @@ class WorkspaceJiraService:
 
         return integration.access_token
 
+    async def get_cloud_id(self, workspace_id: UUID) -> str:
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
+        if integration is None:
+            raise BaseAPIException(
+                message="Workspace has no Jira integration",
+                status_code=400,
+            )
+        config = integration.config or {}
+        cloud_id = config.get("cloud_id")
+        if not cloud_id:
+            raise BaseAPIException(
+                message="Jira integration is missing cloud_id. Reconnect Jira.",
+                status_code=400,
+            )
+        return cloud_id
+
     async def get_sites(self, workspace_id: UUID) -> list[dict]:
         access_token = await self.get_valid_access_token(workspace_id)
         resources = await get_accessible_resources(access_token)
@@ -216,7 +232,7 @@ class WorkspaceJiraService:
         ]
 
     async def disconnect(self, workspace_id: UUID) -> None:
-        integration = await self.repo.get_by_workspace(workspace_id)
+        integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if integration is None:
             raise BaseAPIException(
                 message="Workspace has no Jira integration",
@@ -224,3 +240,18 @@ class WorkspaceJiraService:
             )
 
         await self.repo.delete(integration)
+
+    def _to_response(self, integration) -> dict:
+        config = integration.config or {}
+        return WorkspaceJiraResponse(
+            id=integration.id,
+            workspace_id=integration.workspace_id,
+            provider=integration.provider,
+            cloud_id=config.get("cloud_id"),
+            cloud_name=config.get("cloud_name"),
+            site_url=config.get("site_url"),
+            connected_by=integration.connected_by,
+            connected_at=integration.connected_at,
+            created_at=integration.created_at,
+            updated_at=integration.updated_at,
+        ).model_dump()

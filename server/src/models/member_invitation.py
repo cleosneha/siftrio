@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -80,4 +80,8 @@ class MemberInvitation(UUIDMixin, TimestampMixin, Base):
         "User",
         back_populates="sent_invitations",
         foreign_keys=[invited_by],
+    )
+
+    __table_args__ = (
+        UniqueConstraint("email", "resource_type", "resource_id", name="uq_invitation_email_resource"),
     )

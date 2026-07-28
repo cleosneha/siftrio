@@ -28,18 +28,24 @@ import { useCreateMeeting } from "@/features/meetings/hooks/useMeetings";
 import { projectService } from "@/features/projects/services/project.service";
 import { cn } from "@/lib/utils";
 
-const formSchema = z.object({
-  title: z.string().min(1, "Title is required").max(255),
-  meeting_type: z.enum(["project", "miscellaneous"]),
-  project_id: z.string().optional(),
-  tags: z.string().optional(),
-  meeting_date: z.string().optional(),
-  meeting_provider: z.enum(["none", "google_meet", "existing"]),
-  start_time: z.string().optional(),
-  end_time: z.string().optional(),
-  meeting_url: z.string().optional(),
-  guest_emails: z.string().optional(),
-});
+const formSchema = z
+  .object({
+    title: z.string().min(1, "Title is required").max(255),
+    meeting_type: z.enum(["project", "miscellaneous"]),
+    project_id: z.string().optional(),
+    tags: z.string().optional(),
+    meeting_date: z.string().optional(),
+    meeting_provider: z.enum(["none", "google_meet", "existing"]),
+    start_time: z.string().optional(),
+    end_time: z.string().optional(),
+    meeting_url: z.string().optional(),
+    guest_emails: z.string().optional(),
+  })
+  .refine(
+    (data) =>
+      data.meeting_type !== "project" || (data.project_id && data.project_id.length > 0),
+    { message: "Please select a project", path: ["project_id"] },
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 

@@ -1,26 +1,28 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class WorkspaceJira(UUIDMixin, TimestampMixin, Base):
-    __tablename__ = "workspace_jira"
+class WorkspaceIntegration(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "workspace_integrations"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "provider", name="uq_workspace_integration"),
+    )
 
     workspace_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("workspaces.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
+        index=True,
     )
 
     provider: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="jira",
     )
 
     access_token: Mapped[str] = mapped_column(
@@ -38,19 +40,10 @@ class WorkspaceJira(UUIDMixin, TimestampMixin, Base):
         nullable=True,
     )
 
-    cloud_id: Mapped[str | None] = mapped_column(
-        String(255),
+    config: Mapped[dict | None] = mapped_column(
+        JSONB,
         nullable=True,
-    )
-
-    cloud_name: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
-    )
-
-    site_url: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
+        default=dict,
     )
 
     connected_by: Mapped[UUID | None] = mapped_column(
@@ -67,7 +60,7 @@ class WorkspaceJira(UUIDMixin, TimestampMixin, Base):
 
     workspace = relationship(
         "Workspace",
-        back_populates="jira_integration",
+        back_populates="integrations",
     )
 
     connector = relationship(
