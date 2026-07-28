@@ -257,7 +257,7 @@ export function KnowledgeTabBase({
                   <Select
                     value={editForm[field.key] ?? ""}
                     onValueChange={(v) =>
-                      setEditForm((f) => ({ ...f, [field.key]: v }))
+                      setEditForm((f) => ({ ...f, [field.key]: v ?? "" }))
                     }
                   >
                     <SelectTrigger className="w-full">
@@ -295,7 +295,7 @@ export function KnowledgeTabBase({
               <Select
                 value={editForm.status ?? ""}
                 onValueChange={(v) =>
-                  setEditForm((f) => ({ ...f, status: v }))
+                  setEditForm((f) => ({ ...f, status: v ?? "" }))
                 }
               >
                 <SelectTrigger className="w-full">
