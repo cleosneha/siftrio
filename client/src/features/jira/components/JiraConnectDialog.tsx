@@ -268,7 +268,7 @@ export function JiraConnectDialog({
             </div>
             <div className="space-y-2">
               <label htmlFor="project-type" className="text-sm font-medium">Project Type</label>
-              <Select value={projectType} onValueChange={setProjectType}>
+              <Select value={projectType} onValueChange={(value) => value && setProjectType(value)}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
