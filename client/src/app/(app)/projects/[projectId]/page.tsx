@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Menu, ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProject } from "@/features/projects/hooks/useProjects";
 import { useMeetingsByProject } from "@/features/meetings/hooks/useMeetings";
@@ -42,15 +41,6 @@ export default function ProjectPage() {
     notFound();
   }
 
-  const statusVariant: Record<
-    string,
-    "default" | "secondary" | "outline" | "destructive" | "ghost" | "link"
-  > = {
-    active: "default",
-    completed: "secondary",
-    archived: "outline",
-  };
-
   return (
     <>
       <header className="flex items-center gap-3 px-4 py-3 md:px-6">
@@ -79,11 +69,13 @@ export default function ProjectPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {project?.status && (
-              <Badge variant={statusVariant[project.status] ?? "outline"}>
-                {project.status}
-              </Badge>
-            )}
+            <Button
+              variant="outline"
+              className="bg-elevated text-foreground hover:bg-hover-surface"
+              onClick={() => setShowMeetingsList(true)}
+            >
+              Show Meetings
+            </Button>
             <Button onClick={() => setShowCreateMeeting(true)}>
               <Plus className="h-4 w-4" />
               New Meeting
@@ -94,15 +86,6 @@ export default function ProjectPage() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mb-4 flex justify-center">
-            <Button
-              variant="outline"
-              className="bg-elevated text-foreground hover:bg-hover-surface"
-              onClick={() => setShowMeetingsList(true)}
-            >
-              Show Meetings
-            </Button>
-          </div>
           <div className="mb-6">
             <h2 className="mb-4 text-lg font-medium">Knowledge</h2>
             <KnowledgeSection projectId={projectId} />
