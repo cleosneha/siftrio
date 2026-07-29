@@ -108,4 +108,4 @@ async def fireflies_webhook(request: Request, background_tasks: BackgroundTasks)
         background_tasks.add_task(run_ingestion_pipeline, meeting_id, transcript_text)
 
         logger.info("Fireflies ingestion offloaded for meeting %s", meeting_id)
-        return {"status": "accepted", "meeting_id": str(meeting_id)}
+        return {"success": True, "status": "accepted", "meeting_id": str(meeting_id)}

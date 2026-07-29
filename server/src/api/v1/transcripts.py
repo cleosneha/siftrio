@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
+from starlette.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -63,7 +64,10 @@ async def upload_transcript(
 
     background_tasks.add_task(run_ingestion_pipeline, meeting_id, transcript_text)
 
-    return BaseResponse(
-        message="Transcript processing started",
-        data={"meeting_id": str(meeting_id), "status": "processing"},
+    return JSONResponse(
+        content=BaseResponse(
+            message="Transcript processing started",
+            data={"meeting_id": str(meeting_id), "status": "processing"},
+        ).model_dump(),
+        status_code=202,
     )
