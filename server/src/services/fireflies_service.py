@@ -139,7 +139,8 @@ class FirefliesService:
             logger.error("Failed to fetch Fireflies transcript: %s", e)
             return None
 
-    def _build_transcript_text(self, transcript: dict) -> str:
+    @staticmethod
+    def build_transcript_text(transcript: dict) -> str:
         sentences = transcript.get("sentences") or []
         lines = []
         for s in sentences:
@@ -190,6 +191,22 @@ class FirefliesService:
             return match.group(1)
         return None
 
+    async def match_and_prepare(self, fireflies_meeting_id: str) -> tuple:
+        transcript = await self.fetch_transcript(fireflies_meeting_id)
+        if not transcript:
+            raise BaseAPIException(
+                message="Failed to retrieve transcript from Fireflies",
+                status_code=500,
+            )
+        meeting = await self._find_meeting(transcript, fireflies_meeting_id)
+        if not meeting:
+            raise BaseAPIException(
+                message="No matching meeting found for Fireflies transcript",
+                status_code=404,
+            )
+        transcript_text = self.build_transcript_text(transcript)
+        return meeting, transcript_text
+
     async def process_transcript(self, fireflies_meeting_id: str) -> dict:
         transcript = await self.fetch_transcript(fireflies_meeting_id)
         if not transcript:
@@ -213,7 +230,7 @@ class FirefliesService:
         )
 
         try:
-            transcript_text = self._build_transcript_text(transcript)
+            transcript_text = self.build_transcript_text(transcript)
             result = await self._transcript_service.process_upload(meeting.id, transcript_text)
         except Exception:
             await self._repo.update(meeting.id, transcript_status=TranscriptStatus.FAILED)

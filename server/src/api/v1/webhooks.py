@@ -1,15 +1,18 @@
 import json
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, BackgroundTasks, Request
+from sqlalchemy import text
 
 from src.core.database import async_session_factory
 from src.core.embeddings import embedder
+from src.models.meeting import TranscriptStatus
 from src.repositories.meeting_repository import MeetingRepository
 from src.services.fireflies_service import (
     FirefliesService,
     verify_webhook_signature,
 )
+from src.services.ingestion_service import run_ingestion_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ router = APIRouter(
 
 
 @router.post("/fireflies")
-async def fireflies_webhook(request: Request) -> dict:
+async def fireflies_webhook(request: Request, background_tasks: BackgroundTasks) -> dict:
     body = await request.body()
 
     signature = request.headers.get("x-hub-signature", "")
@@ -65,21 +68,44 @@ async def fireflies_webhook(request: Request) -> dict:
     async with async_session_factory() as db:
         repo = MeetingRepository(db)
 
-        meeting = await repo.find_by_fireflies_meeting_id(fireflies_meeting_id)
+        existing = await repo.find_by_fireflies_meeting_id(fireflies_meeting_id)
+        if existing:
+            if existing.transcript_status == TranscriptStatus.PROCESSING:
+                logger.info("Fireflies meeting %s is already processing", fireflies_meeting_id)
+                await db.commit()
+                return {"status": "already_processing"}
+            if existing.transcript_status == TranscriptStatus.COMPLETED:
+                logger.info("Fireflies meeting %s is already completed", fireflies_meeting_id)
+                await db.commit()
+                return {"status": "already_completed"}
 
-        if meeting:
-            logger.info("Pre-linked fireflies_meeting_id %s to meeting %s", fireflies_meeting_id, meeting.id)
-            await repo.update(meeting.id, fireflies_meeting_id=fireflies_meeting_id)
+        fireflies_service = FirefliesService(db, MeetingRepository(db), embedder)
+        meeting, transcript_text = await fireflies_service.match_and_prepare(fireflies_meeting_id)
 
-        try:
-            fireflies_service = FirefliesService(db, MeetingRepository(db), embedder)
-            result = await fireflies_service.process_transcript(fireflies_meeting_id)
-            logger.info(
-                "Fireflies transcript processed for meeting %s: %s chunks",
-                result["meeting_id"],
-                result["chunk_count"],
-            )
-            return {"success": True, "message": "Transcript processed", "data": result}
-        except Exception as e:
-            logger.error("Fireflies webhook processing failed: %s", e)
-            return {"success": False, "message": str(e)}
+        meeting_id = meeting.id
+
+        result = await db.execute(
+            text("""
+                UPDATE meetings
+                SET transcript_status = 'processing'
+                WHERE id = :mid
+                  AND (transcript_status IS NULL OR transcript_status IN ('pending', 'failed'))
+                RETURNING id
+            """),
+            {"mid": meeting_id},
+        )
+        claimed = result.fetchone()
+        if not claimed:
+            logger.info("Fireflies meeting %s could not be claimed (status conflict)", meeting_id)
+            await db.commit()
+            return {"status": "already_processing"}
+
+        if not existing:
+            await repo.update(meeting_id, fireflies_meeting_id=fireflies_meeting_id)
+
+        await db.commit()
+
+        background_tasks.add_task(run_ingestion_pipeline, meeting_id, transcript_text)
+
+        logger.info("Fireflies ingestion offloaded for meeting %s", meeting_id)
+        return {"status": "accepted", "meeting_id": str(meeting_id)}

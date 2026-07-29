@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import async_session_factory, get_db
@@ -19,6 +20,7 @@ from src.schemas.meeting_schema import (
 from src.core.embeddings import embedder
 from src.services.auth_service import AuthService
 from src.services.fireflies_service import FirefliesService
+from src.services.ingestion_service import run_ingestion_pipeline
 from src.services.meeting_integration_service import MeetingIntegrationService
 from src.services.meeting_service import MeetingService
 
@@ -141,10 +143,31 @@ async def get_transcript_status(
     )
 
 
+@router.get("/{meeting_id}/status", response_model=BaseResponse)
+async def get_ingestion_status(
+    meeting_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    meeting = await MeetingRepository(db).get_by_id(meeting_id)
+    if meeting is None:
+        return BaseResponse(success=False, message="Meeting not found", data=None)
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_meeting_access(meeting, user_id)
+    return BaseResponse(
+        data={
+            "status": meeting.transcript_status.value if meeting.transcript_status else None,
+            "error": meeting.ingestion_error,
+        }
+    )
+
+
 @router.post("/{meeting_id}/retry-transcript", response_model=BaseResponse)
 async def retry_transcript(
     meeting_id: UUID,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
@@ -161,20 +184,54 @@ async def retry_transcript(
             data=None,
         )
 
-    try:
-        async with async_session_factory() as session:
-            fireflies_service = FirefliesService(session, MeetingRepository(session), embedder)
-            result = await fireflies_service.process_transcript(meeting.fireflies_meeting_id)
-        return BaseResponse(
-            message="Transcript retrieved and processed successfully",
-            data=result,
-        )
-    except Exception as e:
+    result = await db.execute(
+        text("""
+            UPDATE meetings
+            SET transcript_status = 'processing'
+            WHERE id = :mid
+              AND (transcript_status IS NULL OR transcript_status IN ('pending', 'failed'))
+            RETURNING id
+        """),
+        {"mid": meeting_id},
+    )
+    if not result.fetchone():
         return BaseResponse(
             success=False,
-            message=f"Failed to retrieve transcript: {e}",
+            message="Meeting is already processing or has a completed transcript",
             data=None,
         )
+
+    await db.commit()
+
+    async with async_session_factory() as session:
+        try:
+            fireflies_service = FirefliesService(session, MeetingRepository(session), embedder)
+            transcript = await fireflies_service.fetch_transcript(meeting.fireflies_meeting_id)
+            if not transcript:
+                raise ValueError("Failed to fetch transcript from Fireflies")
+            transcript_text = FirefliesService.build_transcript_text(transcript)
+        except Exception as e:
+            await session.execute(
+                text("""
+                    UPDATE meetings
+                    SET transcript_status = 'failed', ingestion_error = :err
+                    WHERE id = :mid
+                """),
+                {"mid": meeting_id, "err": str(e)},
+            )
+            await session.commit()
+            return BaseResponse(
+                success=False,
+                message=f"Failed to fetch transcript: {e}",
+                data=None,
+            )
+
+    background_tasks.add_task(run_ingestion_pipeline, meeting_id, transcript_text)
+
+    return BaseResponse(
+        message="Retry started",
+        data={"meeting_id": str(meeting_id), "status": "processing"},
+    )
 
 
 @router.delete("/{meeting_id}", response_model=BaseResponse)
