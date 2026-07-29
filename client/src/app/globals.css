@@ -77,41 +77,41 @@
 
 :root {
   /* Base */
-  --background: #08090A;
-  --foreground: #FFFFFF;
+  --background: #08090a;
+  --foreground: #ffffff;
 
   /* Surfaces */
   --card: #121314;
-  --card-foreground: #D0D3D6;
+  --card-foreground: #d0d3d6;
   --popover: #121314;
-  --popover-foreground: #D0D3D6;
+  --popover-foreground: #d0d3d6;
   --elevated: #121314;
-  --hover-surface: #17191C;
-  --pressed-surface: #1D2024;
-  --selected: #17191C;
+  --hover-surface: #17191c;
+  --pressed-surface: #1d2024;
+  --selected: #17191c;
 
   /* Primary - White */
-  --primary: #FFFFFF;
-  --primary-foreground: #08090A;
+  --primary: #ffffff;
+  --primary-foreground: #08090a;
 
   /* Secondary - Transparent */
   --secondary: transparent;
-  --secondary-foreground: #D0D3D6;
+  --secondary-foreground: #d0d3d6;
 
   /* Muted */
   --muted: #111213;
-  --muted-foreground: #9EA3A9;
+  --muted-foreground: #9ea3a9;
 
   /* Accent */
-  --accent: #17191C;
-  --accent-foreground: #FFFFFF;
+  --accent: #17191c;
+  --accent-foreground: #ffffff;
 
   /* Destructive */
-  --destructive: #EF4444;
+  --destructive: #ef4444;
 
   /* Status */
-  --success: #22C55E;
-  --warning: #F59E0B;
+  --success: #22c55e;
+  --warning: #f59e0b;
 
   /* Borders - rgba(255,255,255,0.05) */
   --border: rgba(255, 255, 255, 0.05);
@@ -120,62 +120,63 @@
   --ring: rgba(255, 255, 255, 0.1);
 
   /* Text hierarchy */
-  --body-text: #D0D3D6;
-  --disabled-text: #6D737C;
-  --secondary-text: #E8E8E8;
-  --subtle-text: #4A4E54;
-  --faint-text: #3A3E44;
-  --soft-text: #BCC0C6;
+  --body-text: #d0d3d6;
+  --disabled-text: #6d737c;
+  --secondary-text: #e8e8e8;
+  --subtle-text: #4a4e54;
+  --faint-text: #3a3e44;
+  --soft-text: #bcc0c6;
 
   /* Entity icon colors */
-  --entity-workspace: #5C8E8A;
-  --entity-client: #6F84A5;
-  --entity-project: #5E8B6D;
-  --entity-meeting: #857A9A;
-  --entity-assistant: #A56D3F;
+  --entity-workspace: #5c8e8a;
+  --entity-client: #6f84a5;
+  --entity-project: #5e8b6d;
+  --entity-meeting: #857a9a;
+  --entity-assistant: #a56d3f;
+  --entity-red: #ed7b7b;
 
   /* Primary button hover/active states */
-  --primary-hover: #F2F2F2;
-  --primary-active: #E5E5E5;
+  --primary-hover: #f2f2f2;
+  --primary-active: #e5e5e5;
 
   /* Borders */
-  --subtle-border: #1C1E22;
-  --svg-track: #1A1C1F;
+  --subtle-border: #1c1e22;
+  --svg-track: #1a1c1f;
   --svg-bg-track: #131416;
-  --svg-line: #2A2E34;
+  --svg-line: #2a2e34;
 
   /* Scrollbar */
-  --scrollbar: #2A2E34;
-  --scrollbar-hover: #40454D;
+  --scrollbar: #2a2e34;
+  --scrollbar-hover: #40454d;
 
   /* Charts */
-  --chart-1: #FFFFFF;
-  --chart-2: #9EA3A9;
-  --chart-3: #22C55E;
-  --chart-4: #EF4444;
-  --chart-5: #F59E0B;
+  --chart-1: #ffffff;
+  --chart-2: #9ea3a9;
+  --chart-3: #22c55e;
+  --chart-4: #ef4444;
+  --chart-5: #f59e0b;
 
   /* Sidebar */
-  --sidebar: #08090A;
-  --sidebar-foreground: #9EA3A9;
-  --sidebar-primary: #FFFFFF;
-  --sidebar-primary-foreground: #08090A;
-  --sidebar-accent: #17191C;
-  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar: #08090a;
+  --sidebar-foreground: #9ea3a9;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #08090a;
+  --sidebar-accent: #17191c;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: transparent;
   --sidebar-ring: rgba(255, 255, 255, 0.1);
 
   /* Status badges */
-  --status-pending-bg: #1D2024;
-  --status-pending-fg: #F59E0B;
-  --status-progress-bg: #17191C;
-  --status-progress-fg: #9EA3A9;
+  --status-pending-bg: #1d2024;
+  --status-pending-fg: #f59e0b;
+  --status-progress-bg: #17191c;
+  --status-progress-fg: #9ea3a9;
   --status-done-bg: rgba(34, 197, 94, 0.1);
-  --status-done-fg: #22C55E;
+  --status-done-fg: #22c55e;
   --status-error-bg: rgba(239, 68, 68, 0.1);
-  --status-error-fg: #EF4444;
+  --status-error-fg: #ef4444;
   --status-default-bg: #111213;
-  --status-default-fg: #9EA3A9;
+  --status-default-fg: #9ea3a9;
 }
 
 html {
@@ -223,7 +224,8 @@ body {
 
 /* Subtle hover/active transitions */
 * {
-  transition-property: background-color, border-color, color, opacity, box-shadow;
+  transition-property:
+    background-color, border-color, color, opacity, box-shadow;
   transition-timing-function: ease-in-out;
 }
 

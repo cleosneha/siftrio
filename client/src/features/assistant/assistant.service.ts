@@ -11,22 +11,39 @@ export const assistantService = {
   },
 
   async *queryStream(question: string, threadId: string) {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/assistant/query/stream`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          thread_id: threadId,
-        }),
-        credentials: "include",
-      },
-    );
+    let response: Response;
+    try {
+      response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/assistant/query/stream`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            thread_id: threadId,
+          }),
+          credentials: "include",
+        },
+      );
+    } catch (err) {
+      const enhanced = new Error(
+        err instanceof TypeError ? "Network error" : "Request failed",
+      );
+      (enhanced as any).status = 0;
+      throw enhanced;
+    }
 
     if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(errBody || `Request failed: ${response.status}`);
+      let errBody = "";
+      try {
+        errBody = await response.text();
+      } catch {
+        errBody = "";
+      }
+      const err = new Error(errBody || `Request failed: ${response.status}`);
+      (err as any).status = response.status;
+      (err as any).retryAfter = response.headers.get("Retry-After");
+      throw err;
     }
 
     const reader = response.body?.getReader();

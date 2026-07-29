@@ -145,7 +145,8 @@ class ChatService:
         try:
             async for event in self._graph.astream_events(initial_state, config=config, version="v2"):
                 kind = event.get("event")
-                if kind == "on_chat_model_stream":
+                node = event.get("metadata", {}).get("langgraph_node", "")
+                if kind == "on_chat_model_stream" and node == "generate_response":
                     chunk = event.get("data", {}).get("chunk")
                     if isinstance(chunk, AIMessageChunk):
                         token = chunk.content or ""

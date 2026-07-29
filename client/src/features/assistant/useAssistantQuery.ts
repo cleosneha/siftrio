@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { assistantService } from "./assistant.service";
 import type { Message } from "./assistant.types";
 
@@ -10,9 +10,18 @@ function nextId() {
   return `msg-${Date.now()}-${msgIdCounter}`;
 }
 
+function getRetrySeconds(err: unknown): number {
+  const e = err as any;
+  if (e?.retryAfter) return parseInt(e.retryAfter, 10);
+  if (e?.response?.headers?.["retry-after"]) return parseInt(e.response.headers["retry-after"], 10);
+  return 60;
+}
+
 export function useAssistant(threadId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const rateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sendMessage = useCallback(async (content: string) => {
     const trimmed = content.trim();
@@ -32,14 +41,6 @@ export function useAssistant(threadId: string) {
         hasStreamedData = true;
         if (event.token) {
           fullAnswer += event.token;
-          setMessages((prev) => {
-            const next = [...prev];
-            const last = next[next.length - 1];
-            if (last?.role === "assistant") {
-              next[next.length - 1] = { ...last, content: fullAnswer };
-            }
-            return next;
-          });
         }
         if (event.done) {
           setMessages((prev) => {
@@ -84,18 +85,34 @@ export function useAssistant(threadId: string) {
         });
       }
     } catch (err) {
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last?.role === "assistant") {
-          next[next.length - 1] = {
-            ...last,
-            content:
-              err instanceof Error ? `Error: ${err.message}` : "Error: Request failed",
-          };
-        }
-        return next;
-      });
+      const status = (err as any)?.status ?? (err as any)?.response?.status;
+      const errMsg =
+        err instanceof Error ? err.message : "";
+      const isRateLimit =
+        status === 429 ||
+        errMsg.includes("rate_limit_exceeded") ||
+        errMsg.includes("Too many requests");
+
+      if (isRateLimit) {
+        const seconds = getRetrySeconds(err);
+        setRateLimited(true);
+        if (rateTimer.current) clearTimeout(rateTimer.current);
+        rateTimer.current = setTimeout(() => setRateLimited(false), seconds * 1000);
+      } else {
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last?.role === "assistant") {
+            next[next.length - 1] = {
+              ...last,
+              content: errMsg
+                ? `Error: ${errMsg}`
+                : "Error: Request failed",
+            };
+          }
+          return next;
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -106,5 +123,5 @@ export function useAssistant(threadId: string) {
     msgIdCounter = 0;
   }, []);
 
-  return { messages, isLoading, sendMessage, clearMessages };
+  return { messages, isLoading, sendMessage, clearMessages, rateLimited };
 }

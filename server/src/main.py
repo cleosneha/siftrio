@@ -45,6 +45,9 @@ def create_app() -> FastAPI:
 def register_middleware(app: FastAPI) -> None:
     origins = list(set(settings.CORS_ORIGINS + [settings.FRONTEND_URL]))
 
+    from src.middleware.rate_limiter import configure_rate_limiting
+    configure_rate_limiting(app)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

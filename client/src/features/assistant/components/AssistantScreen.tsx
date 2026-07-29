@@ -6,14 +6,21 @@ import remarkGfm from "remark-gfm";
 import { Bot, Send, Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { BouncingDots } from "@/components/ui/bouncing-dots";
 import { useAssistant } from "../useAssistantQuery";
 
 const markdownComponents: ComponentProps<typeof ReactMarkdown>["components"] = {
   p: ({ children }) => <p className="mb-2 last:mb-0 leading-6">{children}</p>,
-  ul: ({ children }) => <ul className="mb-2 list-disc pl-5 space-y-1 last:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="mb-2 list-decimal pl-5 space-y-1 last:mb-0">{children}</ol>,
+  ul: ({ children }) => (
+    <ul className="mb-2 list-disc pl-5 space-y-1 last:mb-0">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="mb-2 list-decimal pl-5 space-y-1 last:mb-0">{children}</ol>
+  ),
   li: ({ children }) => <li className="leading-6">{children}</li>,
-  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  strong: ({ children }) => (
+    <strong className="font-semibold">{children}</strong>
+  ),
   em: ({ children }) => <em className="italic">{children}</em>,
   code: ({ children, className }) => {
     const isInline = !className;
@@ -31,9 +38,15 @@ const markdownComponents: ComponentProps<typeof ReactMarkdown>["components"] = {
     );
   },
   pre: ({ children }) => <>{children}</>,
-  h1: ({ children }) => <h1 className="mb-2 mt-3 text-base font-semibold last:mb-0">{children}</h1>,
-  h2: ({ children }) => <h2 className="mb-2 mt-3 text-sm font-semibold last:mb-0">{children}</h2>,
-  h3: ({ children }) => <h3 className="mb-1 mt-2 text-sm font-semibold last:mb-0">{children}</h3>,
+  h1: ({ children }) => (
+    <h1 className="mb-2 mt-3 text-base font-semibold last:mb-0">{children}</h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-2 mt-3 text-sm font-semibold last:mb-0">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-1 mt-2 text-sm font-semibold last:mb-0">{children}</h3>
+  ),
   hr: () => <hr className="my-3 border-border" />,
   blockquote: ({ children }) => (
     <blockquote className="mb-2 border-l-2 border-muted-foreground/30 pl-3 italic last:mb-0">
@@ -41,7 +54,12 @@ const markdownComponents: ComponentProps<typeof ReactMarkdown>["components"] = {
     </blockquote>
   ),
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-primary">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="underline underline-offset-2 hover:text-primary"
+    >
       {children}
     </a>
   ),
@@ -51,7 +69,9 @@ const markdownComponents: ComponentProps<typeof ReactMarkdown>["components"] = {
     </div>
   ),
   th: ({ children }) => (
-    <th className="border border-border bg-muted px-2 py-1 text-left font-semibold">{children}</th>
+    <th className="border border-border bg-muted px-2 py-1 text-left font-semibold">
+      {children}
+    </th>
   ),
   td: ({ children }) => (
     <td className="border border-border px-2 py-1">{children}</td>
@@ -60,10 +80,7 @@ const markdownComponents: ComponentProps<typeof ReactMarkdown>["components"] = {
 
 function MarkdownRenderer({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={markdownComponents}
-    >
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
       {content}
     </ReactMarkdown>
   );
@@ -77,7 +94,8 @@ function formatCitationDate(date: string | null) {
 }
 
 export function AssistantScreen({ threadId }: { threadId: string }) {
-  const { messages, isLoading, sendMessage, clearMessages } = useAssistant(threadId);
+  const { messages, isLoading, sendMessage, clearMessages, rateLimited } =
+    useAssistant(threadId);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -142,33 +160,33 @@ export function AssistantScreen({ threadId }: { threadId: string }) {
                   >
                     {msg.content ? (
                       <MarkdownRenderer content={msg.content} />
-                    ) : msg.role === "assistant" && isLoading && msg === messages[messages.length - 1] ? (
-                      <span className="inline-flex gap-0.5">
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0ms" }} />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "150ms" }} />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "300ms" }} />
-                      </span>
+                    ) : msg.role === "assistant" &&
+                      isLoading &&
+                      msg === messages[messages.length - 1] ? (
+                      <BouncingDots />
                     ) : null}
                   </div>
 
-                  {msg.role === "assistant" && msg.citations && msg.citations.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 px-1">
-                      {msg.citations.map((c, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-0.5 text-[11px] text-muted-foreground"
-                        >
-                          {c.meeting_title || "Untitled"}
-                          {c.chunk_index !== null && ` #${c.chunk_index}`}
-                          {formatCitationDate(c.meeting_date) && (
-                            <span className="opacity-60">
-                              {formatCitationDate(c.meeting_date)}
-                            </span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  {msg.role === "assistant" &&
+                    msg.citations &&
+                    msg.citations.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 px-1">
+                        {msg.citations.map((c, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-0.5 text-[11px] text-muted-foreground"
+                          >
+                            {c.meeting_title || "Untitled"}
+                            {c.chunk_index !== null && ` #${c.chunk_index}`}
+                            {formatCitationDate(c.meeting_date) && (
+                              <span className="opacity-60">
+                                {formatCitationDate(c.meeting_date)}
+                              </span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                 </div>
 
                 {msg.role === "user" && (
@@ -183,6 +201,13 @@ export function AssistantScreen({ threadId }: { threadId: string }) {
         </div>
       )}
 
+      {rateLimited && (
+        <div className="mx-auto flex max-w-4xl items-center justify-center px-4 pt-2">
+          <p className="text-xs text-[var(--entity-red)]">
+            Too many requests. Try again in a minute.
+          </p>
+        </div>
+      )}
       <div className="bg-background px-4 py-3 md:px-6">
         <div className="mx-auto flex max-w-4xl items-center gap-2">
           {messages.length > 0 && (
@@ -212,7 +237,7 @@ export function AssistantScreen({ threadId }: { threadId: string }) {
             <Button
               type="submit"
               size="icon"
-              disabled={isLoading}
+              disabled={isLoading || rateLimited}
               className="shrink-0"
             >
               <Send className="h-4 w-4" />
