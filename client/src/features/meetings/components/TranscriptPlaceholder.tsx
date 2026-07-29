@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Loader } from "lucide-react";
+import { Upload, Loader, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function TranscriptUploadButton({
@@ -34,19 +34,25 @@ export function TranscriptPlaceholder({
   transcriptStatus,
   hasTranscript,
   isUploading,
+  errorMessage,
+  isRetrying,
   onUpload,
+  onRetry,
 }: {
   transcriptStatus: string | null | undefined;
   hasTranscript: boolean;
   isUploading: boolean;
+  errorMessage?: string | null;
+  isRetrying?: boolean;
   onUpload: (file: File) => void;
+  onRetry?: () => void;
 }) {
   if (transcriptStatus === "processing") {
     return (
       <div className="flex items-center justify-center rounded-lg border p-12 text-center mb-6">
         <Loader className="h-5 w-5 animate-spin mr-2 text-muted-foreground" />
         <span className="text-sm text-muted-foreground">
-          Fireflies is processing the transcript...
+          Processing transcript...
         </span>
       </div>
     );
@@ -58,10 +64,23 @@ export function TranscriptPlaceholder({
         <h3 className="mb-2 text-lg font-medium" style={{ color: "var(--status-error-fg)" }}>
           Transcript processing failed
         </h3>
+        {errorMessage && (
+          <p className="mb-4 max-w-lg text-sm text-muted-foreground break-words">
+            {errorMessage}
+          </p>
+        )}
         <p className="mb-4 text-sm text-muted-foreground">
-          Upload a .txt transcript manually to generate analysis
+          Upload a .txt transcript manually or retry processing
         </p>
-        <TranscriptUploadButton onUpload={onUpload} isPending={isUploading} />
+        <div className="flex gap-3">
+          {onRetry && (
+            <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
+              <RefreshCw className={`h-4 w-4 mr-1.5 ${isRetrying ? "animate-spin" : ""}`} />
+              {isRetrying ? "Retrying..." : "Retry"}
+            </Button>
+          )}
+          <TranscriptUploadButton onUpload={onUpload} isPending={isUploading} />
+        </div>
       </div>
     );
   }

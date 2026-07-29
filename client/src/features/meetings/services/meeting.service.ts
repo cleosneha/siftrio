@@ -85,6 +85,22 @@ export const meetingService = {
     return res.data;
   },
 
+  async getIngestionStatus(meetingId: string) {
+    const res = await api.get<ApiResponse<{
+      status: string | null;
+      error: string | null;
+    }>>(`/meetings/${meetingId}/status`);
+    return res.data;
+  },
+
+  async retryTranscript(meetingId: string) {
+    const res = await api.post<ApiResponse<{
+      meeting_id: string;
+      status: string;
+    }>>(`/meetings/${meetingId}/retry-transcript`);
+    return res.data;
+  },
+
   async getSuggestions(meetingId: string) {
     const res = await api.get<ApiResponse<SuggestedMeeting[]>>(
       `/meetings/${meetingId}/suggestions`,

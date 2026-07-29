@@ -8,7 +8,7 @@ import { knowledgeService } from "@/features/knowledge/services/knowledge.servic
 import { useProjectJira } from "@/features/jira/hooks/useJira";
 import { JiraPreviewModal } from "@/features/jira/components/JiraPreviewModal";
 import { JiraIssueDetailsModal } from "@/features/jira/components/JiraIssueDetailsModal";
-import { useMeeting, useMeetingAnalysis, useRegenerateAnalysis, useUploadTranscript, useTranscriptStatus, useMeetingSuggestions, useDismissSuggestion } from "@/features/meetings/hooks/useMeetings";
+import { useMeeting, useMeetingAnalysis, useRegenerateAnalysis, useUploadTranscript, useTranscriptStatus, useMeetingSuggestions, useDismissSuggestion, useIngestionStatus, useRetryTranscript } from "@/features/meetings/hooks/useMeetings";
 import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
 import { MeetingDetailHeader } from "@/features/meetings/components/MeetingDetailHeader";
 import { MeetingInfoBar } from "@/features/meetings/components/MeetingInfoBar";
@@ -24,9 +24,11 @@ export default function MeetingPage() {
   const { data: meetingData, isLoading: meetingLoading } = useMeeting(meetingId);
   const { data: analysisData, isLoading: analysisLoading } = useMeetingAnalysis(meetingId);
   const { data: transcriptStatusData } = useTranscriptStatus(meetingId);
+  const { data: ingestionStatusData } = useIngestionStatus(meetingId);
   const { data: suggestionsData } = useMeetingSuggestions(meetingId);
   const regenerateAnalysis = useRegenerateAnalysis();
   const uploadTranscript = useUploadTranscript();
+  const retryTranscript = useRetryTranscript();
   const dismissSuggestion = useDismissSuggestion();
 
   const [jiraItem, setJiraItem] = useState<ActionItem | null>(null);
@@ -41,6 +43,7 @@ export default function MeetingPage() {
   const meeting = meetingData?.data;
   const analysis = analysisData?.data;
   const transcriptStatus = transcriptStatusData?.data?.transcript_status;
+  const ingestionError = ingestionStatusData?.data?.error;
   const suggestions = suggestionsData?.data ?? [];
   const pendingSuggestions = suggestions.filter(
     (s: { status: string }) => s.status === "pending",
@@ -94,7 +97,10 @@ export default function MeetingPage() {
           transcriptStatus={transcriptStatus}
           hasTranscript={!!meeting?.transcript}
           isUploading={uploadTranscript.isPending}
+          errorMessage={ingestionError}
+          isRetrying={retryTranscript.isPending}
           onUpload={(file) => uploadTranscript.mutateAsync({ meetingId, file })}
+          onRetry={meeting?.fireflies_meeting_id ? () => retryTranscript.mutate(meetingId) : undefined}
         />
 
         {!meeting?.transcript &&

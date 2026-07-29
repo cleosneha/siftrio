@@ -181,6 +181,37 @@ export function useDismissSuggestion() {
   });
 }
 
+export function useIngestionStatus(meetingId?: string) {
+  return useQuery({
+    queryKey: ["ingestion-status", meetingId],
+    queryFn: () => meetingService.getIngestionStatus(meetingId!),
+    enabled: !!meetingId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.status;
+      return status === "pending" || status === "processing" ? 5000 : false;
+    },
+  });
+}
+
+export function useRetryTranscript() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (meetingId: string) =>
+      meetingService.retryTranscript(meetingId),
+    onSuccess: (res, meetingId) => {
+      queryClient.invalidateQueries({ queryKey: ["ingestion-status", meetingId] });
+      queryClient.invalidateQueries({ queryKey: ["transcript-status", meetingId] });
+      toast.success(res.message || "Retry started");
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof Error ? err.message : "Failed to retry transcript";
+      toast.error(msg);
+    },
+  });
+}
+
 export function useRegenerateAnalysis() {
   const queryClient = useQueryClient();
 
