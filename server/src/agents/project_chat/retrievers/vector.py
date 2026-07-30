@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.project_chat.schemas import RetrievedChunk
+from src.core.config import settings
 from src.core.embeddings import EmbeddingService
 from src.models.client import Client
 from src.models.meeting import Meeting
@@ -26,6 +27,12 @@ class VectorRetriever:
         filters: dict | None = None,
     ) -> list[RetrievedChunk]:
         query_embedding = await self.embeddings.embed_query(query)
+
+        # ef_search controls the size of the dynamic candidate list during HNSW traversal.
+        # Higher values improve recall at the cost of slightly higher latency.
+        # Default pgvector value is 40, which may miss relevant results.
+        # 100 is a reasonable production default for this use case.
+        await db.execute(text(f"SET hnsw.ef_search = {settings.HNSW_EF_SEARCH}"))
 
         distance = MeetingChunk.embedding.cosine_distance(query_embedding)
         stmt = select(MeetingChunk, distance.label("distance"))
