@@ -27,11 +27,7 @@ class ToolPlannerService:
                     lines.append(f"    - {param.name} ({param.type}, {req}{default}): {param.description}")
         return "\n".join(lines)
 
-    async def plan(
-        self,
-        parsed_query: ParsedQuery,
-        scope: RetrievalScope,
-    ) -> ToolPlan:
+    async def _call_llm(self, parsed_query: ParsedQuery, scope: RetrievalScope) -> ToolPlan:
         prompt = TOOL_PLANNER_PROMPT.format(
             tool_specs=self._format_specs(),
             question=parsed_query.original_question,
@@ -46,17 +42,55 @@ class ToolPlannerService:
             project_ids=", ".join(scope.project_ids) if scope.project_ids else "none",
             meeting_ids=", ".join(scope.meeting_ids) if scope.meeting_ids else "none",
         )
-
         structured = self._llm.with_structured_output(ToolPlan)
-        response = await structured.ainvoke([HumanMessage(content=prompt)])
+        return await structured.ainvoke([HumanMessage(content=prompt)])
+
+    async def plan(
+        self,
+        parsed_query: ParsedQuery,
+        scope: RetrievalScope,
+    ) -> ToolPlan:
+        query_text = scope.query_text
+        query_lower = query_text.lower()
+
+        STRUCTURED_KEYWORDS = [
+            "action item", "action items", "due date", "requirement", "requirements",
+            "decision", "decisions", "risk", "risks", "assignee", "jira",
+            "blocker", "blockers", "status",
+        ]
+        has_structured_keyword = any(kw in query_lower for kw in STRUCTURED_KEYWORDS)
+        has_scope_entities = bool(scope.project_ids or scope.meeting_ids)
+
+        if not has_scope_entities and not has_structured_keyword:
+            tool_plan = ToolPlan(
+                tool_calls=[],
+                rag_needed=True,
+                rag_query=query_text,
+                out_of_scope=False,
+                routing_source="deterministic_entity_gap",
+            )
+            logger.info(
+                "plan_tools | routing=%s | rag=%s | tools=%d | query=%.80s",
+                tool_plan.routing_source,
+                tool_plan.rag_needed,
+                len(tool_plan.tool_calls),
+                query_text,
+            )
+            return tool_plan
+
+        tool_plan = await self._call_llm(parsed_query, scope)
+
+        if has_scope_entities and has_structured_keyword:
+            tool_plan.routing_source = "deterministic_keyword"
+            tool_plan.rag_needed = False
+        else:
+            tool_plan.routing_source = "llm_ambiguous"
 
         logger.info(
-            "Tool plan: %d MCP calls, rag_needed=%s, out_of_scope=%s",
-            len(response.tool_calls),
-            response.rag_needed,
-            response.out_of_scope,
+            "plan_tools | routing=%s | rag=%s | tools=%d | query=%.80s",
+            tool_plan.routing_source,
+            tool_plan.rag_needed,
+            len(tool_plan.tool_calls),
+            query_text,
         )
-        for call in response.tool_calls:
-            logger.info("  -> %s(%s)", call.tool, call.args)
-
-        return response
+        return tool_plan

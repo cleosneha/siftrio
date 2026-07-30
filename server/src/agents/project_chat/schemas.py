@@ -116,3 +116,7 @@ class ToolPlan(BaseModel):
     rag_needed: bool = Field(default=True, description="Whether RAG retrieval is needed")
     rag_query: str | None = Field(default=None, description="Search query for RAG if needed")
     out_of_scope: bool = Field(default=False, description="True if the question is unrelated to the application")
+    routing_source: str = Field(
+        default="llm_ambiguous",
+        description="How the routing decision was made: deterministic_keyword, deterministic_entity_gap, or llm_ambiguous",
+    )
