@@ -3,11 +3,10 @@
 import {
   createContext,
   useContext,
-  useState,
-  useEffect,
   useCallback,
   type ReactNode,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authService } from "./auth.service";
 import type { User } from "./auth.types";
 
@@ -15,44 +14,34 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const refresh = useCallback(async () => {
-    try {
-      const res = await authService.me();
-      if (res.success && res.data) {
-        setUser(res.data);
-      } else {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data, isLoading } = useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: authService.me,
+    staleTime: Infinity,
+  });
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const user = data?.success && data.data ? data.data : null;
 
   const logout = useCallback(async () => {
     try {
       await authService.logout();
     } finally {
-      setUser(null);
+      queryClient.setQueryData(["auth", "me"], {
+        success: false,
+        data: null,
+      });
     }
-  }, []);
+  }, [queryClient]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading: isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
