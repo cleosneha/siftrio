@@ -47,10 +47,12 @@ async def refresh_token(
     service = AuthService(AuthRepository(db))
     new_access_token = await service.refresh_access_token(refresh_token)
     if not new_access_token:
-        return JSONResponse(
-            status_code=200,
+        resp = JSONResponse(
             content=BaseResponse(success=False, message="Invalid or expired refresh token").model_dump(),
         )
+        resp.delete_cookie(key="access_token", path="/")
+        resp.delete_cookie(key="refresh_token", path="/api/auth/refresh")
+        return resp
 
     resp = JSONResponse(
         content=BaseResponse(message="Token refreshed successfully").model_dump(),
