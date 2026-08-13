@@ -19,6 +19,7 @@ from src.repositories.resource_repository import ResourceRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.schemas.membership_schema import MemberResponse
 from src.services.audit_service import AuditService
+from src.utils.tenant_scope import tenant_scope_subquery, visible_project_exists
 
 
 class MembershipService:
@@ -37,21 +38,22 @@ class MembershipService:
         workspace_id = await self.resource_repo.get_workspace_id(resource_type, resource_id)
         if workspace_id is None:
             raise HTTPException(status_code=404, detail="Resource not found")
-        member = await self.ws_member_repo.get_by_user_and_workspace(workspace_id, user_id)
-        if member is None:
+        result = await self.db.execute(
+            select(Workspace.id)
+            .where(
+                Workspace.id == workspace_id,
+                Workspace.id.in_(tenant_scope_subquery(user_id)),
+            )
+            .exists()
+            .select()
+        )
+        if not result.scalar():
             raise HTTPException(status_code=404, detail="Access denied to this resource")
 
     async def get_accessible_project_ids(self, user_id: UUID) -> list[UUID]:
         rows = await self.db.execute(
             select(Project.id)
-            .join(Client, Client.id == Project.client_id)
-            .where(
-                Client.workspace_id.in_(
-                    select(WorkspaceMember.workspace_id).where(
-                        WorkspaceMember.user_id == user_id
-                    )
-                )
-            )
+            .where(visible_project_exists(user_id))
             .distinct()
         )
         return list(rows.scalars().all())

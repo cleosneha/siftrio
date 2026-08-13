@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.project import Project
+from src.utils.tenant_scope import visible_project_exists
 
 
 class ProjectRepository:
@@ -49,23 +50,7 @@ class ProjectRepository:
         return list(result.scalars().all())
 
     async def list_by_user_id(self, user_id: UUID, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Project]:
-        from src.models.client import Client
-        from src.models.project_member import ProjectMember
-        from src.models.workspace_member import WorkspaceMember
-        query = (
-            select(Project)
-            .join(ProjectMember, ProjectMember.project_id == Project.id)
-            .join(Client, Client.id == Project.client_id)
-            .where(
-                ProjectMember.user_id == user_id,
-                Client.workspace_id.in_(
-                    select(WorkspaceMember.workspace_id).where(
-                        WorkspaceMember.user_id == user_id
-                    )
-                ),
-            )
-            .distinct()
-        )
+        query = select(Project).where(visible_project_exists(user_id))
         if client_id is not None:
             query = query.where(Project.client_id == client_id)
         query = query.order_by(Project.created_at.desc()).limit(limit).offset(offset)

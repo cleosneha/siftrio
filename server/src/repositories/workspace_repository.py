@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.workspace import Workspace
+from src.utils.tenant_scope import tenant_scope_subquery
 
 
 class WorkspaceRepository:
@@ -29,11 +30,9 @@ class WorkspaceRepository:
         return result.scalar_one_or_none()
 
     async def list_by_user_id(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[Workspace]:
-        from src.models.workspace_member import WorkspaceMember
         result = await self._db.execute(
             select(Workspace)
-            .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
-            .where(WorkspaceMember.user_id == user_id)
+            .where(Workspace.id.in_(tenant_scope_subquery(user_id)))
             .order_by(Workspace.created_at.desc())
             .limit(limit)
             .offset(offset)

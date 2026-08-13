@@ -3,11 +3,12 @@ from __future__ import annotations
 from asyncio.log import logger
 from uuid import UUID
 
-from sqlalchemy import and_, exists, select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.client import Client
 from src.models.project import Project
+from src.utils.tenant_scope import visible_client_exists
 
 
 class ClientRepository:
@@ -49,34 +50,14 @@ class ClientRepository:
     async def list_with_project_counts_by_user_id(
         self, user_id: UUID, workspace_id: UUID | None = None, limit: int = 50, offset: int = 0
     ) -> list[tuple[Client, int]]:
-        from src.models.client_member import ClientMember
-        from src.models.project_member import ProjectMember
-        from src.models.workspace_member import WorkspaceMember
         subq = (
             select(func.count(Project.id))
             .where(Project.client_id == Client.id)
             .correlate(Client)
             .scalar_subquery()
         )
-        client_member_exists = exists().where(
-            and_(
-                ClientMember.client_id == Client.id,
-                ClientMember.user_id == user_id,
-            )
-        )
-        project_member_exists = exists().where(
-            and_(
-                ProjectMember.user_id == user_id,
-                Project.id == ProjectMember.project_id,
-                Project.client_id == Client.id,
-            )
-        )
-        user_workspaces = select(WorkspaceMember.workspace_id).where(
-            WorkspaceMember.user_id == user_id
-        )
         query = select(Client, subq.label("project_count")).where(
-            Client.workspace_id.in_(user_workspaces),
-            client_member_exists | project_member_exists,
+            visible_client_exists(user_id)
         )
         if workspace_id is not None:
             query = query.where(Client.workspace_id == workspace_id)

@@ -5,16 +5,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.meeting import Meeting, MeetingProvider, MeetingType, TranscriptStatus
+from src.utils.tenant_scope import tenant_scope_subquery
 
 
 def _user_workspace_filter(user_id: UUID):
     from src.models.client import Client
-    from src.models.workspace_member import WorkspaceMember
-    return Client.workspace_id.in_(
-        select(WorkspaceMember.workspace_id).where(
-            WorkspaceMember.user_id == user_id
-        )
-    )
+    return Client.workspace_id.in_(tenant_scope_subquery(user_id))
 
 
 class MeetingRepository:

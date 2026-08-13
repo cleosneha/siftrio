@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import exists, or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.project_chat.schemas import (
@@ -10,12 +10,8 @@ from src.agents.project_chat.schemas import (
     RetrievalScope,
 )
 from src.exceptions.base import AuthorizationError
-from src.models.client import Client
-from src.models.client_member import ClientMember
-from src.models.project import Project
-from src.models.project_member import ProjectMember
 from src.models.workspace import Workspace
-from src.models.workspace_member import WorkspaceMember
+from src.utils.tenant_scope import tenant_scope_subquery
 
 
 class ScopeService:
@@ -31,25 +27,7 @@ class ScopeService:
             user_id = UUID(user_id)
 
         result = await db.execute(
-            select(Workspace.id).where(
-                or_(
-                    exists().where(
-                        WorkspaceMember.workspace_id == Workspace.id,
-                        WorkspaceMember.user_id == user_id,
-                    ),
-                    exists().where(
-                        Client.workspace_id == Workspace.id,
-                        ClientMember.client_id == Client.id,
-                        ClientMember.user_id == user_id,
-                    ),
-                    exists().where(
-                        Client.workspace_id == Workspace.id,
-                        Project.client_id == Client.id,
-                        ProjectMember.project_id == Project.id,
-                        ProjectMember.user_id == user_id,
-                    ),
-                )
-            )
+            select(Workspace.id).where(Workspace.id.in_(tenant_scope_subquery(user_id)))
         )
         return [str(ws_id) for ws_id in result.scalars().all()]
 

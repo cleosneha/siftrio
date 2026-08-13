@@ -3,16 +3,12 @@ import logging
 from datetime import datetime, timezone
 
 from mcp.server.auth.provider import AccessToken, TokenVerifier
-from sqlalchemy import exists, or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.models.api_key import ApiKey
-from src.models.client import Client
-from src.models.client_member import ClientMember
-from src.models.project import Project
-from src.models.project_member import ProjectMember
 from src.models.workspace import Workspace
-from src.models.workspace_member import WorkspaceMember
+from src.utils.tenant_scope import tenant_scope_subquery
 
 logger = logging.getLogger(__name__)
 
@@ -42,23 +38,7 @@ class ApiKeyVerifier(TokenVerifier):
 
             ws_result = await db.execute(
                 select(Workspace.id).where(
-                    or_(
-                        exists().where(
-                            WorkspaceMember.workspace_id == Workspace.id,
-                            WorkspaceMember.user_id == api_key.user_id,
-                        ),
-                        exists().where(
-                            Client.workspace_id == Workspace.id,
-                            ClientMember.client_id == Client.id,
-                            ClientMember.user_id == api_key.user_id,
-                        ),
-                        exists().where(
-                            Client.workspace_id == Workspace.id,
-                            Project.client_id == Client.id,
-                            ProjectMember.project_id == Project.id,
-                            ProjectMember.user_id == api_key.user_id,
-                        ),
-                    )
+                    Workspace.id.in_(tenant_scope_subquery(api_key.user_id))
                 )
             )
             workspace_ids = [str(row[0]) for row in ws_result.fetchall()]
