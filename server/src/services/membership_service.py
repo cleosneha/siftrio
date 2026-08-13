@@ -18,6 +18,7 @@ from src.repositories.project_repository import ProjectRepository
 from src.repositories.resource_repository import ResourceRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.schemas.membership_schema import MemberResponse
+from src.services.audit_service import AuditService
 
 
 class MembershipService:
@@ -198,6 +199,14 @@ class MembershipService:
         if member_count <= 1:
             await self._delete_workspace_cascade(workspace_id)
         else:
+            AuditService(self.db).record(
+                workspace_id=workspace_id,
+                action="member.removed",
+                resource_type="workspace",
+                resource_id=workspace_id,
+                actor_user_id=actor_user_id,
+                new_value={"role": member.role.value, "user_id": str(user_id)},
+            )
             await self.db.flush()
 
     async def remove_client_member(
@@ -212,11 +221,23 @@ class MembershipService:
             )
 
         member_count = await self.client_member_repo.count_by_client(client_id)
+        ws_id = await self.resource_repo.get_workspace_id("client", client_id)
         await self.client_member_repo.delete(client_id, user_id)
 
         if member_count <= 1:
             await self._delete_client_cascade(client_id)
         else:
+            await self.db.flush()
+
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.removed",
+                resource_type="client",
+                resource_id=client_id,
+                actor_user_id=actor_user_id,
+                new_value={"role": member.role.value, "user_id": str(user_id)},
+            )
             await self.db.flush()
 
     async def remove_project_member(
@@ -231,11 +252,23 @@ class MembershipService:
             )
 
         member_count = await self.project_member_repo.count_by_project(project_id)
+        ws_id = await self.resource_repo.get_workspace_id("project", project_id)
         await self.project_member_repo.delete(project_id, user_id)
 
         if member_count <= 1:
             await self._delete_project_cascade(project_id)
         else:
+            await self.db.flush()
+
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.removed",
+                resource_type="project",
+                resource_id=project_id,
+                actor_user_id=actor_user_id,
+                new_value={"role": member.role.value, "user_id": str(user_id)},
+            )
             await self.db.flush()
 
     async def change_workspace_role(
@@ -247,7 +280,17 @@ class MembershipService:
         await self._assert_role_change(
             "workspace", workspace_id, member, new_role, actor_user_id
         )
+        old_role = member.role
         member.role = new_role
+        AuditService(self.db).record(
+            workspace_id=workspace_id,
+            action="member.role_changed",
+            resource_type="workspace",
+            resource_id=workspace_id,
+            actor_user_id=actor_user_id,
+            old_value={"role": old_role.value},
+            new_value={"role": new_role.value},
+        )
         await self.db.flush()
         await self.db.refresh(member)
         return MemberResponse.model_validate(member)
@@ -261,7 +304,19 @@ class MembershipService:
         await self._assert_role_change(
             "client", client_id, member, new_role, actor_user_id
         )
+        old_role = member.role
         member.role = new_role
+        ws_id = await self.resource_repo.get_workspace_id("client", client_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.role_changed",
+                resource_type="client",
+                resource_id=client_id,
+                actor_user_id=actor_user_id,
+                old_value={"role": old_role.value},
+                new_value={"role": new_role.value},
+            )
         await self.db.flush()
         await self.db.refresh(member)
         return MemberResponse.model_validate(member)
@@ -275,7 +330,19 @@ class MembershipService:
         await self._assert_role_change(
             "project", project_id, member, new_role, actor_user_id
         )
+        old_role = member.role
         member.role = new_role
+        ws_id = await self.resource_repo.get_workspace_id("project", project_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.role_changed",
+                resource_type="project",
+                resource_id=project_id,
+                actor_user_id=actor_user_id,
+                old_value={"role": old_role.value},
+                new_value={"role": new_role.value},
+            )
         await self.db.flush()
         await self.db.refresh(member)
         return MemberResponse.model_validate(member)

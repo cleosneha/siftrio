@@ -6,17 +6,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.models.base import MemberRole, rank
+from src.services.audit_service import AuditService, resolve_workspace_id
 from src.services.membership_service import MembershipService
 
 
-def _emit_audit_event(event: str, **context) -> None:
-    # TODO(phase3): wire into audit service
-    pass
+async def _audit_rbac_denial(
+    request: Request,
+    db: AsyncSession,
+    level: str,
+    resource_id: UUID,
+    required: MemberRole,
+    actual: MemberRole | None,
+) -> None:
+    workspace_id = await resolve_workspace_id(db, level, resource_id)
+    if workspace_id is None:
+        return
+    user = getattr(request.state, "user", None)
+    AuditService(db).record(
+        workspace_id=workspace_id,
+        action="rbac.denied",
+        resource_type=level,
+        resource_id=resource_id,
+        actor_user_id=UUID(user.id) if user else None,
+        new_value={
+            "required": required.value,
+            "actual": actual.value if actual else None,
+        },
+    )
+    await db.commit()
 
 
 def assert_minimum_role(actual: MemberRole | None, required: MemberRole) -> None:
     if rank(actual) < rank(required):
-        _emit_audit_event("rbac.denied", required=required, actual=actual)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions",
@@ -53,6 +74,10 @@ def require_workspace_role(
         db: AsyncSession = Depends(get_db),
     ) -> None:
         role = await _resolve_effective_role(request, db, "workspace", workspace_id)
+        if rank(role) < rank(min_role):
+            await _audit_rbac_denial(
+                request, db, "workspace", workspace_id, min_role, role
+            )
         assert_minimum_role(role, min_role)
         plan_guard(workspace_id, role)
 
@@ -69,6 +94,10 @@ def require_client_role(
         db: AsyncSession = Depends(get_db),
     ) -> None:
         role = await _resolve_effective_role(request, db, "client", client_id)
+        if rank(role) < rank(min_role):
+            await _audit_rbac_denial(
+                request, db, "client", client_id, min_role, role
+            )
         assert_minimum_role(role, min_role)
         plan_guard(client_id, role)
 
@@ -85,6 +114,10 @@ def require_project_role(
         db: AsyncSession = Depends(get_db),
     ) -> None:
         role = await _resolve_effective_role(request, db, "project", project_id)
+        if rank(role) < rank(min_role):
+            await _audit_rbac_denial(
+                request, db, "project", project_id, min_role, role
+            )
         assert_minimum_role(role, min_role)
         plan_guard(project_id, role)
 

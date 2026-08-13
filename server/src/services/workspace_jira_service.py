@@ -15,6 +15,7 @@ from src.integrations.atlassian import (
 from src.repositories.workspace_integration_repository import WorkspaceIntegrationRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.jira_schema import WorkspaceJiraResponse
+from src.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,14 @@ class WorkspaceJiraService:
                 connected_by=user_id,
             )
 
+        AuditService(self.db).record(
+            workspace_id=workspace_id,
+            action="integration.connected",
+            resource_type="workspace",
+            resource_id=workspace_id,
+            actor_user_id=user_id,
+            new_value={"provider": "jira", "cloud_name": cloud_name, "site_url": site_url},
+        )
         await self.db.commit()
         return self._to_response(integration)
 
@@ -231,7 +240,7 @@ class WorkspaceJiraService:
             for r in resources
         ]
 
-    async def disconnect(self, workspace_id: UUID) -> None:
+    async def disconnect(self, workspace_id: UUID, actor_user_id: UUID) -> None:
         integration = await self.repo.get_by_workspace_and_provider(workspace_id, "jira")
         if integration is None:
             raise BaseAPIException(
@@ -240,6 +249,14 @@ class WorkspaceJiraService:
             )
 
         await self.repo.delete(integration)
+        AuditService(self.db).record(
+            workspace_id=workspace_id,
+            action="integration.disconnected",
+            resource_type="workspace",
+            resource_id=workspace_id,
+            actor_user_id=actor_user_id,
+            new_value={"provider": "jira"},
+        )
 
     def _to_response(self, integration) -> dict:
         config = integration.config or {}

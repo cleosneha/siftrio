@@ -70,7 +70,7 @@ async def connect_project_jira(
     user_id = UUID(request.state.user.id)
     await _assert_project_role(db, request, user_id, project_id, MemberRole.ADMIN)
     service = ProjectJiraService(db)
-    data = await service.connect_existing(project_id, body)
+    data = await service.connect_existing(project_id, body, user_id)
     return BaseResponse(message="Jira project connected", data=data)
 
 
@@ -84,7 +84,7 @@ async def create_and_connect_jira_project(
     user_id = UUID(request.state.user.id)
     await _assert_project_role(db, request, user_id, project_id, MemberRole.ADMIN)
     service = ProjectJiraService(db)
-    data = await service.create_and_connect(project_id, body)
+    data = await service.create_and_connect(project_id, body, user_id)
     return BaseResponse(message="Jira project created and connected", data=data)
 
 
@@ -97,5 +97,5 @@ async def disconnect_project_jira(
     user_id = UUID(request.state.user.id)
     await _assert_project_role(db, request, user_id, project_id, MemberRole.ADMIN)
     service = ProjectJiraService(db)
-    await service.disconnect(project_id)
+    await service.disconnect(project_id, user_id)
     return BaseResponse(message="Jira project disconnected")

@@ -6,12 +6,14 @@ from src.exceptions.base import BaseAPIException
 from src.integrations.atlassian.client import JiraClient
 from src.repositories.project_integration_repository import ProjectIntegrationRepository
 from src.repositories.project_repository import ProjectRepository
+from src.repositories.resource_repository import ResourceRepository
 from src.schemas.jira_schema import (
     ConnectJiraProjectRequest,
     CreateJiraProjectRequest,
     JiraProjectItem,
     ProjectJiraResponse,
 )
+from src.services.audit_service import AuditService
 from src.services.workspace_jira_service import WorkspaceJiraService
 
 
@@ -58,6 +60,7 @@ class ProjectJiraService:
         self,
         project_id: UUID,
         body: ConnectJiraProjectRequest,
+        actor_user_id: UUID,
     ) -> dict:
         project = await self.project_repo.get_by_id(project_id)
         if project is None:
@@ -82,6 +85,21 @@ class ProjectJiraService:
             external_project_name=body.jira_project_name,
             config=config if config else None,
         )
+        ws_id = await ResourceRepository(self.db).get_workspace_id("project", project_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="integration.connected",
+                resource_type="project",
+                resource_id=project_id,
+                actor_user_id=actor_user_id,
+                new_value={
+                    "provider": "jira",
+                    "jira_project_id": body.jira_project_id,
+                    "jira_project_key": body.jira_project_key,
+                    "jira_project_name": body.jira_project_name,
+                },
+            )
         await self.db.commit()
         return self._to_response(mapping)
 
@@ -89,6 +107,7 @@ class ProjectJiraService:
         self,
         project_id: UUID,
         body: CreateJiraProjectRequest,
+        actor_user_id: UUID,
     ) -> dict:
         project = await self.project_repo.get_by_id(project_id)
         if project is None:
@@ -142,10 +161,25 @@ class ProjectJiraService:
                 status_code=500,
             )
 
+        ws_id = await ResourceRepository(self.db).get_workspace_id("project", project_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="integration.connected",
+                resource_type="project",
+                resource_id=project_id,
+                actor_user_id=actor_user_id,
+                new_value={
+                    "provider": "jira",
+                    "jira_project_id": created["id"],
+                    "jira_project_key": created["key"],
+                    "jira_project_name": created.get("name", body.name),
+                },
+            )
         await self.db.commit()
         return self._to_response(mapping)
 
-    async def disconnect(self, project_id: UUID) -> None:
+    async def disconnect(self, project_id: UUID, actor_user_id: UUID) -> None:
         mapping = await self.repo.get_by_project_and_provider(project_id, "jira")
         if mapping is None:
             raise BaseAPIException(
@@ -154,6 +188,16 @@ class ProjectJiraService:
             )
 
         await self.repo.delete(mapping)
+        ws_id = await ResourceRepository(self.db).get_workspace_id("project", project_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="integration.disconnected",
+                resource_type="project",
+                resource_id=project_id,
+                actor_user_id=actor_user_id,
+                new_value={"provider": "jira"},
+            )
         await self.db.commit()
 
     def _to_response(self, integration) -> dict:

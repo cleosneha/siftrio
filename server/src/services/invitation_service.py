@@ -21,6 +21,7 @@ from src.repositories.project_repository import ProjectRepository
 from src.repositories.client_repository import ClientRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.member_invitation_schema import InvitationResponse, PendingInvitationItem
+from src.services.audit_service import AuditService, resolve_workspace_id
 from src.services.membership_service import MembershipService
 
 
@@ -39,10 +40,6 @@ class InvitationService:
         self.client_repo = ClientRepository(db)
         self.project_repo = ProjectRepository(db)
         self.membership = MembershipService(db)
-
-    def _emit_audit_event(self, event: str, **context) -> None:
-        # TODO(phase3): wire into audit service
-        pass
 
     async def invite(
         self,
@@ -107,15 +104,18 @@ class InvitationService:
             role=assigned_role,
         )
 
-        await self.db.commit()
+        ws_id = await resolve_workspace_id(self.db, resource_type.value, resource_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.invited",
+                resource_type=resource_type.value,
+                resource_id=resource_id,
+                actor_user_id=invited_by,
+                new_value={"role": assigned_role.value, "email": email},
+            )
 
-        self._emit_audit_event(
-            "member.invited",
-            resource_type=resource_type.value,
-            resource_id=resource_id,
-            actor_user_id=invited_by,
-            assigned_role=assigned_role,
-        )
+        await self.db.commit()
 
         resource_name = await self._get_resource_name(resource_type, resource_id)
         inviter = await self.auth_repo.get_user_by_id(invited_by)
@@ -200,16 +200,20 @@ class InvitationService:
 
         if invitation.status != InvitationStatus.REVOKED:
             invitation.status = InvitationStatus.REVOKED
+            ws_id = await resolve_workspace_id(
+                self.db, invitation.resource_type.value, invitation.resource_id
+            )
+            if ws_id is not None:
+                AuditService(self.db).record(
+                    workspace_id=ws_id,
+                    action="member.invite_revoked",
+                    resource_type=invitation.resource_type.value,
+                    resource_id=invitation.resource_id,
+                    actor_user_id=user_id,
+                    new_value={"status": "revoked", "role": invitation.role.value},
+                )
             await self.db.flush()
             await self.db.commit()
-
-            self._emit_audit_event(
-                "member.invite_revoked",
-                resource_type=invitation.resource_type.value,
-                resource_id=invitation.resource_id,
-                actor_user_id=user_id,
-                revoked_role=invitation.role,
-            )
 
         return InvitationResponse.model_validate(invitation).model_dump()
 

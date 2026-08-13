@@ -143,6 +143,6 @@ async def disconnect_workspace_jira(
     for mapping in project_mappings:
         await project_integration_repo.delete(mapping)
 
-    await service.disconnect(workspace_id)
+    await service.disconnect(workspace_id, user_id)
     await db.commit()
     return BaseResponse(message="Jira disconnected from workspace")

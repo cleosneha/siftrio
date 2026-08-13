@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.repositories.auth_repository import AuthRepository
 from src.services.auth_service import AuthService
+from src.utils.request_context import RequestMeta, set_request_meta
 
 logger = logging.getLogger(__name__)
 
@@ -57,3 +58,9 @@ async def require_authenticated_user(
 
     request.state.user = user
     request.state.effective_roles = {}
+    set_request_meta(
+        RequestMeta(
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+    )

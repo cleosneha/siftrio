@@ -9,6 +9,7 @@ from src.models.knowledge_base import DecisionStatus, RequirementStatus
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.repositories.resource_repository import ResourceRepository
 from src.schemas.knowledge_schema import (
     ActionItemResponse,
     DecisionResponse,
@@ -16,6 +17,7 @@ from src.schemas.knowledge_schema import (
     RequirementResponse,
     RiskResponse,
 )
+from src.services.audit_service import AuditService
 
 
 def _to_priority(value: str | Priority | None) -> Priority | None:
@@ -302,18 +304,20 @@ class KnowledgeService:
         if entity_type == "requirement":
             entity.approved_by = actor_user_id if approved else None
             entity.approved_at = datetime.now(timezone.utc) if approved else None
-        self._emit_audit_event(
-            "approval.approved" if approved else "approval.rejected",
-            actor_user_id=actor_user_id,
-            entity_type=entity_type,
-            entity_id=entity_id,
+        ws_id = await ResourceRepository(self.db).get_workspace_id(
+            entity_type, entity_id
         )
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="approval.approved" if approved else "approval.rejected",
+                resource_type=entity_type,
+                resource_id=entity_id,
+                actor_user_id=actor_user_id,
+                new_value={"status": entity.status.value},
+            )
         await self.db.commit()
         return self._validate(entity, _APPROVAL_RESPONSES[entity_type])
-
-    def _emit_audit_event(self, event: str, **context) -> None:
-        # TODO(phase3): wire into audit service (§3.4)
-        pass
 
     def _validate(self, entity, response_cls) -> dict:
         data = response_cls.model_validate(entity).model_dump()
