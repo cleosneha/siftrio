@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { knowledgeService } from "@/features/knowledge/services/knowledge.service";
 
 function useListQuery<T>(key: (string | undefined)[], fn: () => Promise<{ data: T }>, enabled?: boolean) {
@@ -26,9 +27,7 @@ function useUpdateMutation<T>(
       }
       toast.success(res?.message || successMsg);
     },
-    onError: () => {
-      toast.error("Update failed");
-    },
+    onError: (err: unknown) => notifyError(err, "Update failed"),
   });
 }
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { dispatchPermissionRequired } from "@/components/ui/permission-dialog";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
@@ -29,6 +30,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (error.response?.status === 403) {
+      dispatchPermissionRequired(error.response.data?.message as string | undefined);
+    }
 
     if (
       error.response?.status === 401 &&

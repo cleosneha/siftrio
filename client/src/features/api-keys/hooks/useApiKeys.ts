@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { apiKeyService } from "../services/apiKey.service";
 
 const QUERY_KEY = ["api-keys"];
@@ -21,9 +22,7 @@ export function useCreateApiKey() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
-    onError: () => {
-      toast.error("Failed to create API key");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to create API key"),
   });
 }
 
@@ -36,9 +35,7 @@ export function useRevokeApiKey() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success("API key revoked");
     },
-    onError: () => {
-      toast.error("Failed to revoke API key");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to revoke API key"),
   });
 }
 
@@ -51,8 +48,6 @@ export function useDeleteApiKey() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success("API key deleted");
     },
-    onError: () => {
-      toast.error("Failed to delete API key");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to delete API key"),
   });
 }

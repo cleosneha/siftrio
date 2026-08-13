@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { Toaster } from "@/components/ui/sonner";
+import { PermissionDialog } from "@/components/ui/permission-dialog";
 import { AppProvider } from "@/lib/app-context";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
@@ -35,6 +36,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onClose={() => setShowCreateModal(false)}
           />
           <Toaster />
+          <PermissionDialog />
         </div>
       </AppProvider>
     </ProtectedRoute>

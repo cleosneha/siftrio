@@ -1,6 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { memberService } from "@/features/members/services/member.service";
 
 export function useWorkspaceMembers(workspaceId: string) {
@@ -37,7 +38,7 @@ export function useRemoveWorkspaceMember() {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       toast.success("Member removed");
     },
-    onError: () => toast.error("Failed to remove member"),
+    onError: (err: unknown) => notifyError(err, "Failed to remove member"),
   });
 }
 
@@ -51,7 +52,7 @@ export function useRemoveClientMember() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Member removed");
     },
-    onError: () => toast.error("Failed to remove member"),
+    onError: (err: unknown) => notifyError(err, "Failed to remove member"),
   });
 }
 
@@ -65,6 +66,6 @@ export function useRemoveProjectMember() {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Member removed");
     },
-    onError: () => toast.error("Failed to remove member"),
+    onError: (err: unknown) => notifyError(err, "Failed to remove member"),
   });
 }

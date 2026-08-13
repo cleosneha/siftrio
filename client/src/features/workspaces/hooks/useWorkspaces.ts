@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { workspaceService } from "@/features/workspaces/services/workspace.service";
 
 const QUERY_KEY = ["workspaces"];
@@ -16,9 +17,7 @@ export function useCreateWorkspace() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       toast.success(res.message || "Workspace created");
     },
-    onError: () => {
-      toast.error("Failed to create workspace");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to create workspace"),
   });
 }
 

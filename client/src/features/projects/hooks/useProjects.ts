@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { projectService } from "@/features/projects/services/project.service";
 
 export function useCreateProject() {
@@ -19,9 +20,7 @@ export function useCreateProject() {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       toast.success(res.message || "Project created");
     },
-    onError: () => {
-      toast.error("Failed to create project");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to create project"),
   });
 }
 

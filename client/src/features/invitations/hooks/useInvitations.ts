@@ -1,6 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { invitationService } from "@/features/invitations/services/invitation.service";
 
 export function useInviteMember(resourceType: string, resourceId: string) {
@@ -13,10 +14,7 @@ export function useInviteMember(resourceType: string, resourceId: string) {
       queryClient.invalidateQueries({ queryKey: [`${resourceType}-members`, resourceId] });
       toast.success(res.message || "Invitation sent");
     },
-    onError: (err: unknown) => {
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || "Failed to send invitation");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to send invitation"),
   });
 }
 

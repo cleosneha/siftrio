@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import type {
   ActionItemJiraCreateRequest,
   JiraIssueDetails,
@@ -26,9 +27,7 @@ export function useConnectWorkspaceJira() {
         window.open(data.url, "_blank");
       }
     },
-    onError: () => {
-      toast.error("Failed to initiate Jira connection");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to initiate Jira connection"),
   });
 }
 
@@ -75,9 +74,7 @@ export function useConnectProjectToJira() {
       queryClient.invalidateQueries({ queryKey: ["project-jira", variables.projectId] });
       toast.success(res.message || "Jira project connected");
     },
-    onError: () => {
-      toast.error("Failed to connect Jira project");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to connect Jira project"),
   });
 }
 
@@ -100,9 +97,7 @@ export function useCreateAndConnectJiraProject() {
       queryClient.invalidateQueries({ queryKey: ["project-jira", variables.projectId] });
       toast.success(res.message || "Jira project created and connected");
     },
-    onError: () => {
-      toast.error("Failed to create Jira project");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to create Jira project"),
   });
 }
 
@@ -114,9 +109,7 @@ export function useDisconnectProjectFromJira() {
       queryClient.invalidateQueries({ queryKey: ["project-jira", projectId] });
       toast.success(res.message || "Jira project disconnected");
     },
-    onError: () => {
-      toast.error("Failed to disconnect Jira project");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to disconnect Jira project"),
   });
 }
 
@@ -155,10 +148,7 @@ export function useCreateActionItemJiraIssue() {
       queryClient.invalidateQueries({ queryKey: ["action-items", variables.projectId] });
       toast.success(res.message || "Jira issue created");
     },
-    onError: (error: unknown) => {
-      const msg = error instanceof Error ? error.message : "Failed to create Jira issue";
-      toast.error(msg);
-    },
+    onError: (error: unknown) => notifyError(error, "Failed to create Jira issue"),
   });
 }
 

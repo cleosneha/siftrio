@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { clientService } from "@/features/clients/services/client.service";
 
 export function useCreateClient() {
@@ -18,9 +19,7 @@ export function useCreateClient() {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       toast.success(res.message || "Client created");
     },
-    onError: () => {
-      toast.error("Failed to create client");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to create client"),
   });
 }
 

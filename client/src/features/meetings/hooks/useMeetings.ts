@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/error";
 import { meetingService } from "@/features/meetings/services/meeting.service";
 
 export function useCreateMeeting() {
@@ -26,9 +27,7 @@ export function useCreateMeeting() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success(res.message || "Meeting created");
     },
-    onError: () => {
-      toast.error("Failed to create meeting");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to create meeting"),
   });
 }
 
@@ -82,9 +81,7 @@ export function useUploadTranscript() {
         `Transcript processed: ${res.data?.chunk_count ?? 0} chunks created`,
       );
     },
-    onError: () => {
-      toast.error("Failed to upload transcript");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to upload transcript"),
   });
 }
 
@@ -97,9 +94,7 @@ export function useDeleteMeeting() {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       toast.success("Meeting deleted");
     },
-    onError: () => {
-      toast.error("Failed to delete meeting");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to delete meeting"),
   });
 }
 
@@ -154,9 +149,7 @@ export function useScheduleSuggestion() {
       queryClient.invalidateQueries({ queryKey: ["meeting-suggestions"] });
       toast.success("Suggestion scheduled");
     },
-    onError: () => {
-      toast.error("Failed to schedule suggestion");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to schedule suggestion"),
   });
 }
 
@@ -175,9 +168,7 @@ export function useDismissSuggestion() {
       queryClient.invalidateQueries({ queryKey: ["meeting-suggestions"] });
       toast.success("Suggestion dismissed");
     },
-    onError: () => {
-      toast.error("Failed to dismiss suggestion");
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to dismiss suggestion"),
   });
 }
 
@@ -204,11 +195,7 @@ export function useRetryTranscript() {
       queryClient.invalidateQueries({ queryKey: ["transcript-status", meetingId] });
       toast.success(res.message || "Retry started");
     },
-    onError: (err: unknown) => {
-      const msg =
-        err instanceof Error ? err.message : "Failed to retry transcript";
-      toast.error(msg);
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to retry transcript"),
   });
 }
 
@@ -222,10 +209,6 @@ export function useRegenerateAnalysis() {
       queryClient.invalidateQueries({ queryKey: ["meeting-analysis"] });
       toast.success(res.message || "Analysis regenerated");
     },
-    onError: (err: unknown) => {
-      const msg =
-        err instanceof Error ? err.message : "Failed to regenerate analysis";
-      toast.error(msg);
-    },
+    onError: (err: unknown) => notifyError(err, "Failed to regenerate analysis"),
   });
 }
