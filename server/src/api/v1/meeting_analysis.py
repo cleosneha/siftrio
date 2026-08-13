@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.controllers.meeting_analysis_controller import MeetingAnalysisController
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
+from src.middleware.rbac import require_client_role, require_project_role
+from src.models.base import MemberRole
+from src.repositories.meeting_repository import MeetingRepository
 from src.schemas.base_response import BaseResponse
 
 
@@ -38,5 +41,10 @@ async def regenerate_meeting_analysis(
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
     await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
+    meeting = await MeetingRepository(db).get_by_id(meeting_id)
+    if meeting.project_id is not None:
+        await require_project_role(MemberRole.MEMBER)(meeting.project_id, request, db)
+    else:
+        await require_client_role(MemberRole.MEMBER)(meeting.client_id, request, db)
     controller = MeetingAnalysisController(db)
     return await controller.regenerate(meeting_id)
