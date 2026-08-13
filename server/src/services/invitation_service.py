@@ -69,6 +69,11 @@ class InvitationService:
                 message="User is not registered in the application.",
                 status_code=400,
             )
+        if user.id == invited_by:
+            raise BaseAPIException(
+                message="You cannot invite yourself.",
+                status_code=400,
+            )
 
         existing_member = await self._check_existing_member(resource_type, resource_id, user.id)
         if existing_member:

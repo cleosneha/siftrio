@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import {
   Select,
@@ -31,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toastFormErrors } from "@/lib/form";
 import { useCreateMeeting } from "@/features/meetings/hooks/useMeetings";
 import { projectService } from "@/features/projects/services/project.service";
 import { cn } from "@/lib/utils";
@@ -192,7 +192,7 @@ export function CreateMeetingModal({
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, toastFormErrors)}
             className="grid grid-cols-2 gap-x-6 gap-y-3"
           >
             <div className="col-span-2">
@@ -204,9 +204,7 @@ export function CreateMeetingModal({
                     <FormLabel>Title</FormLabel>
                     <FormControl>
                       <Input placeholder="Meeting title" autoFocus {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                    </FormControl>                  </FormItem>
                 )}
               />
             </div>
@@ -246,9 +244,7 @@ export function CreateMeetingModal({
                             Miscellaneous
                           </button>
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                      </FormControl>                    </FormItem>
                   )}
                 />
 
@@ -273,9 +269,7 @@ export function CreateMeetingModal({
                               </SelectItem>
                             ))}
                           </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+                        </Select>                      </FormItem>
                     )}
                   />
                 ) : (
@@ -290,9 +284,7 @@ export function CreateMeetingModal({
                             placeholder="design, review, feedback"
                             {...field}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                        </FormControl>                      </FormItem>
                     )}
                   />
                 )}
@@ -321,9 +313,7 @@ export function CreateMeetingModal({
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                      </Select>                    </FormItem>
                   )}
                 />
               </div>
@@ -337,9 +327,7 @@ export function CreateMeetingModal({
                   <FormLabel>Meeting Date</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                  </FormControl>                </FormItem>
               )}
             />
 
@@ -394,9 +382,7 @@ export function CreateMeetingModal({
                         Existing Meeting Link
                       </button>
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                  </FormControl>                </FormItem>
               )}
             />
 
@@ -414,9 +400,7 @@ export function CreateMeetingModal({
                         <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <Input type="datetime-local" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                        </FormControl>                      </FormItem>
                     )}
                   />
                   <FormField
@@ -427,9 +411,7 @@ export function CreateMeetingModal({
                         <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <Input type="datetime-local" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                        </FormControl>                      </FormItem>
                     )}
                   />
                 </div>
@@ -444,9 +426,7 @@ export function CreateMeetingModal({
                           placeholder="alice@example.com, bob@example.com"
                           {...field}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                      </FormControl>                    </FormItem>
                   )}
                 />
               </div>
@@ -469,9 +449,7 @@ export function CreateMeetingModal({
                           />
                           <ExternalLink className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                      </FormControl>                    </FormItem>
                   )}
                 />
               </div>
@@ -479,19 +457,21 @@ export function CreateMeetingModal({
 
             <div className="col-span-2">
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    form.reset();
-                    onClose();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMeeting.isPending}>
-                  {createMeeting.isPending ? "Creating..." : "Create"}
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      form.reset();
+                      onClose();
+                    }}
+                    disabled={createMeeting.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createMeeting.isPending}>
+                    {createMeeting.isPending && <Loader2 className="animate-spin" />}
+                    {createMeeting.isPending ? "Creating..." : "Create"}
+                  </Button>
               </DialogFooter>
             </div>
           </form>

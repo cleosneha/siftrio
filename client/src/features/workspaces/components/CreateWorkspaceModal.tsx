@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +22,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
+import { toastFormErrors } from "@/lib/form";
 import { useCreateWorkspace } from "@/features/workspaces/hooks/useWorkspaces";
 
 const formSchema = z.object({
@@ -69,7 +70,7 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, toastFormErrors)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -79,7 +80,6 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
                   <FormControl>
                     <Input placeholder="My Workspace" autoFocus {...field} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -97,16 +97,16 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { form.reset(); onClose(); }}>
+              <Button type="button" variant="outline" onClick={() => { form.reset(); onClose(); }} disabled={createWorkspace.isPending}>
                 Cancel
               </Button>
               <Button type="submit" disabled={createWorkspace.isPending}>
+                {createWorkspace.isPending && <Loader2 className="animate-spin" />}
                 {createWorkspace.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>

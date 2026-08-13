@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +22,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
+import { toastFormErrors } from "@/lib/form";
 import { useCreateClient } from "@/features/clients/hooks/useClients";
 
 const formSchema = z.object({
@@ -82,7 +83,7 @@ export function CreateClientModal({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, toastFormErrors)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -92,7 +93,6 @@ export function CreateClientModal({
                   <FormControl>
                     <Input placeholder="Client name" autoFocus {...field} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -110,7 +110,6 @@ export function CreateClientModal({
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -123,10 +122,12 @@ export function CreateClientModal({
                   form.reset();
                   onClose();
                 }}
+                disabled={createClient.isPending}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={createClient.isPending}>
+                {createClient.isPending && <Loader2 className="animate-spin" />}
                 {createClient.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>

@@ -109,11 +109,11 @@
   --accent-foreground: #ffffff;
 
   /* Destructive */
-  --destructive: #ef4444;
+  --destructive: #de7070;
 
   /* Status */
-  --success: #22c55e;
-  --warning: #f59e0b;
+  --success: #5fa87a;
+  --warning: #eab963;
 
   /* Borders - rgba(255,255,255,0.05) */
   --border: rgba(255, 255, 255, 0.05);
@@ -172,13 +172,13 @@
 
   /* Status badges */
   --status-pending-bg: #1d2024;
-  --status-pending-fg: #f59e0b;
+  --status-pending-fg: #e8bb6c;
   --status-progress-bg: #17191c;
   --status-progress-fg: #9ea3a9;
   --status-done-bg: rgba(34, 197, 94, 0.1);
-  --status-done-fg: #22c55e;
+  --status-done-fg: #5b9a72;
   --status-error-bg: rgba(239, 68, 68, 0.1);
-  --status-error-fg: #ef4444;
+  --status-error-fg: #ed7b7b;
   --status-default-bg: #111213;
   --status-default-fg: #9ea3a9;
 }

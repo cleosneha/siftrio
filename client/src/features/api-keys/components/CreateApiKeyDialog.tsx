@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +20,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
+import { toastFormErrors } from "@/lib/form";
 import { useCreateApiKey } from "../hooks/useApiKeys";
 import type { ApiKeyCreatedResponse } from "../types/apiKey.types";
 
@@ -75,7 +76,7 @@ export function CreateApiKeyDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, toastFormErrors)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -89,7 +90,6 @@ export function CreateApiKeyDialog({
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -102,10 +102,12 @@ export function CreateApiKeyDialog({
                   form.reset();
                   onClose();
                 }}
+                disabled={createKey.isPending}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={createKey.isPending}>
+                {createKey.isPending && <Loader2 className="animate-spin" />}
                 {createKey.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>

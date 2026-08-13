@@ -1,13 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.models.base import MemberRole
 
 
 class InviteMemberRequest(BaseModel):
-    email: str
+    email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     role: MemberRole = MemberRole.MEMBER
 
 

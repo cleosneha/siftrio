@@ -10,16 +10,18 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import {
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { toastFormErrors } from "@/lib/form";
 import { useInviteMember } from "@/features/invitations/hooks/useInvitations";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -35,10 +37,16 @@ interface InviteMemberModalProps {
 }
 
 export function InviteMemberModal({ open, onClose, resourceType, resourceId }: InviteMemberModalProps) {
+  const { user } = useAuth();
   const inviteMutation = useInviteMember(resourceType, resourceId);
 
+  const schema = inviteSchema.refine(
+    (data) => data.email.trim().toLowerCase() !== (user?.email ?? "").trim().toLowerCase(),
+    { path: ["email"], message: "You cannot invite yourself" },
+  );
+
   const form = useForm<InviteForm>({
-    resolver: zodResolver(inviteSchema),
+    resolver: zodResolver(schema),
     defaultValues: { email: "" },
   });
 
@@ -58,7 +66,7 @@ export function InviteMemberModal({ open, onClose, resourceType, resourceId }: I
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, toastFormErrors)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -68,15 +76,15 @@ export function InviteMemberModal({ open, onClose, resourceType, resourceId }: I
                   <FormControl>
                     <Input placeholder="colleague@company.com" {...field} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={inviteMutation.isPending}>
                 Cancel
               </Button>
               <Button type="submit" disabled={inviteMutation.isPending}>
+                {inviteMutation.isPending && <Loader2 className="animate-spin" />}
                 {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
               </Button>
             </div>
