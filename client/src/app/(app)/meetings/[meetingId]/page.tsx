@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useParams, notFound } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { TabBar } from "@/components/ui/tab-bar";
 import { knowledgeService } from "@/features/knowledge/services/knowledge.service";
 import { useProjectJira } from "@/features/jira/hooks/useJira";
 import { JiraPreviewModal } from "@/features/jira/components/JiraPreviewModal";
@@ -33,6 +34,9 @@ export default function MeetingPage() {
 
   const [jiraItem, setJiraItem] = useState<ActionItem | null>(null);
   const [detailsItem, setDetailsItem] = useState<ActionItem | null>(null);
+  const [activeTab, setActiveTab] = useState<"analysis" | "transcript" | "guests">(
+    "analysis",
+  );
   const [scheduleTarget, setScheduleTarget] = useState<{
     title: string;
     suggested_date: string | null;
@@ -82,66 +86,83 @@ export default function MeetingPage() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {meeting && (
-          <>
-            <MeetingInfoBar
-              meetingProvider={meeting.meeting_provider}
-              transcriptStatus={transcriptStatus}
-              meetingUrl={meeting.meeting_url}
-              googleMeetUrl={meeting.google_meet_url}
-            />
-            <GuestsCard guests={meeting.guest_emails} />
-          </>
+          <MeetingInfoBar
+            meetingProvider={meeting.meeting_provider}
+            transcriptStatus={transcriptStatus}
+            meetingUrl={meeting.meeting_url}
+            googleMeetUrl={meeting.google_meet_url}
+          />
         )}
 
-        <TranscriptPlaceholder
-          transcriptStatus={transcriptStatus}
-          hasTranscript={!!meeting?.transcript}
-          isUploading={uploadTranscript.isPending}
-          errorMessage={ingestionError}
-          isRetrying={retryTranscript.isPending}
-          onUpload={(file) => uploadTranscript.mutateAsync({ meetingId, file })}
-          onRetry={meeting?.fireflies_meeting_id ? () => retryTranscript.mutate(meetingId) : undefined}
+        <TabBar
+          className="mb-6"
+          tabs={[
+            { value: "analysis", label: "Analysis" },
+            { value: "transcript", label: "Transcript" },
+            { value: "guests", label: "Guests" },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(value) =>
+            setActiveTab(value as "analysis" | "transcript" | "guests")
+          }
         />
 
-        {!meeting?.transcript &&
+        {activeTab === "guests" && meeting && (
+          <GuestsCard guests={meeting.guest_emails} />
+        )}
+
+        {activeTab === "transcript" && (
+          <TranscriptPlaceholder
+            transcriptStatus={transcriptStatus}
+            hasTranscript={!!meeting?.transcript}
+            isUploading={uploadTranscript.isPending}
+            errorMessage={ingestionError}
+            isRetrying={retryTranscript.isPending}
+            onUpload={(file) => uploadTranscript.mutateAsync({ meetingId, file })}
+            onRetry={meeting?.fireflies_meeting_id ? () => retryTranscript.mutate(meetingId) : undefined}
+          />
+        )}
+
+        {activeTab === "analysis" &&
+          (!meeting?.transcript &&
           transcriptStatus !== "processing" &&
           transcriptStatus !== "failed" ? null : analysisLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">
-              Loading analysis...
-            </span>
-          </div>
-        ) : analysis ? (
-          <AnalysisContent
-            analysis={analysis}
-            actionItems={meetingActionItems}
-            hasJira={hasJira}
-            pendingSuggestions={pendingSuggestions}
-            onOpenJira={setJiraItem}
-            onViewIssue={setDetailsItem}
-            onDismiss={(id) =>
-              dismissSuggestion.mutate({ meetingId, suggestionId: id })
-            }
-            onSchedule={handleSchedule}
-            isDismissing={dismissSuggestion.isPending}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-            <h3 className="mb-2 text-lg font-medium">No analysis yet</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Click regenerate to generate analysis from the transcript
-            </p>
-            <button
-              type="button"
-              onClick={() => regenerateAnalysis.mutate(meetingId)}
-              disabled={regenerateAnalysis.isPending}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {regenerateAnalysis.isPending ? "Generating..." : "Generate Analysis"}
-            </button>
-          </div>
-        )}
+            <div className="flex items-center justify-center p-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Loading analysis...
+              </span>
+            </div>
+          ) : analysis ? (
+            <AnalysisContent
+              analysis={analysis}
+              actionItems={meetingActionItems}
+              hasJira={hasJira}
+              pendingSuggestions={pendingSuggestions}
+              onOpenJira={setJiraItem}
+              onViewIssue={setDetailsItem}
+              onDismiss={(id) =>
+                dismissSuggestion.mutate({ meetingId, suggestionId: id })
+              }
+              onSchedule={handleSchedule}
+              isDismissing={dismissSuggestion.isPending}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
+              <h3 className="mb-2 text-lg font-medium">No analysis yet</h3>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Click regenerate to generate analysis from the transcript
+              </p>
+              <button
+                type="button"
+                onClick={() => regenerateAnalysis.mutate(meetingId)}
+                disabled={regenerateAnalysis.isPending}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {regenerateAnalysis.isPending ? "Generating..." : "Generate Analysis"}
+              </button>
+            </div>
+          ))}
       </div>
 
       <JiraPreviewModal

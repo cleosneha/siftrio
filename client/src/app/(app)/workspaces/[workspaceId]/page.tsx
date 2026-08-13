@@ -3,10 +3,10 @@
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams, notFound } from "next/navigation";
-import { motion } from "framer-motion";
 import { Menu, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { TabBar } from "@/components/ui/tab-bar";
 import { ProjectCard } from "@/features/projects/components/ProjectCard";
 import { useWorkspace } from "@/features/workspaces/hooks/useWorkspaces";
 import { useClients } from "@/features/clients/hooks/useClients";
@@ -103,30 +103,15 @@ export default function WorkspacePage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="mb-6 flex gap-1 rounded-lg border p-1">
-          {(["clients", "members"] as const).map((tab) => (
-            <Button
-              key={tab}
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveTab(tab)}
-              className="relative flex-1 rounded-md"
-            >
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="workspace-tab-pill"
-                  className="absolute inset-0 rounded-md bg-primary"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                />
-              )}
-              <span
-                className={`relative z-10 ${activeTab === tab ? "text-primary-foreground" : ""}`}
-              >
-                {tab === "clients" ? "Clients" : "Members"}
-              </span>
-            </Button>
-          ))}
-        </div>
+        <TabBar
+          className="mb-6"
+          tabs={[
+            { value: "clients", label: "Clients" },
+            { value: "members", label: "Members" },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(value) => setActiveTab(value as "clients" | "members")}
+        />
 
         {activeTab === "clients" && (
           <>
