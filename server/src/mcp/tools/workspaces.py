@@ -21,12 +21,14 @@ TOOL_SPECS = [
     ToolSpec(
         name="list_workspaces",
         description="List all workspaces you have access to.",
+        permission="workspace.read",
         parameters=[],
     ),
     ToolSpec(
         name="get_workspace",
         description="Get details of a specific workspace by ID.",
         entity_type="workspace",
+        permission="workspace.read",
         parameters=[
             ToolParameterSpec(name="workspace_id", type="string", description="The UUID of the workspace to retrieve", required=True),
         ],

@@ -63,6 +63,7 @@ TOOL_SPECS = [
         name="get_action_item",
         description="Get a specific action item by ID, including assignee, due date, and Jira sync status.",
         entity_type="action_item",
+        permission="action_item.read",
         parameters=[
             ToolParameterSpec(name="action_item_id", type="string", description="The UUID of the action item.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from action item if not provided.", required=False),
@@ -71,6 +72,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="update_action_item_status",
         description="Update the status of an action item.",
+        permission="action_item.update",
         parameters=[
             ToolParameterSpec(name="action_item_id", type="string", description="The UUID of the action item.", required=True),
             ToolParameterSpec(name="status", type="string", description="New status value (e.g., 'completed', 'in_progress', 'pending').", required=True),

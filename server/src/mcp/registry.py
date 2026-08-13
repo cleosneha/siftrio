@@ -60,6 +60,10 @@ class ToolRegistry:
             len(self._specs),
         )
 
+        self.dispatcher.set_permissions(
+            {spec.name: spec.permission for spec in self._specs if spec.permission}
+        )
+
     def add_spec(self, spec: ToolSpec) -> None:
         self._specs.append(spec)
 

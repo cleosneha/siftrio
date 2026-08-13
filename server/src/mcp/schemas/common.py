@@ -41,6 +41,11 @@ class ToolSpec(BaseModel):
     name: str
     description: str
     parameters: list[ToolParameterSpec] = Field(default_factory=list)
+    permission: str | None = Field(
+        default=None,
+        description="RBAC permission required to call this tool (see PERMISSION_MIN_ROLES). "
+        "None = no permission gate.",
+    )
     entity_type: str | None = Field(
         default=None,
         description="Entity type this tool hydrates (e.g. 'action_item', 'meeting'). "

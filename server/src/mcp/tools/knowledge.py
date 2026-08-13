@@ -184,14 +184,15 @@ _KNOWLEDGE_PARAMS = [
 ]
 
 TOOL_SPECS = [
-    ToolSpec(name="list_requirements", description="List project requirements, optionally filtered by project, meeting, or status.", parameters=_KNOWLEDGE_PARAMS),
-    ToolSpec(name="list_action_items", description="List action items across meetings, optionally filtered by project, meeting, or status.", parameters=_KNOWLEDGE_PARAMS),
-    ToolSpec(name="list_decisions", description="List decisions recorded in meetings, optionally filtered by project, meeting, or status.", parameters=_KNOWLEDGE_PARAMS),
-    ToolSpec(name="list_risks", description="List risks identified in meetings, optionally filtered by project, meeting, or status.", parameters=_KNOWLEDGE_PARAMS),
-    ToolSpec(name="list_questions", description="List open or answered questions from meetings, optionally filtered by project, meeting, or status.", parameters=_KNOWLEDGE_PARAMS),
+    ToolSpec(name="list_requirements", description="List project requirements, optionally filtered by project, meeting, or status.", permission="knowledge.read", parameters=_KNOWLEDGE_PARAMS),
+    ToolSpec(name="list_action_items", description="List action items across meetings, optionally filtered by project, meeting, or status.", permission="knowledge.read", parameters=_KNOWLEDGE_PARAMS),
+    ToolSpec(name="list_decisions", description="List decisions recorded in meetings, optionally filtered by project, meeting, or status.", permission="knowledge.read", parameters=_KNOWLEDGE_PARAMS),
+    ToolSpec(name="list_risks", description="List risks identified in meetings, optionally filtered by project, meeting, or status.", permission="knowledge.read", parameters=_KNOWLEDGE_PARAMS),
+    ToolSpec(name="list_questions", description="List open or answered questions from meetings, optionally filtered by project, meeting, or status.", permission="knowledge.read", parameters=_KNOWLEDGE_PARAMS),
     ToolSpec(
         name="get_knowledge_item",
         description="Get a specific knowledge item (requirement, action_item, decision, risk, or question) by ID.",
+        permission="knowledge.read",
         parameters=[
             ToolParameterSpec(name="item_type", type="string", description="One of 'requirement', 'action_item', 'decision', 'risk', 'question'.", required=True),
             ToolParameterSpec(name="item_id", type="string", description="The UUID of the item to retrieve.", required=True),

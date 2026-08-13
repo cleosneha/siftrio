@@ -28,6 +28,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_upcoming_meetings",
         description="Get upcoming meetings, prioritizing those with Google Meet links.",
+        permission="meeting.read",
         parameters=[
             ToolParameterSpec(name="workspace_id", type="string", description="Filter by workspace UUID. Auto-resolved if not provided.", required=False),
             ToolParameterSpec(name="client_id", type="string", description="Filter by client UUID.", required=False),

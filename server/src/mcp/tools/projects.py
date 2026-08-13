@@ -28,6 +28,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="list_projects",
         description="List projects you have access to, optionally filtered by client.",
+        permission="project.read",
         parameters=[
             ToolParameterSpec(name="workspace_id", type="string", description="Filter by workspace UUID. Auto-resolved if not provided.", required=False),
             ToolParameterSpec(name="client_id", type="string", description="Filter by client UUID.", required=False),
@@ -39,6 +40,7 @@ TOOL_SPECS = [
         name="get_project",
         description="Get details of a specific project by ID.",
         entity_type="project",
+        permission="project.read",
         parameters=[
             ToolParameterSpec(name="project_id", type="string", description="The UUID of the project to retrieve.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),

@@ -116,6 +116,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_jira_integration_status",
         description="Check if Jira is connected for a workspace and get connection details.",
+        permission="jira.status.read",
         parameters=[
             ToolParameterSpec(name="workspace_id", type="string", description="The UUID of the workspace to check. Auto-resolved if not provided.", required=False),
         ],
@@ -123,6 +124,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="list_jira_projects",
         description="List available Jira projects that can be linked to a Siftrio project.",
+        permission="jira.project.list",
         parameters=[
             ToolParameterSpec(name="project_id", type="string", description="The UUID of the Siftrio project.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),
@@ -131,6 +133,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_project_jira_mapping",
         description="Get the Jira project mapping for a Siftrio project, if one exists.",
+        permission="jira.mapping.read",
         parameters=[
             ToolParameterSpec(name="project_id", type="string", description="The UUID of the Siftrio project.", required=True),
             ToolParameterSpec(name="workspace_id", type="string", description="Scope to a specific workspace. Auto-resolved from project if not provided.", required=False),
@@ -139,6 +142,7 @@ TOOL_SPECS = [
     ToolSpec(
         name="get_jira_issue",
         description="Get details of a Jira issue linked to an action item.",
+        permission="jira.issue.read",
         parameters=[
             ToolParameterSpec(name="project_id", type="string", description="The UUID of the Siftrio project.", required=True),
             ToolParameterSpec(name="action_item_id", type="string", description="The UUID of the action item with a linked Jira issue.", required=True),
