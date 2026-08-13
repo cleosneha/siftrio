@@ -412,7 +412,7 @@ export function McpSection() {
                     stroke="var(--svg-line)"
                     strokeWidth={1.5}
                     fill="none"
-                    initial={{ pathLength: 0 }}
+                    initial={{ pathLength: 0, strokeOpacity: 0 }}
                     animate={{
                       pathLength: 1,
                       strokeOpacity: edgeOpacity(edge.id),
