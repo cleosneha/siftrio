@@ -1,3 +1,4 @@
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -24,6 +25,10 @@ from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.member_invitation_schema import InvitationResponse, PendingInvitationItem
 from src.services.audit_service import AuditService, resolve_workspace_id
 from src.services.membership_service import MembershipService
+
+
+def _replace_placeholder(template: str, key: str, value: str) -> str:
+    return re.sub(r"{{\s*" + re.escape(key) + r"\s*}}", value, template)
 
 
 INVITATION_EXPIRY_DAYS = 7
@@ -319,11 +324,11 @@ class InvitationService:
 
         template_path = Path(__file__).parent.parent / "email" / "templates" / "invitation.html"
         html = template_path.read_text(encoding="utf-8")
-        html = html.replace("{{ inviter_name }}", inviter_name)
-        html = html.replace("{{ resource_name }}", resource_name)
-        html = html.replace("{{ resource_type }}", resource_type)
-        html = html.replace("{{ accept_url }}", accept_url)
-        html = html.replace("{{ expires_at }}", expires_at.strftime("%B %d, %Y"))
+        html = _replace_placeholder(html, "inviter_name", inviter_name)
+        html = _replace_placeholder(html, "resource_name", resource_name)
+        html = _replace_placeholder(html, "resource_type", resource_type)
+        html = _replace_placeholder(html, "accept_url", accept_url)
+        html = _replace_placeholder(html, "expires_at", expires_at.strftime("%B %d, %Y"))
         return html
 
     def _render_text(self, inviter_name: str, resource_name: str, resource_type: str, accept_url: str, expires_at) -> str:
@@ -331,11 +336,11 @@ class InvitationService:
 
         template_path = Path(__file__).parent.parent / "email" / "templates" / "invitation.txt"
         text = template_path.read_text(encoding="utf-8")
-        text = text.replace("{{ inviter_name }}", inviter_name)
-        text = text.replace("{{ resource_name }}", resource_name)
-        text = text.replace("{{ resource_type }}", resource_type)
-        text = text.replace("{{ accept_url }}", accept_url)
-        text = text.replace("{{ expires_at }}", expires_at.strftime("%B %d, %Y"))
+        text = _replace_placeholder(text, "inviter_name", inviter_name)
+        text = _replace_placeholder(text, "resource_name", resource_name)
+        text = _replace_placeholder(text, "resource_type", resource_type)
+        text = _replace_placeholder(text, "accept_url", accept_url)
+        text = _replace_placeholder(text, "expires_at", expires_at.strftime("%B %d, %Y"))
         return text
 
     def _render_withdraw_html(self, inviter_name: str, resource_name: str, resource_type: str) -> str:
@@ -343,9 +348,9 @@ class InvitationService:
 
         template_path = Path(__file__).parent.parent / "email" / "templates" / "withdraw_invite.html"
         html = template_path.read_text(encoding="utf-8")
-        html = html.replace("{{ inviter_name }}", inviter_name)
-        html = html.replace("{{ resource_name }}", resource_name)
-        html = html.replace("{{ resource_type }}", resource_type)
+        html = _replace_placeholder(html, "inviter_name", inviter_name)
+        html = _replace_placeholder(html, "resource_name", resource_name)
+        html = _replace_placeholder(html, "resource_type", resource_type)
         return html
 
     def _render_withdraw_text(self, inviter_name: str, resource_name: str, resource_type: str) -> str:
@@ -353,7 +358,7 @@ class InvitationService:
 
         template_path = Path(__file__).parent.parent / "email" / "templates" / "withdraw_invite.txt"
         text = template_path.read_text(encoding="utf-8")
-        text = text.replace("{{ inviter_name }}", inviter_name)
-        text = text.replace("{{ resource_name }}", resource_name)
-        text = text.replace("{{ resource_type }}", resource_type)
+        text = _replace_placeholder(text, "inviter_name", inviter_name)
+        text = _replace_placeholder(text, "resource_name", resource_name)
+        text = _replace_placeholder(text, "resource_type", resource_type)
         return text
