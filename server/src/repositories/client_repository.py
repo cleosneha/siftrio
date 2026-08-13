@@ -89,3 +89,9 @@ class ClientRepository:
             select(func.count(Project.id)).where(Project.client_id == client_id)
         )
         return result.scalar() or 0
+
+    async def list_ids_by_workspace(self, workspace_id: UUID) -> list[UUID]:
+        result = await self._db.execute(
+            select(Client.id).where(Client.workspace_id == workspace_id)
+        )
+        return list(result.scalars().all())

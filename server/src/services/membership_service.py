@@ -55,6 +55,48 @@ class MembershipService:
         )
         return list(rows.scalars().all())
 
+    async def get_visible_project_ids(
+        self, user_id: UUID, workspace_id: UUID
+    ) -> list[UUID]:
+        """Projects whose content a user may retrieve in this workspace (§8.8)."""
+        ws_role = await self.ws_member_repo.get_by_user_and_workspace(
+            workspace_id, user_id
+        )
+        if ws_role is not None:
+            all_projects = await self.project_repo.list_by_workspace(workspace_id)
+            return [p.id for p in all_projects]
+
+        visible: set[UUID] = set()
+        for cm in await self.client_member_repo.list_by_user(workspace_id, user_id):
+            for p in await self.project_repo.list(client_id=cm.client_id):
+                visible.add(p.id)
+        for pm in await self.project_member_repo.list_by_workspace(
+            workspace_id, user_id
+        ):
+            visible.add(pm.project_id)
+        return list(visible)
+
+    async def get_visible_client_ids(
+        self, user_id: UUID, workspace_id: UUID
+    ) -> list[UUID]:
+        """Clients whose content (incl. client-level meetings) a user may retrieve."""
+        ws_role = await self.ws_member_repo.get_by_user_and_workspace(
+            workspace_id, user_id
+        )
+        if ws_role is not None:
+            return await self.client_repo.list_ids_by_workspace(workspace_id)
+
+        visible: set[UUID] = set()
+        for cm in await self.client_member_repo.list_by_user(workspace_id, user_id):
+            visible.add(cm.client_id)
+        for pm in await self.project_member_repo.list_by_workspace(
+            workspace_id, user_id
+        ):
+            project = await self.project_repo.get_by_id(pm.project_id)
+            if project:
+                visible.add(project.client_id)
+        return list(visible)
+
     async def get_effective_role(
         self, level: str, resource_id: UUID, user_id: UUID
     ) -> MemberRole | None:

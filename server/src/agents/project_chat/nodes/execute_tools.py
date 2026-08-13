@@ -11,8 +11,45 @@ from src.agents.project_chat.state import ChatState
 from src.mcp.dispatcher import MCPDispatcher
 from src.mcp.schemas.common import ToolResult
 from src.mcp.schemas.execution_context import ToolExecutionContext
+from src.models.base import MemberRole, rank
+from src.repositories.meeting_repository import MeetingRepository
+from src.repositories.resource_repository import ResourceRepository
+from src.services.membership_service import MembershipService
 
 logger = logging.getLogger(__name__)
+
+WRITE_TOOLS = {"update_action_item_status"}
+
+
+async def _effective_role_for_call(
+    db, user_id: UUID, tool_name: str, args: dict
+) -> MemberRole | None:
+    """Effective role on the resource a write tool targets (§8.8)."""
+    level: str | None = None
+    resource_id: UUID | None = None
+
+    if args.get("project_id"):
+        level, resource_id = "project", UUID(args["project_id"])
+    elif args.get("client_id"):
+        level, resource_id = "client", UUID(args["client_id"])
+    elif args.get("workspace_id"):
+        level, resource_id = "workspace", UUID(args["workspace_id"])
+    elif args.get("meeting_id"):
+        meeting = await MeetingRepository(db).get_by_id(UUID(args["meeting_id"]))
+        if meeting and meeting.project_id:
+            level, resource_id = "project", meeting.project_id
+        elif meeting:
+            level, resource_id = "client", meeting.client_id
+    elif args.get("action_item_id"):
+        project_id = await ResourceRepository(db).get_project_id(
+            "action_item", UUID(args["action_item_id"])
+        )
+        if project_id:
+            level, resource_id = "project", project_id
+
+    if level is None or resource_id is None:
+        return None
+    return await MembershipService(db).get_effective_role(level, resource_id, user_id)
 
 
 async def execute_tools(
@@ -33,15 +70,33 @@ async def execute_tools(
         return {"tool_results": [], "retrieved_chunks": [], "meeting_analysis": [], "knowledge_entities": []}
 
     user_context = state["user_context"]
+    user_id = UUID(user_context["id"])
     context = ToolExecutionContext(
-        user_id=UUID(user_context["id"]),
+        user_id=user_id,
         workspace_ids=[UUID(wid) for wid in retrieval_scope.workspace_ids] if retrieval_scope else [],
     )
 
     tasks = []
+    tool_results: list[ToolResult] = []
 
     if tool_plan and tool_plan.tool_calls:
         for call in tool_plan.tool_calls:
+            if call.tool in WRITE_TOOLS:
+                role = await _effective_role_for_call(db, user_id, call.tool, call.args or {})
+                if rank(role) < rank(MemberRole.MEMBER):
+                    logger.warning(
+                        "Assistant write tool '%s' denied for user %s (role=%s)",
+                        call.tool,
+                        user_id,
+                        role,
+                    )
+                    tool_results.append(
+                        ToolResult(
+                            success=False,
+                            message=f"Tool '{call.tool}' requires member or higher",
+                        )
+                    )
+                    continue
             tasks.append(dispatcher.dispatch(call.tool, context, **call.args))
 
     rag_task = None
@@ -54,11 +109,10 @@ async def execute_tools(
         tasks.append(rag_task)
 
     if not tasks:
-        return {"tool_results": [], "retrieved_chunks": [], "meeting_analysis": [], "knowledge_entities": []}
+        return {"tool_results": tool_results, "retrieved_chunks": [], "meeting_analysis": [], "knowledge_entities": []}
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    tool_results: list[ToolResult] = []
     retrieved_chunks = []
     meeting_analysis = []
     knowledge_entities = []

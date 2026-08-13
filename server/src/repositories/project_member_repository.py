@@ -60,6 +60,22 @@ class ProjectMemberRepository:
         )
         return result.scalar_one_or_none()
 
+    async def list_by_workspace(
+        self, workspace_id: UUID, user_id: UUID
+    ) -> list[ProjectMember]:
+        from src.models.client import Client
+        from src.models.project import Project
+        result = await self._db.execute(
+            select(ProjectMember)
+            .join(Project, Project.id == ProjectMember.project_id)
+            .join(Client, Client.id == Project.client_id)
+            .where(
+                Client.workspace_id == workspace_id,
+                ProjectMember.user_id == user_id,
+            )
+        )
+        return list(result.scalars().all())
+
     async def list_project_ids_by_user(self, user_id: UUID) -> list[UUID]:
         result = await self._db.execute(
             select(ProjectMember.project_id).where(

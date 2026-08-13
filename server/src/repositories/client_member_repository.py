@@ -60,6 +60,20 @@ class ClientMemberRepository:
         )
         return result.scalar_one_or_none()
 
+    async def list_by_user(
+        self, workspace_id: UUID, user_id: UUID
+    ) -> list[ClientMember]:
+        from src.models.client import Client
+        result = await self._db.execute(
+            select(ClientMember)
+            .join(Client, Client.id == ClientMember.client_id)
+            .where(
+                Client.workspace_id == workspace_id,
+                ClientMember.user_id == user_id,
+            )
+        )
+        return list(result.scalars().all())
+
     async def list_client_ids_by_user(self, user_id: UUID) -> list[UUID]:
         result = await self._db.execute(
             select(ClientMember.client_id).where(

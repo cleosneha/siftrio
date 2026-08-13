@@ -93,6 +93,12 @@ class KnowledgeRetriever:
         if project_ids:
             stmt = stmt.where(model.project_id.in_([UUID(pid) for pid in project_ids]))
 
+        visible_project_ids = filters.get("visible_project_ids") or []
+        if visible_project_ids:
+            stmt = stmt.where(
+                model.project_id.in_([UUID(pid) for pid in visible_project_ids])
+            )
+
         if keywords:
             search_terms = " & ".join(keywords)
             ts_query = func.plainto_tsquery("english", search_terms)

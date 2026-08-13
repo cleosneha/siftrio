@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.project_chat.schemas import RetrievedChunk
@@ -71,6 +71,23 @@ class KeywordRetriever:
 
         if filters.get("meeting_ids"):
             stmt = stmt.where(MeetingChunk.meeting_id.in_([UUID(mid) for mid in filters["meeting_ids"]]))
+
+        visible_project_ids = filters.get("visible_project_ids") or []
+        visible_client_ids = filters.get("visible_client_ids") or []
+        if visible_project_ids or visible_client_ids:
+            if not joined_meeting:
+                stmt = stmt.join(Meeting, MeetingChunk.meeting_id == Meeting.id)
+                joined_meeting = True
+            boundary = Meeting.project_id.in_([UUID(pid) for pid in visible_project_ids])
+            if visible_client_ids:
+                boundary = or_(
+                    boundary,
+                    and_(
+                        Meeting.project_id.is_(None),
+                        Meeting.client_id.in_([UUID(cid) for cid in visible_client_ids]),
+                    ),
+                )
+            stmt = stmt.where(boundary)
 
         date_range = filters.get("date_range")
         if date_range and (date_range.get("start") or date_range.get("end")):

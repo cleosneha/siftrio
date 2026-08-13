@@ -38,6 +38,16 @@ class ProjectRepository:
         result = await self._db.execute(query)
         return list(result.scalars().all())
 
+    async def list_by_workspace(self, workspace_id: UUID) -> list[Project]:
+        from src.models.client import Client
+        query = (
+            select(Project)
+            .join(Client, Client.id == Project.client_id)
+            .where(Client.workspace_id == workspace_id)
+        )
+        result = await self._db.execute(query)
+        return list(result.scalars().all())
+
     async def list_by_user_id(self, user_id: UUID, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Project]:
         from src.models.client import Client
         from src.models.project_member import ProjectMember

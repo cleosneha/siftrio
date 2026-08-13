@@ -55,6 +55,14 @@ class RetrievalScope(BaseModel):
     client_ids: list[str] = Field(default_factory=list, description="Clients to filter by")
     project_ids: list[str] = Field(default_factory=list, description="Projects to filter by")
     meeting_ids: list[str] = Field(default_factory=list, description="Meetings to filter by")
+    visible_project_ids: list[str] = Field(
+        default_factory=list,
+        description="Hard authorization boundary: only projects in this set may be retrieved (§8.8)",
+    )
+    visible_client_ids: list[str] = Field(
+        default_factory=list,
+        description="Hard authorization boundary for client-level meetings with no project",
+    )
     keywords: list[str] = Field(default_factory=list, description="Search keywords")
     date_range: dict | None = Field(default=None, description="Date range filter")
     ambiguous_entities: dict[str, list[EntityCandidate]] = Field(

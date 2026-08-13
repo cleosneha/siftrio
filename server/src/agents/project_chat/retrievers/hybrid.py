@@ -52,6 +52,10 @@ class HybridRetriever:
             filters["project_ids"] = scope.project_ids
         if scope.meeting_ids:
             filters["meeting_ids"] = scope.meeting_ids
+        if scope.visible_project_ids:
+            filters["visible_project_ids"] = scope.visible_project_ids
+        if scope.visible_client_ids:
+            filters["visible_client_ids"] = scope.visible_client_ids
         if scope.keywords:
             filters["keywords"] = scope.keywords
         if scope.date_range:
