@@ -25,6 +25,8 @@
   --color-border: var(--border);
   --color-divider: var(--divider);
   --color-input: var(--input);
+  --color-input-bg: var(--input-bg);
+  --color-input-focus: var(--input-focus);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -117,6 +119,8 @@
   --border: rgba(255, 255, 255, 0.05);
   --divider: rgba(255, 255, 255, 0.05);
   --input: #111213;
+  --input-bg: #1a1c20;
+  --input-focus: rgba(255, 255, 255, 0.7);
   --ring: rgba(255, 255, 255, 0.1);
 
   /* Text hierarchy */
