@@ -32,6 +32,15 @@ class ProjectMemberRepository:
         )
         return result.scalar() or 0
 
+    async def count_owners_by_project(self, project_id: UUID) -> int:
+        result = await self._db.execute(
+            select(func.count(ProjectMember.id)).where(
+                ProjectMember.project_id == project_id,
+                ProjectMember.role == MemberRole.OWNER,
+            )
+        )
+        return result.scalar() or 0
+
     async def get_by_project(self, project_id: UUID) -> list[ProjectMember]:
         result = await self._db.execute(
             select(ProjectMember)

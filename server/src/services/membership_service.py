@@ -139,10 +139,16 @@ class MembershipService:
         members = await self.project_member_repo.get_by_project(project_id)
         return [self._to_response(m) for m in members]
 
-    async def remove_workspace_member(self, workspace_id: UUID, user_id: UUID) -> None:
+    async def remove_workspace_member(
+        self, workspace_id: UUID, user_id: UUID, actor_user_id: UUID
+    ) -> None:
         member = await self.ws_member_repo.get_by_user_and_workspace(workspace_id, user_id)
-        if member and member.role == MemberRole.OWNER:
-            raise HTTPException(status_code=403, detail="Cannot remove an owner")
+        if member is None:
+            return
+        if member.role == MemberRole.OWNER:
+            await self._assert_owner_removal(
+                "workspace", workspace_id, user_id, actor_user_id
+            )
 
         member_count = await self.ws_member_repo.count_by_workspace(workspace_id)
         await self.ws_member_repo.delete(workspace_id, user_id)
@@ -152,10 +158,16 @@ class MembershipService:
         else:
             await self.db.flush()
 
-    async def remove_client_member(self, client_id: UUID, user_id: UUID) -> None:
+    async def remove_client_member(
+        self, client_id: UUID, user_id: UUID, actor_user_id: UUID
+    ) -> None:
         member = await self.client_member_repo.get_by_user_and_client(client_id, user_id)
-        if member and member.role == MemberRole.OWNER:
-            raise HTTPException(status_code=403, detail="Cannot remove an owner")
+        if member is None:
+            return
+        if member.role == MemberRole.OWNER:
+            await self._assert_owner_removal(
+                "client", client_id, user_id, actor_user_id
+            )
 
         member_count = await self.client_member_repo.count_by_client(client_id)
         await self.client_member_repo.delete(client_id, user_id)
@@ -165,10 +177,16 @@ class MembershipService:
         else:
             await self.db.flush()
 
-    async def remove_project_member(self, project_id: UUID, user_id: UUID) -> None:
+    async def remove_project_member(
+        self, project_id: UUID, user_id: UUID, actor_user_id: UUID
+    ) -> None:
         member = await self.project_member_repo.get_by_user_and_project(project_id, user_id)
-        if member and member.role == MemberRole.OWNER:
-            raise HTTPException(status_code=403, detail="Cannot remove an owner")
+        if member is None:
+            return
+        if member.role == MemberRole.OWNER:
+            await self._assert_owner_removal(
+                "project", project_id, user_id, actor_user_id
+            )
 
         member_count = await self.project_member_repo.count_by_project(project_id)
         await self.project_member_repo.delete(project_id, user_id)
@@ -177,6 +195,91 @@ class MembershipService:
             await self._delete_project_cascade(project_id)
         else:
             await self.db.flush()
+
+    async def change_workspace_role(
+        self, workspace_id: UUID, user_id: UUID, new_role: MemberRole, actor_user_id: UUID
+    ) -> MemberResponse | None:
+        member = await self.ws_member_repo.get_by_user_and_workspace(workspace_id, user_id)
+        if member is None:
+            return None
+        await self._assert_role_change(
+            "workspace", workspace_id, member, new_role, actor_user_id
+        )
+        member.role = new_role
+        await self.db.flush()
+        await self.db.refresh(member)
+        return MemberResponse.model_validate(member)
+
+    async def change_client_role(
+        self, client_id: UUID, user_id: UUID, new_role: MemberRole, actor_user_id: UUID
+    ) -> MemberResponse | None:
+        member = await self.client_member_repo.get_by_user_and_client(client_id, user_id)
+        if member is None:
+            return None
+        await self._assert_role_change(
+            "client", client_id, member, new_role, actor_user_id
+        )
+        member.role = new_role
+        await self.db.flush()
+        await self.db.refresh(member)
+        return MemberResponse.model_validate(member)
+
+    async def change_project_role(
+        self, project_id: UUID, user_id: UUID, new_role: MemberRole, actor_user_id: UUID
+    ) -> MemberResponse | None:
+        member = await self.project_member_repo.get_by_user_and_project(project_id, user_id)
+        if member is None:
+            return None
+        await self._assert_role_change(
+            "project", project_id, member, new_role, actor_user_id
+        )
+        member.role = new_role
+        await self.db.flush()
+        await self.db.refresh(member)
+        return MemberResponse.model_validate(member)
+
+    async def _assert_owner_removal(
+        self, level: str, resource_id: UUID, user_id: UUID, actor_user_id: UUID
+    ) -> None:
+        owner_count = await self._count_owners(level, resource_id)
+        if owner_count <= 1:
+            raise HTTPException(status_code=403, detail="Cannot remove the last owner")
+        actor_role = await self.get_effective_role(level, resource_id, actor_user_id)
+        if actor_role != MemberRole.OWNER:
+            raise HTTPException(
+                status_code=403, detail="Only an owner can remove an owner"
+            )
+
+    async def _assert_role_change(
+        self,
+        level: str,
+        resource_id: UUID,
+        member,
+        new_role: MemberRole,
+        actor_user_id: UUID,
+    ) -> None:
+        actor_role = await self.get_effective_role(level, resource_id, actor_user_id)
+        if rank(new_role) > rank(actor_role):
+            raise HTTPException(
+                status_code=403, detail="Cannot assign a role higher than your own"
+            )
+        if member.role == MemberRole.OWNER and new_role != MemberRole.OWNER:
+            owner_count = await self._count_owners(level, resource_id)
+            if owner_count <= 1:
+                raise HTTPException(
+                    status_code=403, detail="Cannot demote the last owner"
+                )
+            if actor_role != MemberRole.OWNER:
+                raise HTTPException(
+                    status_code=403, detail="Only an owner can demote an owner"
+                )
+
+    async def _count_owners(self, level: str, resource_id: UUID) -> int:
+        if level == "workspace":
+            return await self.ws_member_repo.count_owners_by_workspace(resource_id)
+        if level == "client":
+            return await self.client_member_repo.count_owners_by_client(resource_id)
+        return await self.project_member_repo.count_owners_by_project(resource_id)
 
     async def _delete_workspace_cascade(self, workspace_id: UUID) -> None:
         from src.models.external_user import ExternalUser

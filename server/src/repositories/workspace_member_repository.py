@@ -33,6 +33,15 @@ class WorkspaceMemberRepository:
         )
         return result.scalar() or 0
 
+    async def count_owners_by_workspace(self, workspace_id: UUID) -> int:
+        result = await self._db.execute(
+            select(func.count(WorkspaceMember.id)).where(
+                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.role == MemberRole.OWNER,
+            )
+        )
+        return result.scalar() or 0
+
     async def count_by_workspace_and_user(self, workspace_id: UUID, user_id: UUID) -> int:
         result = await self._db.execute(
             select(func.count(WorkspaceMember.id)).where(

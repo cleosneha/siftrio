@@ -32,6 +32,15 @@ class ClientMemberRepository:
         )
         return result.scalar() or 0
 
+    async def count_owners_by_client(self, client_id: UUID) -> int:
+        result = await self._db.execute(
+            select(func.count(ClientMember.id)).where(
+                ClientMember.client_id == client_id,
+                ClientMember.role == MemberRole.OWNER,
+            )
+        )
+        return result.scalar() or 0
+
     async def get_by_client(self, client_id: UUID) -> list[ClientMember]:
         result = await self._db.execute(
             select(ClientMember)

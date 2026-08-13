@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from src.models.base import MemberRole
+
 
 class MemberResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -15,3 +17,7 @@ class MemberResponse(BaseModel):
     email: str = ""
     full_name: str | None = None
     profile_picture: str | None = None
+
+
+class RoleChangeRequest(BaseModel):
+    role: MemberRole
