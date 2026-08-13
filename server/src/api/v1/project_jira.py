@@ -26,6 +26,7 @@ async def get_project_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ProjectJiraService(db)
     data = await service.get_mapping(project_id)
@@ -41,6 +42,7 @@ async def list_jira_projects(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ProjectJiraService(db)
     data = await service.get_available_projects(project_id)
@@ -55,6 +57,7 @@ async def connect_project_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ProjectJiraService(db)
     data = await service.connect_existing(project_id, body)
@@ -69,6 +72,7 @@ async def create_and_connect_jira_project(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ProjectJiraService(db)
     data = await service.create_and_connect(project_id, body)
@@ -82,6 +86,7 @@ async def disconnect_project_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ProjectJiraService(db)
     await service.disconnect(project_id)

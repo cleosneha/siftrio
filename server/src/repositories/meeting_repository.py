@@ -7,6 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.meeting import Meeting, MeetingProvider, MeetingType, TranscriptStatus
 
 
+def _user_workspace_filter(user_id: UUID):
+    from src.models.client import Client
+    from src.models.workspace_member import WorkspaceMember
+    return Client.workspace_id.in_(
+        select(WorkspaceMember.workspace_id).where(
+            WorkspaceMember.user_id == user_id
+        )
+    )
+
+
 class MeetingRepository:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
@@ -91,34 +101,38 @@ class MeetingRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_by_client(self, client_id: UUID, limit: int = 50, offset: int = 0) -> list[Meeting]:
-        result = await self._db.execute(
-            select(Meeting)
-            .where(Meeting.client_id == client_id)
-            .order_by(Meeting.created_at.desc())
-            .limit(limit).offset(offset)
+    async def list_by_client(self, client_id: UUID, limit: int = 50, offset: int = 0, user_id: UUID | None = None) -> list[Meeting]:
+        from src.models.client import Client
+        query = select(Meeting).join(Client, Client.id == Meeting.client_id).where(
+            Meeting.client_id == client_id,
         )
+        if user_id is not None:
+            query = query.where(_user_workspace_filter(user_id))
+        query = query.order_by(Meeting.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
         return list(result.scalars().all())
 
-    async def list_by_project(self, project_id: UUID, limit: int = 50, offset: int = 0) -> list[Meeting]:
-        result = await self._db.execute(
-            select(Meeting)
-            .where(Meeting.project_id == project_id)
-            .order_by(Meeting.created_at.desc())
-            .limit(limit).offset(offset)
+    async def list_by_project(self, project_id: UUID, limit: int = 50, offset: int = 0, user_id: UUID | None = None) -> list[Meeting]:
+        from src.models.client import Client
+        query = select(Meeting).join(Client, Client.id == Meeting.client_id).where(
+            Meeting.project_id == project_id,
         )
+        if user_id is not None:
+            query = query.where(_user_workspace_filter(user_id))
+        query = query.order_by(Meeting.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
         return list(result.scalars().all())
 
-    async def list_miscellaneous_by_client(self, client_id: UUID, limit: int = 50, offset: int = 0) -> list[Meeting]:
-        result = await self._db.execute(
-            select(Meeting)
-            .where(
-                Meeting.client_id == client_id,
-                Meeting.meeting_type == MeetingType.MISCELLANEOUS,
-            )
-            .order_by(Meeting.created_at.desc())
-            .limit(limit).offset(offset)
+    async def list_miscellaneous_by_client(self, client_id: UUID, limit: int = 50, offset: int = 0, user_id: UUID | None = None) -> list[Meeting]:
+        from src.models.client import Client
+        query = select(Meeting).join(Client, Client.id == Meeting.client_id).where(
+            Meeting.client_id == client_id,
+            Meeting.meeting_type == MeetingType.MISCELLANEOUS,
         )
+        if user_id is not None:
+            query = query.where(_user_workspace_filter(user_id))
+        query = query.order_by(Meeting.created_at.desc()).limit(limit).offset(offset)
+        result = await self._db.execute(query)
         return list(result.scalars().all())
 
     async def delete(self, meeting_id: UUID) -> None:

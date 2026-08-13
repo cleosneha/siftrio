@@ -24,6 +24,7 @@ async def preview_action_item_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ActionItemJiraService(db)
     data = await service.get_preview(action_item_id)
@@ -38,6 +39,7 @@ async def list_jira_issue_types(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ActionItemJiraService(db)
     data = await service.get_issue_types(project_id)
@@ -53,6 +55,7 @@ async def search_jira_assignees(
     query: str = Query(""),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ActionItemJiraService(db)
     data = await service.search_users(project_id, query)
@@ -68,6 +71,7 @@ async def create_jira_issue_from_action_item(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ActionItemJiraService(db)
 
@@ -96,6 +100,7 @@ async def get_jira_issue_details(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     await MembershipService(db).assert_project_access(project_id, user_id)
     service = ActionItemJiraService(db)
     data = await service.get_issue_details(project_id, action_item_id)

@@ -17,6 +17,8 @@ from src.models.knowledge_base import (
     Risk,
     RiskStatus,
 )
+from src.models.project import Project
+from src.models.workspace_member import WorkspaceMember
 
 
 class KnowledgeRepository:
@@ -152,8 +154,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[Requirement]:
-        return await self._list(Requirement, project_id, meeting_id, status, limit=limit, offset=offset)
+        return await self._list(Requirement, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
 
     async def list_action_items(
         self,
@@ -162,8 +165,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[ActionItem]:
-        return await self._list(ActionItem, project_id, meeting_id, status, limit=limit, offset=offset)
+        return await self._list(ActionItem, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
 
     async def list_decisions(
         self,
@@ -172,8 +176,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[Decision]:
-        return await self._list(Decision, project_id, meeting_id, status, limit=limit, offset=offset)
+        return await self._list(Decision, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
 
     async def list_risks(
         self,
@@ -182,8 +187,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[Risk]:
-        return await self._list(Risk, project_id, meeting_id, status, limit=limit, offset=offset)
+        return await self._list(Risk, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
 
     async def list_questions(
         self,
@@ -192,8 +198,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[Question]:
-        return await self._list(Question, project_id, meeting_id, status, limit=limit, offset=offset)
+        return await self._list(Question, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
 
     async def _list(
         self,
@@ -203,6 +210,7 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ):
         query = select(model).options(
             joinedload(model.meeting),
@@ -214,6 +222,14 @@ class KnowledgeRepository:
             query = query.where(model.meeting_id == meeting_id)
         if status is not None:
             query = query.where(model.status == status)
+        if user_id is not None:
+            query = query.join(model.project).where(
+                Project.workspace_id.in_(
+                    select(WorkspaceMember.workspace_id).where(
+                        WorkspaceMember.user_id == user_id
+                    )
+                )
+            )
         query = query.order_by(model.created_at.desc()).limit(limit).offset(offset)
         result = await self._db.execute(query)
         return list(result.unique().scalars().all())

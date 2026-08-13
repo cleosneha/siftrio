@@ -27,6 +27,7 @@ async def create_project(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id) if request.state.user else None
+    await MembershipService(db).assert_workspace_boundary("client", body.client_id, user_id)
     service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
     data = await service.create(body.client_id, body.name, body.description, user_id=user_id)
     return BaseResponse(message="Project created successfully", data=data)
@@ -54,7 +55,7 @@ async def get_project(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_project_access(project_id, user_id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
     service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
     data = await service.get_by_id(project_id)
     if data is None:

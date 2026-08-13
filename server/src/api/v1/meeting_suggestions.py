@@ -20,11 +20,12 @@ router = APIRouter(
 
 
 async def _assert_meeting_access(meeting_id: UUID, request: Request, db: AsyncSession) -> None:
+    user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Meeting not found")
-    user_id = UUID(request.state.user.id)
     await MembershipService(db).assert_meeting_access(meeting, user_id)
 
 

@@ -28,6 +28,7 @@ async def get_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
     service = WorkspaceJiraService(db)
     data = await service.get_integration(workspace_id)
@@ -43,6 +44,7 @@ async def connect_workspace_jira_redirect(
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
     service = WorkspaceJiraService(db)
     url = await service.get_or_create_oauth_url(workspace_id, user_id)
@@ -56,6 +58,7 @@ async def connect_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
     service = WorkspaceJiraService(db)
     url = await service.get_or_create_oauth_url(workspace_id, user_id)
@@ -95,6 +98,7 @@ async def refresh_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
     service = WorkspaceJiraService(db)
     data = await service.refresh_token(workspace_id)
@@ -108,6 +112,7 @@ async def list_jira_sites(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
     service = WorkspaceJiraService(db)
     data = await service.get_sites(workspace_id)
@@ -121,6 +126,7 @@ async def disconnect_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     await MembershipService(db).assert_workspace_access(workspace_id, user_id)
 
     service = WorkspaceJiraService(db)

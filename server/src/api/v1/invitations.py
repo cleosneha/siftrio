@@ -28,18 +28,23 @@ async def create_invitation(
     user_id = UUID(request.state.user.id)
     service = InvitationService(db)
     rtype = ResourceType(resource_type)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary(rtype.value, resource_id, user_id)
     data = await service.invite(body.email, rtype, resource_id, user_id)
     return BaseResponse(message="Invitation sent successfully.", data=data)
 
 
 @router.get("", response_model=BaseResponse)
 async def list_pending_invitations(
+    request: Request,
     resource_type: str = Query(...),
     resource_id: UUID = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     service = InvitationService(db)
     rtype = ResourceType(resource_type)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary(rtype.value, resource_id, UUID(request.state.user.id))
     data = await service.list_pending(rtype, resource_id)
     return BaseResponse(data=data)
 

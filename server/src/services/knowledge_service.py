@@ -120,8 +120,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_requirements(project_id, meeting_id, status, limit=limit, offset=offset)
+        entities = await self.repo.list_requirements(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
         return [self._validate(r, RequirementResponse) for r in entities]
 
     async def list_action_items(
@@ -131,8 +132,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_action_items(project_id, meeting_id, status, limit=limit, offset=offset)
+        entities = await self.repo.list_action_items(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
         return [self._validate(r, ActionItemResponse) for r in entities]
 
     async def list_decisions(
@@ -142,8 +144,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_decisions(project_id, meeting_id, status, limit=limit, offset=offset)
+        entities = await self.repo.list_decisions(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
         return [self._validate(r, DecisionResponse) for r in entities]
 
     async def list_risks(
@@ -153,8 +156,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_risks(project_id, meeting_id, status, limit=limit, offset=offset)
+        entities = await self.repo.list_risks(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
         return [self._validate(r, RiskResponse) for r in entities]
 
     async def list_questions(
@@ -164,8 +168,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        user_id: UUID | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_questions(project_id, meeting_id, status, limit=limit, offset=offset)
+        entities = await self.repo.list_questions(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
         return [self._validate(r, QuestionResponse) for r in entities]
 
     async def get_requirement(self, entity_id: UUID) -> dict | None:

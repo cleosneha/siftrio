@@ -39,11 +39,21 @@ class ProjectRepository:
         return list(result.scalars().all())
 
     async def list_by_user_id(self, user_id: UUID, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Project]:
+        from src.models.client import Client
         from src.models.project_member import ProjectMember
+        from src.models.workspace_member import WorkspaceMember
         query = (
             select(Project)
             .join(ProjectMember, ProjectMember.project_id == Project.id)
-            .where(ProjectMember.user_id == user_id)
+            .join(Client, Client.id == Project.client_id)
+            .where(
+                ProjectMember.user_id == user_id,
+                Client.workspace_id.in_(
+                    select(WorkspaceMember.workspace_id).where(
+                        WorkspaceMember.user_id == user_id
+                    )
+                ),
+            )
             .distinct()
         )
         if client_id is not None:

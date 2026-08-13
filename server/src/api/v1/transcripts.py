@@ -36,6 +36,10 @@ async def upload_transcript(
     content = await file.read()
     transcript_text = content.decode("utf-8")
 
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
+
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(

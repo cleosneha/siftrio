@@ -23,6 +23,7 @@ async def list_workspace_members(
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
     service = MembershipService(db)
+    await service.assert_workspace_boundary("workspace", workspace_id, user_id)
     await service.assert_workspace_access(workspace_id, user_id)
     data = await service.list_workspace_members(workspace_id)
     return BaseResponse(data=data)
@@ -36,6 +37,7 @@ async def list_client_members(
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
     service = MembershipService(db)
+    await service.assert_workspace_boundary("client", client_id, user_id)
     await service.assert_client_access(client_id, user_id)
     data = await service.list_client_members(client_id)
     return BaseResponse(data=data)
@@ -49,6 +51,7 @@ async def list_project_members(
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
     service = MembershipService(db)
+    await service.assert_workspace_boundary("project", project_id, user_id)
     await service.assert_project_access(project_id, user_id)
     data = await service.list_project_members(project_id)
     return BaseResponse(data=data)
@@ -63,6 +66,7 @@ async def remove_workspace_member(
 ) -> BaseResponse:
     current_user_id = UUID(request.state.user.id)
     service = MembershipService(db)
+    await service.assert_workspace_boundary("workspace", workspace_id, current_user_id)
     await service.assert_workspace_access(workspace_id, current_user_id)
     await service.remove_workspace_member(workspace_id, user_id)
     await db.commit()
@@ -78,6 +82,7 @@ async def remove_client_member(
 ) -> BaseResponse:
     current_user_id = UUID(request.state.user.id)
     service = MembershipService(db)
+    await service.assert_workspace_boundary("client", client_id, current_user_id)
     await service.assert_client_access(client_id, current_user_id)
     await service.remove_client_member(client_id, user_id)
     await db.commit()
@@ -93,6 +98,7 @@ async def remove_project_member(
 ) -> BaseResponse:
     current_user_id = UUID(request.state.user.id)
     service = MembershipService(db)
+    await service.assert_workspace_boundary("project", project_id, current_user_id)
     await service.assert_project_access(project_id, current_user_id)
     await service.remove_project_member(project_id, user_id)
     await db.commit()

@@ -27,6 +27,7 @@ async def create_client(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id) if request.state.user else None
+    await MembershipService(db).assert_workspace_boundary("workspace", body.workspace_id, user_id)
     service = ClientService(db, ClientRepository(db), WorkspaceRepository(db))
     data = await service.create(body.workspace_id, body.name, body.description, user_id=user_id)
     return BaseResponse(message="Client created successfully", data=data)
@@ -54,7 +55,7 @@ async def get_client(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_client_access(client_id, user_id)
+    await MembershipService(db).assert_workspace_boundary("client", client_id, user_id)
     service = ClientService(db, ClientRepository(db), WorkspaceRepository(db))
     data = await service.get_by_id(client_id)
     if data is None:

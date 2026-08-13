@@ -51,6 +51,7 @@ class ClientRepository:
     ) -> list[tuple[Client, int]]:
         from src.models.client_member import ClientMember
         from src.models.project_member import ProjectMember
+        from src.models.workspace_member import WorkspaceMember
         subq = (
             select(func.count(Project.id))
             .where(Project.client_id == Client.id)
@@ -70,8 +71,12 @@ class ClientRepository:
                 Project.client_id == Client.id,
             )
         )
+        user_workspaces = select(WorkspaceMember.workspace_id).where(
+            WorkspaceMember.user_id == user_id
+        )
         query = select(Client, subq.label("project_count")).where(
-            client_member_exists | project_member_exists
+            Client.workspace_id.in_(user_workspaces),
+            client_member_exists | project_member_exists,
         )
         if workspace_id is not None:
             query = query.where(Client.workspace_id == workspace_id)

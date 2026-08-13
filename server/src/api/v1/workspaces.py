@@ -58,12 +58,10 @@ async def get_workspace(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
-    repo = WorkspaceRepository(db)
-    workspace = await repo.get_by_id(workspace_id)
-    if workspace is None:
-        return BaseResponse(success=False, message="Workspace not found", data=None)
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
+    repo = WorkspaceRepository(db)
+    workspace = await repo.get_by_id(workspace_id)
     data = WorkspaceResponse.model_validate(workspace).model_dump()
     return BaseResponse(data=data)

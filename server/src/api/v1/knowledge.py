@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -17,6 +17,7 @@ from src.schemas.knowledge_schema import (
     RiskUpdate,
 )
 from src.services.knowledge_service import KnowledgeService
+from src.services.membership_service import MembershipService
 from src.utils.uuid_validator import parse_optional_uuid
 
 router = APIRouter(
@@ -43,6 +44,7 @@ def _entity_response(data: dict | None, label: str) -> BaseResponse:
 
 @router.get("/requirements", response_model=BaseResponse)
 async def list_requirements(
+    request: Request,
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
@@ -55,6 +57,7 @@ async def list_requirements(
         parse_optional_uuid(project_id, "project_id") if project_id else None,
         parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
         status, limit=limit, offset=offset,
+        user_id=UUID(request.state.user.id),
     )
     return BaseResponse(data=data)
 
@@ -62,8 +65,10 @@ async def list_requirements(
 @router.get("/requirements/{entity_id}", response_model=BaseResponse)
 async def get_requirement(
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("requirement", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     return _entity_response(await service.get_requirement(entity_id), "Requirement")
 
@@ -72,8 +77,10 @@ async def get_requirement(
 async def update_requirement(
     body: RequirementUpdate,
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("requirement", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     data = await service.update_requirement(
         entity_id, body.model_dump(exclude_none=True)
@@ -83,6 +90,7 @@ async def update_requirement(
 
 @router.get("/action-items", response_model=BaseResponse)
 async def list_action_items(
+    request: Request,
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
@@ -95,6 +103,7 @@ async def list_action_items(
         parse_optional_uuid(project_id, "project_id") if project_id else None,
         parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
         status, limit=limit, offset=offset,
+        user_id=UUID(request.state.user.id),
     )
     return BaseResponse(data=data)
 
@@ -102,8 +111,10 @@ async def list_action_items(
 @router.get("/action-items/{entity_id}", response_model=BaseResponse)
 async def get_action_item(
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("action_item", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     return _entity_response(await service.get_action_item(entity_id), "Action item")
 
@@ -112,8 +123,10 @@ async def get_action_item(
 async def update_action_item(
     body: ActionItemUpdate,
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("action_item", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     data = await service.update_action_item(
         entity_id, body.model_dump(exclude_none=True)
@@ -123,6 +136,7 @@ async def update_action_item(
 
 @router.get("/decisions", response_model=BaseResponse)
 async def list_decisions(
+    request: Request,
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
@@ -135,6 +149,7 @@ async def list_decisions(
         parse_optional_uuid(project_id, "project_id") if project_id else None,
         parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
         status, limit=limit, offset=offset,
+        user_id=UUID(request.state.user.id),
     )
     return BaseResponse(data=data)
 
@@ -142,8 +157,10 @@ async def list_decisions(
 @router.get("/decisions/{entity_id}", response_model=BaseResponse)
 async def get_decision(
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("decision", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     return _entity_response(await service.get_decision(entity_id), "Decision")
 
@@ -152,8 +169,10 @@ async def get_decision(
 async def update_decision(
     body: DecisionUpdate,
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("decision", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     data = await service.update_decision(
         entity_id, body.model_dump(exclude_none=True)
@@ -163,6 +182,7 @@ async def update_decision(
 
 @router.get("/risks", response_model=BaseResponse)
 async def list_risks(
+    request: Request,
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
@@ -175,6 +195,7 @@ async def list_risks(
         parse_optional_uuid(project_id, "project_id") if project_id else None,
         parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
         status, limit=limit, offset=offset,
+        user_id=UUID(request.state.user.id),
     )
     return BaseResponse(data=data)
 
@@ -182,8 +203,10 @@ async def list_risks(
 @router.get("/risks/{entity_id}", response_model=BaseResponse)
 async def get_risk(
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("risk", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     return _entity_response(await service.get_risk(entity_id), "Risk")
 
@@ -192,8 +215,10 @@ async def get_risk(
 async def update_risk(
     body: RiskUpdate,
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("risk", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     data = await service.update_risk(
         entity_id, body.model_dump(exclude_none=True)
@@ -203,6 +228,7 @@ async def update_risk(
 
 @router.get("/questions", response_model=BaseResponse)
 async def list_questions(
+    request: Request,
     project_id: str | None = Query(None),
     meeting_id: str | None = Query(None),
     status: str | None = Query(None),
@@ -215,6 +241,7 @@ async def list_questions(
         parse_optional_uuid(project_id, "project_id") if project_id else None,
         parse_optional_uuid(meeting_id, "meeting_id") if meeting_id else None,
         status, limit=limit, offset=offset,
+        user_id=UUID(request.state.user.id),
     )
     return BaseResponse(data=data)
 
@@ -222,8 +249,10 @@ async def list_questions(
 @router.get("/questions/{entity_id}", response_model=BaseResponse)
 async def get_question(
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("question", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     return _entity_response(await service.get_question(entity_id), "Question")
 
@@ -232,8 +261,10 @@ async def get_question(
 async def update_question(
     body: QuestionUpdate,
     entity_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    await MembershipService(db).assert_workspace_boundary("question", entity_id, UUID(request.state.user.id))
     service = _get_knowledge_service(db)
     data = await service.update_question(
         entity_id, body.model_dump(exclude_none=True)

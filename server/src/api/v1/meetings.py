@@ -42,8 +42,10 @@ async def create_meeting(
     user_id = UUID(request.state.user.id) if request.state.user else None
     membership = MembershipService(db)
     if body.project_id:
+        await membership.assert_workspace_boundary("project", UUID(body.project_id), user_id)
         await membership.assert_project_access(UUID(body.project_id), user_id)
     elif body.client_id:
+        await membership.assert_workspace_boundary("client", UUID(body.client_id), user_id)
         await membership.assert_client_access(UUID(body.client_id), user_id)
 
     auth_service = AuthService(AuthRepository(db))
@@ -80,11 +82,12 @@ async def get_meeting(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
     meeting = await MeetingRepository(db).get_by_id(meeting_id)
     if meeting is None:
         return BaseResponse(success=False, message="Meeting not found", data=None)
-    user_id = UUID(request.state.user.id)
-    from src.services.membership_service import MembershipService
     await MembershipService(db).assert_meeting_access(meeting, user_id)
     data = MeetingResponse.model_validate(meeting).model_dump()
     return BaseResponse(data=data)
@@ -110,13 +113,13 @@ async def list_meetings(
 
     if pr_id:
         await membership.assert_project_access(pr_id, user_id)
-        meetings = await repo.list_by_project(pr_id, limit=limit, offset=offset)
+        meetings = await repo.list_by_project(pr_id, limit=limit, offset=offset, user_id=user_id)
     elif miscellaneous and cl_id:
         await membership.assert_client_access(cl_id, user_id)
-        meetings = await repo.list_miscellaneous_by_client(cl_id, limit=limit, offset=offset)
+        meetings = await repo.list_miscellaneous_by_client(cl_id, limit=limit, offset=offset, user_id=user_id)
     elif cl_id:
         await membership.assert_client_access(cl_id, user_id)
-        meetings = await repo.list_by_client(cl_id, limit=limit, offset=offset)
+        meetings = await repo.list_by_client(cl_id, limit=limit, offset=offset, user_id=user_id)
     else:
         return BaseResponse(data=[])
 
@@ -135,6 +138,7 @@ async def get_transcript_status(
         return BaseResponse(success=False, message="Meeting not found", data=None)
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
     await MembershipService(db).assert_meeting_access(meeting, user_id)
     return BaseResponse(
         data=TranscriptStatusResponse(
@@ -155,6 +159,7 @@ async def get_ingestion_status(
         return BaseResponse(success=False, message="Meeting not found", data=None)
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
     await MembershipService(db).assert_meeting_access(meeting, user_id)
     return BaseResponse(
         data={
@@ -176,6 +181,7 @@ async def retry_transcript(
         return BaseResponse(success=False, message="Meeting not found", data=None)
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
     await MembershipService(db).assert_meeting_access(meeting, user_id)
 
     if not meeting.fireflies_meeting_id:
@@ -249,6 +255,7 @@ async def delete_meeting(
         return BaseResponse(success=False, message="Meeting not found", data=None)
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
+    await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
     await MembershipService(db).assert_meeting_access(meeting, user_id)
     repo = MeetingRepository(db)
     await repo.delete(meeting_id)

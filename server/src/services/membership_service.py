@@ -15,6 +15,7 @@ from src.repositories.client_member_repository import ClientMemberRepository
 from src.repositories.client_repository import ClientRepository
 from src.repositories.project_member_repository import ProjectMemberRepository
 from src.repositories.project_repository import ProjectRepository
+from src.repositories.resource_repository import ResourceRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.schemas.membership_schema import MemberResponse
 
@@ -27,6 +28,17 @@ class MembershipService:
         self.project_member_repo = ProjectMemberRepository(db)
         self.client_repo = ClientRepository(db)
         self.project_repo = ProjectRepository(db)
+        self.resource_repo = ResourceRepository(db)
+
+    async def assert_workspace_boundary(
+        self, resource_type: str, resource_id: UUID, user_id: UUID
+    ) -> None:
+        workspace_id = await self.resource_repo.get_workspace_id(resource_type, resource_id)
+        if workspace_id is None:
+            raise HTTPException(status_code=404, detail="Resource not found")
+        member = await self.ws_member_repo.get_by_user_and_workspace(workspace_id, user_id)
+        if member is None:
+            raise HTTPException(status_code=404, detail="Access denied to this resource")
 
     async def get_effective_role(
         self, level: str, resource_id: UUID, user_id: UUID
