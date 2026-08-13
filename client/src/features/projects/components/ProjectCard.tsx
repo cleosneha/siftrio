@@ -33,6 +33,7 @@ export function ProjectCard({ client, onCreateProject }: ProjectCardProps) {
             variant="ghost"
             size="sm"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onCreateProject(client.id);
             }}

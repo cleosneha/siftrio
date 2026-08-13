@@ -2,7 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams, notFound } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+  notFound,
+} from "next/navigation";
 import { Menu, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -45,10 +50,15 @@ export default function WorkspacePage() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"clients" | "members">("clients");
 
-  const { data: workspaceData, isLoading: workspaceLoading } = useWorkspace(workspaceId);
+  const { data: workspaceData, isLoading: workspaceLoading } =
+    useWorkspace(workspaceId);
   const { data: clientsData } = useClients(workspaceId);
-  const { data: membersData, isLoading: membersLoading } = useWorkspaceMembers(workspaceId);
-  const { data: invitationsData } = usePendingInvitations("workspace", workspaceId);
+  const { data: membersData, isLoading: membersLoading } =
+    useWorkspaceMembers(workspaceId);
+  const { data: invitationsData } = usePendingInvitations(
+    "workspace",
+    workspaceId,
+  );
   const { mutate: removeMember } = useRemoveWorkspaceMember();
   useWorkspaceJira(workspaceId);
   const router = useRouter();
@@ -142,14 +152,16 @@ export default function WorkspacePage() {
             ) : (
               <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {clients.map((client) => (
-                  <ProjectCard
-                    key={client.id}
-                    client={client}
-                    onCreateProject={(clientId) => {
-                      setSelectedClientId(clientId);
-                      setShowCreateProjectModal(true);
-                    }}
-                  />
+                  <Link key={client.id} href={`/clients/${client.id}`}>
+                    <ProjectCard
+                      key={client.id}
+                      client={client}
+                      onCreateProject={(clientId) => {
+                        setSelectedClientId(clientId);
+                        setShowCreateProjectModal(true);
+                      }}
+                    />
+                  </Link>
                 ))}
               </div>
             )}
