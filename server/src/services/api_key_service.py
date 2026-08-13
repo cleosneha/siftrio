@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
+from src.models.base import APIKeyScope
 from src.repositories.api_key_repository import ApiKeyRepository
 from src.schemas.api_key_schema import ApiKeyCreatedResponse, ApiKeyResponse
 
@@ -15,7 +16,13 @@ class ApiKeyService:
         self.db = db
         self.repo = ApiKeyRepository(db)
 
-    async def create(self, user_id: UUID, name: str) -> ApiKeyCreatedResponse:
+    async def create(
+        self,
+        user_id: UUID,
+        name: str,
+        scope: APIKeyScope = APIKeyScope.READ,
+        workspace_id: UUID | None = None,
+    ) -> ApiKeyCreatedResponse:
         raw_secret = f"sk_live_{secrets.token_urlsafe(32)}"
         key_prefix = raw_secret[:12]
         hashed_secret = hashlib.sha256(raw_secret.encode()).hexdigest()
@@ -25,6 +32,8 @@ class ApiKeyService:
             name=name,
             key_prefix=key_prefix,
             hashed_secret=hashed_secret,
+            scope=scope,
+            workspace_id=workspace_id,
         )
         await self.db.commit()
 
@@ -33,6 +42,8 @@ class ApiKeyService:
             name=api_key.name,
             secret=raw_secret,
             key_prefix=api_key.key_prefix,
+            scope=api_key.scope,
+            workspace_id=api_key.workspace_id,
             created_at=api_key.created_at,
         )
 

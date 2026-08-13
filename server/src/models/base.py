@@ -13,7 +13,23 @@ class Base(DeclarativeBase):
 
 class MemberRole(str, Enum):
     OWNER = "owner"
+    ADMIN = "admin"
     MEMBER = "member"
+    VIEWER = "viewer"
+
+
+ROLE_RANK: dict[MemberRole, int] = {
+    MemberRole.VIEWER: 1,
+    MemberRole.MEMBER: 2,
+    MemberRole.ADMIN: 3,
+    MemberRole.OWNER: 4,
+}
+
+
+def rank(role: MemberRole | None) -> int:
+    if role is None:
+        return 0
+    return ROLE_RANK.get(role, 0)
 
 
 class Priority(str, Enum):
@@ -28,6 +44,12 @@ class SyncStatus(str, Enum):
     SYNCED = "synced"
     FAILED = "failed"
     CONFLICT = "conflict"
+
+
+class APIKeyScope(str, Enum):
+    READ = "read"
+    WRITE = "write"
+    ADMIN = "admin"
 
 
 class UUIDMixin:

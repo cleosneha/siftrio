@@ -56,3 +56,4 @@ async def require_authenticated_user(
     )
 
     request.state.user = user
+    request.state.effective_roles = {}

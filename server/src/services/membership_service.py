@@ -9,10 +9,12 @@ from src.models.client_member import ClientMember
 from src.models.project import Project
 from src.models.project_member import ProjectMember
 from src.models.workspace import Workspace
-from src.models.base import MemberRole
+from src.models.base import MemberRole, rank
 from src.models.workspace_member import WorkspaceMember
 from src.repositories.client_member_repository import ClientMemberRepository
+from src.repositories.client_repository import ClientRepository
 from src.repositories.project_member_repository import ProjectMemberRepository
+from src.repositories.project_repository import ProjectRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.schemas.membership_schema import MemberResponse
 
@@ -23,6 +25,31 @@ class MembershipService:
         self.ws_member_repo = WorkspaceMemberRepository(db)
         self.client_member_repo = ClientMemberRepository(db)
         self.project_member_repo = ProjectMemberRepository(db)
+        self.client_repo = ClientRepository(db)
+        self.project_repo = ProjectRepository(db)
+
+    async def get_effective_role(
+        self, level: str, resource_id: UUID, user_id: UUID
+    ) -> MemberRole | None:
+        """Highest role the user holds on the resource chain up to the workspace root."""
+        roles: list[MemberRole | None] = []
+        if level == "workspace":
+            m = await self.ws_member_repo.get_by_user_and_workspace(resource_id, user_id)
+            roles.append(m.role if m else None)
+        elif level == "client":
+            m = await self.client_member_repo.get_by_user_and_client(resource_id, user_id)
+            roles.append(m.role if m else None)
+            client = await self.client_repo.get_by_id(resource_id)
+            if client:
+                wm = await self.ws_member_repo.get_by_user_and_workspace(client.workspace_id, user_id)
+                roles.append(wm.role if wm else None)
+        elif level == "project":
+            m = await self.project_member_repo.get_by_user_and_project(resource_id, user_id)
+            roles.append(m.role if m else None)
+            project = await self.project_repo.get_by_id(resource_id)
+            if project:
+                roles.append(await self.get_effective_role("client", project.client_id, user_id))
+        return max(roles, key=rank, default=None)
 
     async def assert_workspace_access(self, workspace_id: UUID, user_id: UUID) -> None:
         result = await self.db.execute(
@@ -205,3 +232,21 @@ class MembershipService:
             data["full_name"] = user.full_name
             data["profile_picture"] = user.profile_picture
         return data
+
+
+class EffectiveRoleCache:
+    """Stored on request.state; one instance per HTTP request."""
+
+    def __init__(self, membership_service) -> None:
+        self._membership = membership_service
+        self._cache: dict[tuple[str, UUID], MemberRole] = {}
+
+    async def resolve(
+        self, level: str, resource_id: UUID, user_id: UUID
+    ) -> MemberRole:
+        key = (level, resource_id)
+        if key not in self._cache:
+            self._cache[key] = await self._membership.get_effective_role(
+                level, resource_id, user_id
+            )
+        return self._cache[key]

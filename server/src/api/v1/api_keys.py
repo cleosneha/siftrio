@@ -27,7 +27,7 @@ async def create_api_key(
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
     service = ApiKeyService(db)
-    result = await service.create(user_id, body.name)
+    result = await service.create(user_id, body.name, body.scope, body.workspace_id)
     return BaseResponse(
         message="API key created successfully. Copy the secret now — it will not be shown again.",
         data=result.model_dump(),

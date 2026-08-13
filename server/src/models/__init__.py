@@ -23,6 +23,7 @@ from src.models.project_integration import ProjectIntegration
 from src.models.external_user import ExternalUser
 from src.models.entity_integration import EntityIntegration
 from src.models.api_key import ApiKey
+from src.models.audit_event import RbacAuditEvent
 
 __all__ = [
     "Workspace",
@@ -48,4 +49,5 @@ __all__ = [
     "ExternalUser",
     "EntityIntegration",
     "ApiKey",
+    "RbacAuditEvent",
 ]
