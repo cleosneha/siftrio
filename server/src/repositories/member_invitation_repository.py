@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.base import MemberRole
 from src.models.member_invitation import (
     InvitationStatus,
     MemberInvitation,
@@ -23,6 +24,7 @@ class MemberInvitationRepository:
         invited_by: UUID | None,
         token: str,
         expires_at,
+        role: MemberRole = MemberRole.MEMBER,
     ) -> MemberInvitation:
         invitation = MemberInvitation(
             email=email,
@@ -33,11 +35,18 @@ class MemberInvitationRepository:
             token=token,
             expires_at=expires_at,
             status=InvitationStatus.PENDING,
+            role=role,
         )
         self._db.add(invitation)
         await self._db.flush()
         await self._db.refresh(invitation)
         return invitation
+
+    async def get_by_id(self, invitation_id: UUID) -> MemberInvitation | None:
+        result = await self._db.execute(
+            select(MemberInvitation).where(MemberInvitation.id == invitation_id)
+        )
+        return result.scalar_one_or_none()
 
     async def get_by_token(self, token: str) -> MemberInvitation | None:
         result = await self._db.execute(

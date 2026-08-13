@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.email.sender import sender
 from src.exceptions.base import BaseAPIException
+from src.models.base import MemberRole, rank
 from src.models.member_invitation import (
     InvitationStatus,
     ResourceType,
@@ -20,6 +21,7 @@ from src.repositories.project_repository import ProjectRepository
 from src.repositories.client_repository import ClientRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.member_invitation_schema import InvitationResponse, PendingInvitationItem
+from src.services.membership_service import MembershipService
 
 
 INVITATION_EXPIRY_DAYS = 7
@@ -36,6 +38,11 @@ class InvitationService:
         self.ws_repo = WorkspaceRepository(db)
         self.client_repo = ClientRepository(db)
         self.project_repo = ProjectRepository(db)
+        self.membership = MembershipService(db)
+
+    def _emit_audit_event(self, event: str, **context) -> None:
+        # TODO(phase3): wire into audit service
+        pass
 
     async def invite(
         self,
@@ -43,7 +50,22 @@ class InvitationService:
         resource_type: ResourceType,
         resource_id: UUID,
         invited_by: UUID,
+        assigned_role: MemberRole = MemberRole.MEMBER,
     ) -> dict:
+        inviter_role = await self.membership.get_effective_role(
+            resource_type.value, resource_id, invited_by
+        )
+        if rank(inviter_role) < rank(MemberRole.ADMIN):
+            raise BaseAPIException(
+                message="Only admins and above can invite members",
+                status_code=403,
+            )
+        if rank(assigned_role) >= rank(inviter_role):
+            raise BaseAPIException(
+                message="Invited role must be strictly below the inviter's role",
+                status_code=403,
+            )
+
         user = await self.auth_repo.get_user_by_email(email)
         if user is None:
             raise BaseAPIException(
@@ -82,9 +104,18 @@ class InvitationService:
             invited_by=invited_by,
             token=token,
             expires_at=expires_at,
+            role=assigned_role,
         )
 
         await self.db.commit()
+
+        self._emit_audit_event(
+            "member.invited",
+            resource_type=resource_type.value,
+            resource_id=resource_id,
+            actor_user_id=invited_by,
+            assigned_role=assigned_role,
+        )
 
         resource_name = await self._get_resource_name(resource_type, resource_id)
         inviter = await self.auth_repo.get_user_by_id(invited_by)
@@ -130,13 +161,14 @@ class InvitationService:
             )
 
         now = datetime.now(timezone.utc)
+        role = invitation.role
 
         if invitation.resource_type == ResourceType.WORKSPACE:
-            await self._accept_workspace(invitation.resource_id, user_id)
+            await self._accept_workspace(invitation.resource_id, user_id, role)
         elif invitation.resource_type == ResourceType.CLIENT:
-            await self._accept_client(invitation.resource_id, user_id)
+            await self._accept_client(invitation.resource_id, user_id, role)
         elif invitation.resource_type == ResourceType.PROJECT:
-            await self._accept_project(invitation.resource_id, user_id)
+            await self._accept_project(invitation.resource_id, user_id, role)
 
         invitation.status = InvitationStatus.ACCEPTED
         invitation.accepted_at = now
@@ -145,35 +177,77 @@ class InvitationService:
 
         return InvitationResponse.model_validate(invitation).model_dump()
 
-    async def _accept_workspace(self, workspace_id: UUID, user_id: UUID) -> None:
+    async def revoke(self, invitation_id: UUID, user_id: UUID) -> dict:
+        invitation = await self.invitation_repo.get_by_id(invitation_id)
+        if invitation is None:
+            raise BaseAPIException(message="Invitation not found.", status_code=404)
+
+        if invitation.status == InvitationStatus.ACCEPTED:
+            raise BaseAPIException(
+                message="This invitation has already been accepted.",
+                status_code=409,
+            )
+
+        inviter_role = await self.membership.get_effective_role(
+            invitation.resource_type.value, invitation.resource_id, user_id
+        )
+        is_inviter = invitation.invited_by == user_id
+        if not is_inviter and rank(inviter_role) < rank(MemberRole.ADMIN):
+            raise BaseAPIException(
+                message="Only the inviter or an admin can revoke this invitation",
+                status_code=403,
+            )
+
+        if invitation.status != InvitationStatus.REVOKED:
+            invitation.status = InvitationStatus.REVOKED
+            await self.db.flush()
+            await self.db.commit()
+
+            self._emit_audit_event(
+                "member.invite_revoked",
+                resource_type=invitation.resource_type.value,
+                resource_id=invitation.resource_id,
+                actor_user_id=user_id,
+                revoked_role=invitation.role,
+            )
+
+        return InvitationResponse.model_validate(invitation).model_dump()
+
+    async def _accept_workspace(
+        self, workspace_id: UUID, user_id: UUID, role: MemberRole
+    ) -> None:
         existing = await self.ws_member_repo.get_by_user_and_workspace(workspace_id, user_id)
         if existing is None:
-            await self.ws_member_repo.create(workspace_id, user_id)
+            await self.ws_member_repo.create(workspace_id, user_id, role)
 
-    async def _accept_client(self, client_id: UUID, user_id: UUID) -> None:
+    async def _accept_client(
+        self, client_id: UUID, user_id: UUID, role: MemberRole
+    ) -> None:
         client = await self.client_repo.get_by_id(client_id)
         if client is None:
             raise BaseAPIException(message="Client not found.", status_code=404)
 
-        await self._accept_workspace(client.workspace_id, user_id)
+        await self._accept_workspace(client.workspace_id, user_id, role)
 
         existing = await self.client_member_repo.get_by_user_and_client(client_id, user_id)
         if existing is None:
-            await self.client_member_repo.create(client_id, user_id)
+            await self.client_member_repo.create(client_id, user_id, role)
 
-    async def _accept_project(self, project_id: UUID, user_id: UUID) -> None:
+    async def _accept_project(
+        self, project_id: UUID, user_id: UUID, role: MemberRole
+    ) -> None:
         project = await self.project_repo.get_by_id(project_id)
         if project is None:
             raise BaseAPIException(message="Project not found.", status_code=404)
 
         client = await self.client_repo.get_by_id(project.client_id)
         if client is not None:
-            await self._accept_workspace(client.workspace_id, user_id)
-            await self._accept_client(project.client_id, user_id)
+            await self._accept_workspace(client.workspace_id, user_id, role)
+            await self._accept_client(project.client_id, user_id, role)
 
         existing = await self.project_member_repo.get_by_user_and_project(project_id, user_id)
         if existing is None:
-            await self.project_member_repo.create(project_id, user_id)
+            await self.project_member_repo.create(project_id, user_id, role)
 
     async def list_pending(self, resource_type: ResourceType, resource_id: UUID) -> list[dict]:
         invitations = await self.invitation_repo.get_by_resource(resource_type, resource_id)

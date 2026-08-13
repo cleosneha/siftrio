@@ -3,9 +3,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from src.models.base import MemberRole
+
 
 class InviteMemberRequest(BaseModel):
     email: str
+    role: MemberRole = MemberRole.MEMBER
 
 
 class InvitationResponse(BaseModel):
@@ -15,6 +18,7 @@ class InvitationResponse(BaseModel):
     email: str
     resource_type: str
     resource_id: UUID
+    role: MemberRole
     status: str
     token: str
     expires_at: datetime
@@ -29,6 +33,7 @@ class PendingInvitationItem(BaseModel):
     email: str
     resource_type: str
     resource_id: UUID
+    role: MemberRole
     status: str
     expires_at: datetime
     created_at: datetime | None = None

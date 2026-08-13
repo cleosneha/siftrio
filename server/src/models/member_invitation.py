@@ -6,7 +6,7 @@ from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, String, Text, Uniq
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base, TimestampMixin, UUIDMixin
+from src.models.base import Base, MemberRole, TimestampMixin, UUIDMixin
 
 
 class InvitationStatus(str, Enum):
@@ -51,6 +51,12 @@ class MemberInvitation(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
+    )
+
+    role: Mapped[MemberRole] = mapped_column(
+        SQLEnum(MemberRole),
+        nullable=False,
+        default=MemberRole.MEMBER,
     )
 
     token: Mapped[str] = mapped_column(

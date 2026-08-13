@@ -30,7 +30,7 @@ async def create_invitation(
     rtype = ResourceType(resource_type)
     from src.services.membership_service import MembershipService
     await MembershipService(db).assert_workspace_boundary(rtype.value, resource_id, user_id)
-    data = await service.invite(body.email, rtype, resource_id, user_id)
+    data = await service.invite(body.email, rtype, resource_id, user_id, body.role)
     return BaseResponse(message="Invitation sent successfully.", data=data)
 
 
@@ -59,3 +59,15 @@ async def accept_invitation(
     service = InvitationService(db)
     data = await service.accept(token, user_id)
     return BaseResponse(message="You have successfully joined.", data=data)
+
+
+@router.delete("/{invitation_id}", response_model=BaseResponse)
+async def revoke_invitation(
+    invitation_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    service = InvitationService(db)
+    data = await service.revoke(invitation_id, user_id)
+    return BaseResponse(message="Invitation revoked successfully.", data=data)
