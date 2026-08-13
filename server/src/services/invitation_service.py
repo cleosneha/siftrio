@@ -2,6 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
@@ -82,32 +83,47 @@ class InvitationService:
                 status_code=409,
             )
 
-        existing = await self.invitation_repo.get_pending_by_email_and_resource(
+        token = secrets.token_urlsafe(48)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=INVITATION_EXPIRY_DAYS)
+
+        existing = await self.invitation_repo.get_by_email_and_resource(
             email, resource_type, resource_id
         )
         if existing is not None:
-            if existing.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-                existing.status = InvitationStatus.EXPIRED
-                await self.db.flush()
-            else:
+            if (
+                existing.status == InvitationStatus.PENDING
+                and existing.expires_at.replace(tzinfo=timezone.utc)
+                >= datetime.now(timezone.utc)
+            ):
                 raise BaseAPIException(
                     message="An invitation has already been sent to this user.",
                     status_code=409,
                 )
-
-        token = secrets.token_urlsafe(48)
-        expires_at = datetime.now(timezone.utc) + timedelta(days=INVITATION_EXPIRY_DAYS)
-
-        invitation = await self.invitation_repo.create(
-            email=email,
-            user_id=user.id,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            invited_by=invited_by,
-            token=token,
-            expires_at=expires_at,
-            role=assigned_role,
-        )
+            existing.status = InvitationStatus.PENDING
+            existing.token = token
+            existing.expires_at = expires_at
+            existing.invited_by = invited_by
+            existing.role = assigned_role
+            existing.accepted_at = None
+            await self.db.flush()
+            invitation = existing
+        else:
+            try:
+                invitation = await self.invitation_repo.create(
+                    email=email,
+                    user_id=user.id,
+                    resource_type=resource_type,
+                    resource_id=resource_id,
+                    invited_by=invited_by,
+                    token=token,
+                    expires_at=expires_at,
+                    role=assigned_role,
+                )
+            except IntegrityError:
+                raise BaseAPIException(
+                    message="An invitation has already been sent to this user.",
+                    status_code=409,
+                )
 
         ws_id = await resolve_workspace_id(self.db, resource_type.value, resource_id)
         if ws_id is not None:
@@ -151,12 +167,6 @@ class InvitationService:
                 status_code=409,
             )
 
-        if invitation.status == InvitationStatus.REVOKED:
-            raise BaseAPIException(
-                message="This invitation has been revoked.",
-                status_code=410,
-            )
-
         if invitation.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
             invitation.status = InvitationStatus.EXPIRED
             await self.db.flush()
@@ -182,7 +192,7 @@ class InvitationService:
 
         return InvitationResponse.model_validate(invitation).model_dump()
 
-    async def revoke(self, invitation_id: UUID, user_id: UUID) -> dict:
+    async def withdraw(self, invitation_id: UUID, user_id: UUID) -> None:
         invitation = await self.invitation_repo.get_by_id(invitation_id)
         if invitation is None:
             raise BaseAPIException(message="Invitation not found.", status_code=404)
@@ -199,28 +209,46 @@ class InvitationService:
         is_inviter = invitation.invited_by == user_id
         if not is_inviter and rank(inviter_role) < rank(MemberRole.ADMIN):
             raise BaseAPIException(
-                message="Only the inviter or an admin can revoke this invitation",
+                message="Only the inviter or an admin can withdraw this invitation",
                 status_code=403,
             )
 
-        if invitation.status != InvitationStatus.REVOKED:
-            invitation.status = InvitationStatus.REVOKED
-            ws_id = await resolve_workspace_id(
-                self.db, invitation.resource_type.value, invitation.resource_id
+        ws_id = await resolve_workspace_id(
+            self.db, invitation.resource_type.value, invitation.resource_id
+        )
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.invite_withdrawn",
+                resource_type=invitation.resource_type.value,
+                resource_id=invitation.resource_id,
+                actor_user_id=user_id,
+                new_value={
+                    "status": "withdrawn",
+                    "role": invitation.role.value,
+                    "email": invitation.email,
+                },
             )
-            if ws_id is not None:
-                AuditService(self.db).record(
-                    workspace_id=ws_id,
-                    action="member.invite_revoked",
-                    resource_type=invitation.resource_type.value,
-                    resource_id=invitation.resource_id,
-                    actor_user_id=user_id,
-                    new_value={"status": "revoked", "role": invitation.role.value},
-                )
-            await self.db.flush()
-            await self.db.commit()
 
-        return InvitationResponse.model_validate(invitation).model_dump()
+        resource_name = await self._get_resource_name(
+            invitation.resource_type, invitation.resource_id
+        )
+        revoker = await self.auth_repo.get_user_by_id(user_id)
+        revoker_name = revoker.full_name if revoker else "Someone"
+
+        await self.invitation_repo.delete(invitation)
+        await self.db.commit()
+
+        await sender.send(
+            to_email=invitation.email,
+            subject=f"Your invitation to join {resource_name} has been withdrawn",
+            html_body=self._render_withdraw_html(
+                revoker_name, resource_name, invitation.resource_type.value
+            ),
+            text_body=self._render_withdraw_text(
+                revoker_name, resource_name, invitation.resource_type.value
+            ),
+        )
 
     async def _accept_workspace(
         self, workspace_id: UUID, user_id: UUID, role: MemberRole
@@ -308,4 +336,24 @@ class InvitationService:
         text = text.replace("{{ resource_type }}", resource_type)
         text = text.replace("{{ accept_url }}", accept_url)
         text = text.replace("{{ expires_at }}", expires_at.strftime("%B %d, %Y"))
+        return text
+
+    def _render_withdraw_html(self, inviter_name: str, resource_name: str, resource_type: str) -> str:
+        from pathlib import Path
+
+        template_path = Path(__file__).parent.parent / "email" / "templates" / "withdraw_invite.html"
+        html = template_path.read_text(encoding="utf-8")
+        html = html.replace("{{ inviter_name }}", inviter_name)
+        html = html.replace("{{ resource_name }}", resource_name)
+        html = html.replace("{{ resource_type }}", resource_type)
+        return html
+
+    def _render_withdraw_text(self, inviter_name: str, resource_name: str, resource_type: str) -> str:
+        from pathlib import Path
+
+        template_path = Path(__file__).parent.parent / "email" / "templates" / "withdraw_invite.txt"
+        text = template_path.read_text(encoding="utf-8")
+        text = text.replace("{{ inviter_name }}", inviter_name)
+        text = text.replace("{{ resource_name }}", resource_name)
+        text = text.replace("{{ resource_type }}", resource_type)
         return text

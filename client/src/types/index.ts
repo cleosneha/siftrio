@@ -146,6 +146,7 @@ export interface PendingInvitation {
   email: string;
   resource_type: string;
   resource_id: string;
+  role: string;
   status: string;
   expires_at: string;
   created_at: string | null;
@@ -156,6 +157,7 @@ export interface Invitation {
   email: string;
   resource_type: string;
   resource_id: string;
+  role: string;
   status: string;
   token: string;
   expires_at: string;

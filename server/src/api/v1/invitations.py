@@ -62,12 +62,12 @@ async def accept_invitation(
 
 
 @router.delete("/{invitation_id}", response_model=BaseResponse)
-async def revoke_invitation(
+async def withdraw_invitation(
     invitation_id: UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
     service = InvitationService(db)
-    data = await service.revoke(invitation_id, user_id)
-    return BaseResponse(message="Invitation revoked successfully.", data=data)
+    await service.withdraw(invitation_id, user_id)
+    return BaseResponse(message="Invitation withdrawn successfully.")

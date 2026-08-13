@@ -19,12 +19,22 @@ import {
   FormControl,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toastFormErrors } from "@/lib/form";
 import { useInviteMember } from "@/features/invitations/hooks/useInvitations";
 import { useAuth } from "@/features/auth/AuthProvider";
 
+const INVITE_ROLES = ["admin", "member", "viewer"] as const;
+
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address"),
+  role: z.enum(INVITE_ROLES),
 });
 
 type InviteForm = z.infer<typeof inviteSchema>;
@@ -47,11 +57,11 @@ export function InviteMemberModal({ open, onClose, resourceType, resourceId }: I
 
   const form = useForm<InviteForm>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "" },
+    defaultValues: { email: "", role: "member" },
   });
 
   async function onSubmit(data: InviteForm) {
-    await inviteMutation.mutateAsync({ email: data.email });
+    await inviteMutation.mutateAsync({ email: data.email, role: data.role });
     form.reset();
     onClose();
   }
@@ -75,6 +85,29 @@ export function InviteMemberModal({ open, onClose, resourceType, resourceId }: I
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="colleague@company.com" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INVITE_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                 </FormItem>
               )}

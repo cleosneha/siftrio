@@ -1,14 +1,11 @@
 "use client";
 import { useState } from "react";
-import { Plus, UserMinus, Mail } from "lucide-react";
+import { Plus, UserMinus, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { TabBar } from "@/components/ui/tab-bar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InviteMemberModal } from "./InviteMemberModal";
+import { useWithdrawInvitation } from "@/features/invitations/hooks/useInvitations";
 import type { Member, PendingInvitation } from "@/types";
 
 interface MembersSectionProps {
@@ -31,6 +28,10 @@ export function MembersSection({
   isLoading,
 }: MembersSectionProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"active members" | "pending">(
+    "active members",
+  );
+  const withdrawInvitation = useWithdrawInvitation(resourceType, resourceId);
 
   if (isLoading) {
     return (
@@ -58,7 +59,62 @@ export function MembersSection({
           </div>
         </CardHeader>
         <CardContent>
-          {members.length === 0 && pendingInvitations.length === 0 ? (
+          <TabBar
+            className="mb-4"
+            tabs={[
+              { value: "active members", label: "Active Members" },
+              { value: "pending", label: "Pending Invitations" },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(value) =>
+              setActiveTab(value as "active members" | "pending")
+            }
+          />
+
+          {activeTab === "pending" ? (
+            pendingInvitations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No pending invitations.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {pendingInvitations.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="flex items-center justify-between gap-2 rounded-md border border-dashed px-3 py-2 opacity-60"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm">{inv.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Pending invitation
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs text-muted-foreground px-2">
+                        {inv.role}
+                      </span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={withdrawInvitation.isPending}
+                        onClick={() => withdrawInvitation.mutate(inv.id)}
+                      >
+                        {withdrawInvitation.isPending && (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        )}
+                        Withdraw
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : members.length === 0 ? (
             <p className="text-sm text-muted-foreground">No members yet.</p>
           ) : (
             <div className="space-y-2">
@@ -69,7 +125,8 @@ export function MembersSection({
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                      {(member.full_name ?? member.email)?.[0]?.toUpperCase() ?? "?"}
+                      {(member.full_name ?? member.email)?.[0]?.toUpperCase() ??
+                        "?"}
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">
@@ -86,31 +143,18 @@ export function MembersSection({
                     <span className="text-xs text-muted-foreground px-2">
                       {member.role}
                     </span>
-                    {onRemove && member.user_id !== currentUserId && member.role !== "owner" && (
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => onRemove(member.user_id)}
-                      >
-                        <UserMinus className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {pendingInvitations.map((inv) => (
-                <div
-                  key={inv.id}
-                  className="flex items-center justify-between rounded-md border border-dashed px-3 py-2 opacity-60"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm">{inv.email}</p>
-                      <p className="text-xs text-muted-foreground">Pending invitation</p>
-                    </div>
+                    {onRemove &&
+                      member.user_id !== currentUserId &&
+                      member.role !== "owner" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onRemove(member.user_id)}
+                        >
+                          <UserMinus className="h-3 w-3" />
+                          Remove
+                        </Button>
+                      )}
                   </div>
                 </div>
               ))}

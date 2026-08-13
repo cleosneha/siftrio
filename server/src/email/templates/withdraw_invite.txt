@@ -1,0 +1,5 @@
+{{ inviter_name }} has withdrawn your invitation to join the {{ resource_name }} {{ resource_type }}.
+
+If you have any questions, please contact the person who invited you.
+
+Sent via SiftRio

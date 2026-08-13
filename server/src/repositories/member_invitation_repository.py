@@ -54,7 +54,7 @@ class MemberInvitationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_pending_by_email_and_resource(
+    async def get_by_email_and_resource(
         self, email: str, resource_type: ResourceType, resource_id: UUID
     ) -> MemberInvitation | None:
         result = await self._db.execute(
@@ -62,10 +62,13 @@ class MemberInvitationRepository:
                 MemberInvitation.email == email,
                 MemberInvitation.resource_type == resource_type,
                 MemberInvitation.resource_id == resource_id,
-                MemberInvitation.status == InvitationStatus.PENDING,
             )
         )
         return result.scalar_one_or_none()
+
+    async def delete(self, invitation: MemberInvitation) -> None:
+        await self._db.delete(invitation)
+        await self._db.flush()
 
     async def get_by_resource(
         self, resource_type: ResourceType, resource_id: UUID

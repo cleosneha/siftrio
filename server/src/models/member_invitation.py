@@ -13,7 +13,6 @@ class InvitationStatus(str, Enum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     EXPIRED = "expired"
-    REVOKED = "revoked"
 
 
 class ResourceType(str, Enum):
