@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 from src.core.config import settings
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
+from src.middleware.rbac import require_workspace_role
+from src.models.base import MemberRole
 from src.repositories.project_integration_repository import ProjectIntegrationRepository
 from src.schemas.base_response import BaseResponse
 from src.services.membership_service import MembershipService
@@ -21,6 +23,17 @@ router = APIRouter(
 )
 
 
+async def _assert_workspace_role(
+    db: AsyncSession,
+    request: Request,
+    user_id: UUID,
+    workspace_id: UUID,
+    min_role: MemberRole,
+) -> None:
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
+    await require_workspace_role(min_role)(workspace_id, request, db)
+
+
 @router.get("/workspaces/{workspace_id}/jira", response_model=BaseResponse)
 async def get_workspace_jira(
     workspace_id: UUID,
@@ -28,8 +41,7 @@ async def get_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await _assert_workspace_role(db, request, user_id, workspace_id, MemberRole.MEMBER)
     service = WorkspaceJiraService(db)
     data = await service.get_integration(workspace_id)
     if data is None:
@@ -44,8 +56,7 @@ async def connect_workspace_jira_redirect(
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await _assert_workspace_role(db, request, user_id, workspace_id, MemberRole.ADMIN)
     service = WorkspaceJiraService(db)
     url = await service.get_or_create_oauth_url(workspace_id, user_id)
     return RedirectResponse(url=url)
@@ -58,8 +69,7 @@ async def connect_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await _assert_workspace_role(db, request, user_id, workspace_id, MemberRole.ADMIN)
     service = WorkspaceJiraService(db)
     url = await service.get_or_create_oauth_url(workspace_id, user_id)
     return {"url": url}
@@ -98,8 +108,7 @@ async def refresh_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await _assert_workspace_role(db, request, user_id, workspace_id, MemberRole.ADMIN)
     service = WorkspaceJiraService(db)
     data = await service.refresh_token(workspace_id)
     return BaseResponse(message="Token refreshed", data=data)
@@ -112,8 +121,7 @@ async def list_jira_sites(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await _assert_workspace_role(db, request, user_id, workspace_id, MemberRole.MEMBER)
     service = WorkspaceJiraService(db)
     data = await service.get_sites(workspace_id)
     return BaseResponse(data=data)
@@ -126,8 +134,7 @@ async def disconnect_workspace_jira(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
-    await MembershipService(db).assert_workspace_access(workspace_id, user_id)
+    await _assert_workspace_role(db, request, user_id, workspace_id, MemberRole.ADMIN)
 
     service = WorkspaceJiraService(db)
     project_integration_repo = ProjectIntegrationRepository(db)
