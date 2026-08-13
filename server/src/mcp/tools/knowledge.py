@@ -12,7 +12,9 @@ from src.mcp.schemas.common import ToolParameterSpec, ToolResult, ToolSpec
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.repositories.resource_repository import ResourceRepository
 from src.services.knowledge_service import KnowledgeService
+from src.services.membership_service import MembershipService
 
 if TYPE_CHECKING:
     from src.mcp.dispatcher import MCPDispatcher
@@ -29,16 +31,37 @@ def _service(db: AsyncSession) -> KnowledgeService:
     )
 
 
+async def _visible_projects(
+    db: AsyncSession,
+    auth: MCPContext,
+    project_id: UUID | None,
+    meeting_id: UUID | None,
+) -> list[UUID] | None:
+    if project_id is not None:
+        return [project_id]
+    if meeting_id is not None:
+        meeting = await MeetingRepository(db).get_by_id(meeting_id)
+        if meeting is None or meeting.project_id is None:
+            return None
+        return [meeting.project_id]
+    return await MembershipService(db).get_accessible_project_ids(auth.user_id)
+
+
 async def _list_requirements(
     db: AsyncSession, auth: MCPContext,
     project_id: str | None = None, meeting_id: str | None = None,
     status: str | None = None, limit: int = 50, offset: int = 0,
 ) -> ToolResult:
+    pr_id = UUID(project_id) if project_id else None
+    mt_id = UUID(meeting_id) if meeting_id else None
+    visible = await _visible_projects(db, auth, pr_id, mt_id)
+    if visible is None:
+        return ToolResult(data=[], message="Found 0 requirements")
     svc = _service(db)
     items = await svc.list_requirements(
-        project_id=UUID(project_id) if project_id else None,
-        meeting_id=UUID(meeting_id) if meeting_id else None,
+        project_id=pr_id, meeting_id=mt_id,
         status=status, limit=limit, offset=offset,
+        visible_project_ids=visible,
     )
     return ToolResult(data=items, message=f"Found {len(items)} requirements")
 
@@ -48,11 +71,16 @@ async def _list_action_items(
     project_id: str | None = None, meeting_id: str | None = None,
     status: str | None = None, limit: int = 50, offset: int = 0,
 ) -> ToolResult:
+    pr_id = UUID(project_id) if project_id else None
+    mt_id = UUID(meeting_id) if meeting_id else None
+    visible = await _visible_projects(db, auth, pr_id, mt_id)
+    if visible is None:
+        return ToolResult(data=[], message="Found 0 action items")
     svc = _service(db)
     items = await svc.list_action_items(
-        project_id=UUID(project_id) if project_id else None,
-        meeting_id=UUID(meeting_id) if meeting_id else None,
+        project_id=pr_id, meeting_id=mt_id,
         status=status, limit=limit, offset=offset,
+        visible_project_ids=visible,
     )
     return ToolResult(data=items, message=f"Found {len(items)} action items")
 
@@ -62,11 +90,16 @@ async def _list_decisions(
     project_id: str | None = None, meeting_id: str | None = None,
     status: str | None = None, limit: int = 50, offset: int = 0,
 ) -> ToolResult:
+    pr_id = UUID(project_id) if project_id else None
+    mt_id = UUID(meeting_id) if meeting_id else None
+    visible = await _visible_projects(db, auth, pr_id, mt_id)
+    if visible is None:
+        return ToolResult(data=[], message="Found 0 decisions")
     svc = _service(db)
     items = await svc.list_decisions(
-        project_id=UUID(project_id) if project_id else None,
-        meeting_id=UUID(meeting_id) if meeting_id else None,
+        project_id=pr_id, meeting_id=mt_id,
         status=status, limit=limit, offset=offset,
+        visible_project_ids=visible,
     )
     return ToolResult(data=items, message=f"Found {len(items)} decisions")
 
@@ -76,11 +109,16 @@ async def _list_risks(
     project_id: str | None = None, meeting_id: str | None = None,
     status: str | None = None, limit: int = 50, offset: int = 0,
 ) -> ToolResult:
+    pr_id = UUID(project_id) if project_id else None
+    mt_id = UUID(meeting_id) if meeting_id else None
+    visible = await _visible_projects(db, auth, pr_id, mt_id)
+    if visible is None:
+        return ToolResult(data=[], message="Found 0 risks")
     svc = _service(db)
     items = await svc.list_risks(
-        project_id=UUID(project_id) if project_id else None,
-        meeting_id=UUID(meeting_id) if meeting_id else None,
+        project_id=pr_id, meeting_id=mt_id,
         status=status, limit=limit, offset=offset,
+        visible_project_ids=visible,
     )
     return ToolResult(data=items, message=f"Found {len(items)} risks")
 
@@ -90,11 +128,16 @@ async def _list_questions(
     project_id: str | None = None, meeting_id: str | None = None,
     status: str | None = None, limit: int = 50, offset: int = 0,
 ) -> ToolResult:
+    pr_id = UUID(project_id) if project_id else None
+    mt_id = UUID(meeting_id) if meeting_id else None
+    visible = await _visible_projects(db, auth, pr_id, mt_id)
+    if visible is None:
+        return ToolResult(data=[], message="Found 0 questions")
     svc = _service(db)
     items = await svc.list_questions(
-        project_id=UUID(project_id) if project_id else None,
-        meeting_id=UUID(meeting_id) if meeting_id else None,
+        project_id=pr_id, meeting_id=mt_id,
         status=status, limit=limit, offset=offset,
+        visible_project_ids=visible,
     )
     return ToolResult(data=items, message=f"Found {len(items)} questions")
 
@@ -112,7 +155,11 @@ async def _get_knowledge_item(
     }.get(item_type)
     if getter is None:
         return ToolResult(success=False, message=f"Unknown item type: {item_type}")
-    item = await getter(UUID(item_id))
+    item_uuid = UUID(item_id)
+    project_id = await ResourceRepository(db).get_project_id(item_type, item_uuid)
+    if project_id is None:
+        return ToolResult(success=False, message=f"{item_type.capitalize()} not found")
+    item = await getter(item_uuid, visible_project_ids=[project_id])
     if item is None:
         return ToolResult(success=False, message=f"{item_type.capitalize()} not found")
     return ToolResult(data=item)

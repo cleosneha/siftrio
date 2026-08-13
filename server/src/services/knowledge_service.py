@@ -120,9 +120,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_requirements(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        entities = await self.repo.list_requirements(project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
         return [self._validate(r, RequirementResponse) for r in entities]
 
     async def list_action_items(
@@ -132,9 +132,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_action_items(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        entities = await self.repo.list_action_items(project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
         return [self._validate(r, ActionItemResponse) for r in entities]
 
     async def list_decisions(
@@ -144,9 +144,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_decisions(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        entities = await self.repo.list_decisions(project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
         return [self._validate(r, DecisionResponse) for r in entities]
 
     async def list_risks(
@@ -156,9 +156,9 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_risks(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        entities = await self.repo.list_risks(project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
         return [self._validate(r, RiskResponse) for r in entities]
 
     async def list_questions(
@@ -168,69 +168,71 @@ class KnowledgeService:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[dict]:
-        entities = await self.repo.list_questions(project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        entities = await self.repo.list_questions(project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
         return [self._validate(r, QuestionResponse) for r in entities]
 
-    async def get_requirement(self, entity_id: UUID) -> dict | None:
-        entity = await self.repo.get_requirement(entity_id)
+    async def get_requirement(self, entity_id: UUID, visible_project_ids: list[UUID]) -> dict | None:
+        entity = await self.repo.get_requirement(entity_id, visible_project_ids)
         return self._validate(entity, RequirementResponse) if entity else None
 
-    async def get_action_item(self, entity_id: UUID) -> dict | None:
-        entity = await self.repo.get_action_item(entity_id)
+    async def get_action_item(self, entity_id: UUID, visible_project_ids: list[UUID]) -> dict | None:
+        entity = await self.repo.get_action_item(entity_id, visible_project_ids)
         return self._validate(entity, ActionItemResponse) if entity else None
 
-    async def get_decision(self, entity_id: UUID) -> dict | None:
-        entity = await self.repo.get_decision(entity_id)
+    async def get_decision(self, entity_id: UUID, visible_project_ids: list[UUID]) -> dict | None:
+        entity = await self.repo.get_decision(entity_id, visible_project_ids)
         return self._validate(entity, DecisionResponse) if entity else None
 
-    async def get_risk(self, entity_id: UUID) -> dict | None:
-        entity = await self.repo.get_risk(entity_id)
+    async def get_risk(self, entity_id: UUID, visible_project_ids: list[UUID]) -> dict | None:
+        entity = await self.repo.get_risk(entity_id, visible_project_ids)
         return self._validate(entity, RiskResponse) if entity else None
 
-    async def get_question(self, entity_id: UUID) -> dict | None:
-        entity = await self.repo.get_question(entity_id)
+    async def get_question(self, entity_id: UUID, visible_project_ids: list[UUID]) -> dict | None:
+        entity = await self.repo.get_question(entity_id, visible_project_ids)
         return self._validate(entity, QuestionResponse) if entity else None
 
     async def update_requirement(
-        self, entity_id: UUID, data: dict
+        self, entity_id: UUID, data: dict, visible_project_ids: list[UUID]
     ) -> dict | None:
-        entity = await self.repo.update_requirement(entity_id, **data)
+        entity = await self.repo.update_requirement(entity_id, visible_project_ids, **data)
         if entity is None:
             raise BaseAPIException(message="Requirement not found", status_code=404)
         await self.db.commit()
         return self._validate(entity, RequirementResponse)
 
     async def update_action_item(
-        self, entity_id: UUID, data: dict
+        self, entity_id: UUID, data: dict, visible_project_ids: list[UUID]
     ) -> dict | None:
-        entity = await self.repo.update_action_item(entity_id, **data)
+        entity = await self.repo.update_action_item(entity_id, visible_project_ids, **data)
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
         await self.db.commit()
         return self._validate(entity, ActionItemResponse)
 
     async def update_decision(
-        self, entity_id: UUID, data: dict
+        self, entity_id: UUID, data: dict, visible_project_ids: list[UUID]
     ) -> dict | None:
-        entity = await self.repo.update_decision(entity_id, **data)
+        entity = await self.repo.update_decision(entity_id, visible_project_ids, **data)
         if entity is None:
             raise BaseAPIException(message="Decision not found", status_code=404)
         await self.db.commit()
         return self._validate(entity, DecisionResponse)
 
-    async def update_risk(self, entity_id: UUID, data: dict) -> dict | None:
-        entity = await self.repo.update_risk(entity_id, **data)
+    async def update_risk(
+        self, entity_id: UUID, data: dict, visible_project_ids: list[UUID]
+    ) -> dict | None:
+        entity = await self.repo.update_risk(entity_id, visible_project_ids, **data)
         if entity is None:
             raise BaseAPIException(message="Risk not found", status_code=404)
         await self.db.commit()
         return self._validate(entity, RiskResponse)
 
     async def update_question(
-        self, entity_id: UUID, data: dict
+        self, entity_id: UUID, data: dict, visible_project_ids: list[UUID]
     ) -> dict | None:
-        entity = await self.repo.update_question(entity_id, **data)
+        entity = await self.repo.update_question(entity_id, visible_project_ids, **data)
         if entity is None:
             raise BaseAPIException(message="Question not found", status_code=404)
         await self.db.commit()

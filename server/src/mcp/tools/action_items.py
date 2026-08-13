@@ -12,6 +12,7 @@ from src.mcp.schemas.common import ToolParameterSpec, ToolResult, ToolSpec
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
+from src.repositories.resource_repository import ResourceRepository
 from src.services.knowledge_service import KnowledgeService
 
 if TYPE_CHECKING:
@@ -33,7 +34,11 @@ async def _get_action_item(
     db: AsyncSession, auth: MCPContext, action_item_id: str
 ) -> ToolResult:
     svc = _service(db)
-    item = await svc.get_action_item(UUID(action_item_id))
+    item_uuid = UUID(action_item_id)
+    project_id = await ResourceRepository(db).get_project_id("action_item", item_uuid)
+    if project_id is None:
+        return ToolResult(success=False, message="Action item not found")
+    item = await svc.get_action_item(item_uuid, visible_project_ids=[project_id])
     if item is None:
         return ToolResult(success=False, message="Action item not found")
     return ToolResult(data=item)
@@ -43,7 +48,13 @@ async def _update_action_item_status(
     db: AsyncSession, auth: MCPContext, action_item_id: str, status: str,
 ) -> ToolResult:
     svc = _service(db)
-    item = await svc.update_action_item(UUID(action_item_id), {"status": status})
+    item_uuid = UUID(action_item_id)
+    project_id = await ResourceRepository(db).get_project_id("action_item", item_uuid)
+    if project_id is None:
+        return ToolResult(success=False, message="Action item not found")
+    item = await svc.update_action_item(
+        item_uuid, {"status": status}, visible_project_ids=[project_id]
+    )
     return ToolResult(data=item, message=f"Action item status updated to '{status}'")
 
 

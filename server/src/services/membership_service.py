@@ -40,6 +40,21 @@ class MembershipService:
         if member is None:
             raise HTTPException(status_code=404, detail="Access denied to this resource")
 
+    async def get_accessible_project_ids(self, user_id: UUID) -> list[UUID]:
+        rows = await self.db.execute(
+            select(Project.id)
+            .join(Client, Client.id == Project.client_id)
+            .where(
+                Client.workspace_id.in_(
+                    select(WorkspaceMember.workspace_id).where(
+                        WorkspaceMember.user_id == user_id
+                    )
+                )
+            )
+            .distinct()
+        )
+        return list(rows.scalars().all())
+
     async def get_effective_role(
         self, level: str, resource_id: UUID, user_id: UUID
     ) -> MemberRole | None:

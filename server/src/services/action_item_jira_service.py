@@ -10,6 +10,7 @@ from src.models.knowledge_base import ActionItemStatus
 from src.repositories.entity_integration_repository import EntityIntegrationRepository
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.project_repository import ProjectRepository
+from src.repositories.resource_repository import ResourceRepository
 from src.repositories.external_user_repository import ExternalUserRepository
 from src.schemas.jira_schema import (
     ActionItemJiraCreateRequest,
@@ -78,8 +79,14 @@ class ActionItemJiraService:
             email_address=email_address,
         )
 
+    async def _get_action_item(self, action_item_id: UUID):
+        project_id = await ResourceRepository(self.db).get_project_id("action_item", action_item_id)
+        if project_id is None:
+            return None
+        return await self.knowledge_repo.get_action_item(action_item_id, [project_id])
+
     async def get_preview(self, action_item_id: UUID) -> ActionItemJiraPreview:
-        entity = await self.knowledge_repo.get_action_item(action_item_id)
+        entity = await self._get_action_item(action_item_id)
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
 
@@ -111,7 +118,7 @@ class ActionItemJiraService:
     async def get_issue_details(
         self, project_id: UUID, action_item_id: UUID,
     ) -> JiraIssueDetailsResponse:
-        entity = await self.knowledge_repo.get_action_item(action_item_id)
+        entity = await self._get_action_item(action_item_id)
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
 
@@ -206,7 +213,7 @@ class ActionItemJiraService:
         request: ActionItemJiraCreateRequest,
         site_url: str | None = None,
     ) -> ActionItemJiraCreateResponse:
-        entity = await self.knowledge_repo.get_action_item(action_item_id)
+        entity = await self._get_action_item(action_item_id)
         if entity is None:
             raise BaseAPIException(message="Action item not found", status_code=404)
 
@@ -290,6 +297,7 @@ class ActionItemJiraService:
         if request.assignee_account_id:
             await self.knowledge_repo.update_action_item(
                 action_item_id,
+                [entity.project_id],
                 status=ActionItemStatus.IN_PROGRESS,
             )
 

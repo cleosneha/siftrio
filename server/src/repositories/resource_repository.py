@@ -53,6 +53,14 @@ class ResourceRepository:
         result = await self._db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_project_id(self, resource_type: str, resource_id: UUID) -> UUID | None:
+        model = _KNOWLEDGE_MODELS.get(resource_type)
+        if model is None:
+            return None
+        stmt = select(model.project_id).select_from(model).where(model.id == resource_id)
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def belongs_to_workspace(
         self, resource_type: str, resource_id: UUID, workspace_id: UUID
     ) -> bool:

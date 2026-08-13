@@ -17,8 +17,6 @@ from src.models.knowledge_base import (
     Risk,
     RiskStatus,
 )
-from src.models.project import Project
-from src.models.workspace_member import WorkspaceMember
 
 
 class KnowledgeRepository:
@@ -154,9 +152,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[Requirement]:
-        return await self._list(Requirement, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        return await self._list(Requirement, project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
 
     async def list_action_items(
         self,
@@ -165,9 +163,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[ActionItem]:
-        return await self._list(ActionItem, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        return await self._list(ActionItem, project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
 
     async def list_decisions(
         self,
@@ -176,9 +174,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[Decision]:
-        return await self._list(Decision, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        return await self._list(Decision, project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
 
     async def list_risks(
         self,
@@ -187,9 +185,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[Risk]:
-        return await self._list(Risk, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        return await self._list(Risk, project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
 
     async def list_questions(
         self,
@@ -198,9 +196,9 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ) -> list[Question]:
-        return await self._list(Question, project_id, meeting_id, status, limit=limit, offset=offset, user_id=user_id)
+        return await self._list(Question, project_id, meeting_id, status, limit=limit, offset=offset, visible_project_ids=visible_project_ids)
 
     async def _list(
         self,
@@ -210,8 +208,10 @@ class KnowledgeRepository:
         status: str | None = None,
         limit: int = 50,
         offset: int = 0,
-        user_id: UUID | None = None,
+        visible_project_ids: list[UUID] | None = None,
     ):
+        if not visible_project_ids:
+            return []
         query = select(model).options(
             joinedload(model.meeting),
             joinedload(model.project),
@@ -222,69 +222,64 @@ class KnowledgeRepository:
             query = query.where(model.meeting_id == meeting_id)
         if status is not None:
             query = query.where(model.status == status)
-        if user_id is not None:
-            query = query.join(model.project).where(
-                Project.workspace_id.in_(
-                    select(WorkspaceMember.workspace_id).where(
-                        WorkspaceMember.user_id == user_id
-                    )
-                )
-            )
+        query = query.where(model.project_id.in_(visible_project_ids))
         query = query.order_by(model.created_at.desc()).limit(limit).offset(offset)
         result = await self._db.execute(query)
         return list(result.unique().scalars().all())
 
-    async def get_requirement(self, entity_id: UUID) -> Requirement | None:
-        return await self._get(Requirement, entity_id)
+    async def get_requirement(self, entity_id: UUID, visible_project_ids: list[UUID]) -> Requirement | None:
+        return await self._get(Requirement, entity_id, visible_project_ids)
 
-    async def get_action_item(self, entity_id: UUID) -> ActionItem | None:
-        return await self._get(ActionItem, entity_id)
+    async def get_action_item(self, entity_id: UUID, visible_project_ids: list[UUID]) -> ActionItem | None:
+        return await self._get(ActionItem, entity_id, visible_project_ids)
 
-    async def get_decision(self, entity_id: UUID) -> Decision | None:
-        return await self._get(Decision, entity_id)
+    async def get_decision(self, entity_id: UUID, visible_project_ids: list[UUID]) -> Decision | None:
+        return await self._get(Decision, entity_id, visible_project_ids)
 
-    async def get_risk(self, entity_id: UUID) -> Risk | None:
-        return await self._get(Risk, entity_id)
+    async def get_risk(self, entity_id: UUID, visible_project_ids: list[UUID]) -> Risk | None:
+        return await self._get(Risk, entity_id, visible_project_ids)
 
-    async def get_question(self, entity_id: UUID) -> Question | None:
-        return await self._get(Question, entity_id)
+    async def get_question(self, entity_id: UUID, visible_project_ids: list[UUID]) -> Question | None:
+        return await self._get(Question, entity_id, visible_project_ids)
 
-    async def _get(self, model, entity_id: UUID):
+    async def _get(self, model, entity_id: UUID, visible_project_ids: list[UUID]):
         result = await self._db.execute(
             select(model)
             .options(joinedload(model.meeting), joinedload(model.project))
-            .where(model.id == entity_id)
+            .where(model.id == entity_id, model.project_id.in_(visible_project_ids))
         )
         return result.unique().scalar_one_or_none()
 
     async def update_requirement(
-        self, entity_id: UUID, **kwargs
+        self, entity_id: UUID, visible_project_ids: list[UUID], **kwargs
     ) -> Requirement | None:
-        return await self._update(Requirement, entity_id, kwargs)
+        return await self._update(Requirement, entity_id, visible_project_ids, kwargs)
 
     async def update_action_item(
-        self, entity_id: UUID, **kwargs
+        self, entity_id: UUID, visible_project_ids: list[UUID], **kwargs
     ) -> ActionItem | None:
-        return await self._update(ActionItem, entity_id, kwargs)
+        return await self._update(ActionItem, entity_id, visible_project_ids, kwargs)
 
     async def update_decision(
-        self, entity_id: UUID, **kwargs
+        self, entity_id: UUID, visible_project_ids: list[UUID], **kwargs
     ) -> Decision | None:
-        return await self._update(Decision, entity_id, kwargs)
+        return await self._update(Decision, entity_id, visible_project_ids, kwargs)
 
-    async def update_risk(self, entity_id: UUID, **kwargs) -> Risk | None:
-        return await self._update(Risk, entity_id, kwargs)
+    async def update_risk(
+        self, entity_id: UUID, visible_project_ids: list[UUID], **kwargs
+    ) -> Risk | None:
+        return await self._update(Risk, entity_id, visible_project_ids, kwargs)
 
     async def update_question(
-        self, entity_id: UUID, **kwargs
+        self, entity_id: UUID, visible_project_ids: list[UUID], **kwargs
     ) -> Question | None:
-        return await self._update(Question, entity_id, kwargs)
+        return await self._update(Question, entity_id, visible_project_ids, kwargs)
 
-    async def _update(self, model, entity_id: UUID, kwargs: dict):
+    async def _update(self, model, entity_id: UUID, visible_project_ids: list[UUID], kwargs: dict):
         result = await self._db.execute(
             select(model)
             .options(joinedload(model.meeting), joinedload(model.project))
-            .where(model.id == entity_id)
+            .where(model.id == entity_id, model.project_id.in_(visible_project_ids))
         )
         entity = result.unique().scalar_one_or_none()
         if entity is None:
