@@ -8,11 +8,13 @@ logger = logging.getLogger(__name__)
 
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
+from src.middleware.rbac import require_workspace_role
 from src.models.base import MemberRole
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.repositories.workspace_repository import WorkspaceRepository
 from src.schemas.base_response import BaseResponse
-from src.schemas.workspace_schema import WorkspaceCreate, WorkspaceResponse
+from src.schemas.workspace_schema import WorkspaceCreate, WorkspaceResponse, WorkspaceUpdate
+from src.services.membership_service import MembershipService
 
 
 router = APIRouter(
@@ -59,9 +61,41 @@ async def get_workspace(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    from src.services.membership_service import MembershipService
     await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
     repo = WorkspaceRepository(db)
     workspace = await repo.get_by_id(workspace_id)
     data = WorkspaceResponse.model_validate(workspace).model_dump()
     return BaseResponse(data=data)
+
+
+@router.patch("/{workspace_id}", response_model=BaseResponse)
+async def update_workspace(
+    workspace_id: UUID,
+    body: WorkspaceUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("workspace", workspace_id, user_id)
+    await require_workspace_role(MemberRole.ADMIN)(workspace_id, request, db)
+    repo = WorkspaceRepository(db)
+    workspace = await repo.update(workspace_id, **body.model_dump(exclude_none=True))
+    if workspace is None:
+        return BaseResponse(success=False, message="Workspace not found", data=None)
+    await db.commit()
+    return BaseResponse(data=WorkspaceResponse.model_validate(workspace).model_dump())
+
+
+@router.delete("/{workspace_id}", response_model=BaseResponse)
+async def delete_workspace(
+    workspace_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    service = MembershipService(db)
+    await service.assert_workspace_boundary("workspace", workspace_id, user_id)
+    await require_workspace_role(MemberRole.OWNER)(workspace_id, request, db)
+    await service.delete_workspace(workspace_id)
+    await db.commit()
+    return BaseResponse(message="Workspace deleted successfully")

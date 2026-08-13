@@ -29,6 +29,16 @@ class WorkspaceRepository:
         )
         return result.scalar_one_or_none()
 
+    async def update(self, workspace_id: UUID, **kwargs) -> Workspace | None:
+        workspace = await self.get_by_id(workspace_id)
+        if workspace is None:
+            return None
+        for key, value in kwargs.items():
+            setattr(workspace, key, value)
+        await self._db.flush()
+        await self._db.refresh(workspace)
+        return workspace
+
     async def list_by_user_id(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[Workspace]:
         result = await self._db.execute(
             select(Workspace)

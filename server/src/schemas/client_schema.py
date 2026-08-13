@@ -10,6 +10,11 @@ class ClientCreate(BaseModel):
     description: str | None = None
 
 
+class ClientUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+
 class ClientResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

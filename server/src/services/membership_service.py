@@ -465,6 +465,87 @@ class MembershipService:
         )
         await self.db.flush()
 
+    async def delete_workspace(self, workspace_id: UUID) -> None:
+        await self._delete_workspace_cascade(workspace_id)
+
+    async def delete_client(self, client_id: UUID) -> None:
+        await self._delete_client_cascade(client_id)
+
+    async def delete_project(self, project_id: UUID) -> None:
+        await self._delete_project_cascade(project_id)
+
+    async def transfer_ownership(
+        self, level: str, resource_id: UUID, new_owner_id: UUID, actor_user_id: UUID
+    ) -> None:
+        actor_role = await self.get_effective_role(level, resource_id, actor_user_id)
+        if actor_role != MemberRole.OWNER:
+            raise HTTPException(
+                status_code=403, detail="Only an owner can transfer ownership"
+            )
+        if new_owner_id == actor_user_id:
+            raise HTTPException(
+                status_code=400, detail="Target is already the owner"
+            )
+
+        if level == "workspace":
+            actor_member = await self.ws_member_repo.get_by_user_and_workspace(
+                resource_id, actor_user_id
+            )
+            new_member = await self.ws_member_repo.get_by_user_and_workspace(
+                resource_id, new_owner_id
+            )
+        elif level == "client":
+            actor_member = await self.client_member_repo.get_by_user_and_client(
+                resource_id, actor_user_id
+            )
+            new_member = await self.client_member_repo.get_by_user_and_client(
+                resource_id, new_owner_id
+            )
+        elif level == "project":
+            actor_member = await self.project_member_repo.get_by_user_and_project(
+                resource_id, actor_user_id
+            )
+            new_member = await self.project_member_repo.get_by_user_and_project(
+                resource_id, new_owner_id
+            )
+        else:
+            raise HTTPException(status_code=400, detail="Invalid resource level")
+
+        if actor_member is None:
+            raise HTTPException(
+                status_code=403, detail="Only an owner can transfer ownership"
+            )
+        if new_member is None:
+            raise HTTPException(
+                status_code=404, detail="Target user is not a member of this resource"
+            )
+
+        old_target_role = new_member.role
+        new_member.role = MemberRole.OWNER
+        actor_member.role = MemberRole.ADMIN
+
+        ws_id = await self.resource_repo.get_workspace_id(level, resource_id)
+        if ws_id is not None:
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.role_changed",
+                resource_type=level,
+                resource_id=resource_id,
+                actor_user_id=actor_user_id,
+                old_value={"role": MemberRole.OWNER.value, "user_id": str(actor_user_id)},
+                new_value={"role": MemberRole.ADMIN.value, "user_id": str(actor_user_id)},
+            )
+            AuditService(self.db).record(
+                workspace_id=ws_id,
+                action="member.role_changed",
+                resource_type=level,
+                resource_id=resource_id,
+                actor_user_id=actor_user_id,
+                old_value={"role": old_target_role.value, "user_id": str(new_owner_id)},
+                new_value={"role": MemberRole.OWNER.value, "user_id": str(new_owner_id)},
+            )
+        await self.db.flush()
+
     def _to_response(self, member) -> dict:
         data = MemberResponse.model_validate(member).model_dump()
         user = getattr(member, "user", None)

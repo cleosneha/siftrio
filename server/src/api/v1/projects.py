@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
+from src.middleware.rbac import require_client_role, require_project_role
+from src.models.base import MemberRole
 from src.repositories.client_repository import ClientRepository
 from src.repositories.project_repository import ProjectRepository
 from src.schemas.base_response import BaseResponse
-from src.schemas.project_schema import ProjectCreate
+from src.schemas.project_schema import ProjectCreate, ProjectResponse, ProjectUpdate
 from src.services.membership_service import MembershipService
 from src.services.project_service import ProjectService
 from src.utils.uuid_validator import parse_optional_uuid
@@ -28,6 +30,7 @@ async def create_project(
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id) if request.state.user else None
     await MembershipService(db).assert_workspace_boundary("client", body.client_id, user_id)
+    await require_client_role(MemberRole.MEMBER)(body.client_id, request, db)
     service = ProjectService(db, ProjectRepository(db), ClientRepository(db))
     data = await service.create(body.client_id, body.name, body.description, user_id=user_id)
     return BaseResponse(message="Project created successfully", data=data)
@@ -61,3 +64,36 @@ async def get_project(
     if data is None:
         return BaseResponse(success=False, message="Project not found", data=None)
     return BaseResponse(data=data)
+
+
+@router.patch("/{project_id}", response_model=BaseResponse)
+async def update_project(
+    project_id: UUID,
+    body: ProjectUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    await MembershipService(db).assert_workspace_boundary("project", project_id, user_id)
+    await require_project_role(MemberRole.ADMIN)(project_id, request, db)
+    repo = ProjectRepository(db)
+    project = await repo.update(project_id, **body.model_dump(exclude_none=True))
+    if project is None:
+        return BaseResponse(success=False, message="Project not found", data=None)
+    await db.commit()
+    return BaseResponse(data=ProjectResponse.model_validate(project).model_dump())
+
+
+@router.delete("/{project_id}", response_model=BaseResponse)
+async def delete_project(
+    project_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    service = MembershipService(db)
+    await service.assert_workspace_boundary("project", project_id, user_id)
+    await require_project_role(MemberRole.OWNER)(project_id, request, db)
+    await service.delete_project(project_id)
+    await db.commit()
+    return BaseResponse(message="Project deleted successfully")

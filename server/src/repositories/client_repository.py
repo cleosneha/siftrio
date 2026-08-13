@@ -31,6 +31,16 @@ class ClientRepository:
         )
         return result.scalar_one_or_none()
 
+    async def update(self, client_id: UUID, **kwargs) -> Client | None:
+        client = await self.get_by_id(client_id)
+        if client is None:
+            return None
+        for key, value in kwargs.items():
+            setattr(client, key, value)
+        await self._db.flush()
+        await self._db.refresh(client)
+        return client
+
     async def list_with_project_counts(
         self, workspace_id: UUID | None = None, limit: int = 50, offset: int = 0
     ) -> list[tuple[Client, int]]:

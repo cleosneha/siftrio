@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import async_session_factory, get_db
 from src.utils.uuid_validator import parse_optional_uuid
 from src.middleware.auth import require_authenticated_user
+from src.middleware.rbac import require_client_role, require_project_role
+from src.models.base import MemberRole
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.client_repository import ClientRepository
 from src.repositories.meeting_repository import MeetingRepository
@@ -43,10 +45,10 @@ async def create_meeting(
     membership = MembershipService(db)
     if body.project_id:
         await membership.assert_workspace_boundary("project", UUID(body.project_id), user_id)
-        await membership.assert_project_access(UUID(body.project_id), user_id)
+        await require_project_role(MemberRole.MEMBER)(UUID(body.project_id), request, db)
     elif body.client_id:
         await membership.assert_workspace_boundary("client", UUID(body.client_id), user_id)
-        await membership.assert_client_access(UUID(body.client_id), user_id)
+        await require_client_role(MemberRole.MEMBER)(UUID(body.client_id), request, db)
 
     auth_service = AuthService(AuthRepository(db))
     integration_service = MeetingIntegrationService(db, auth_service=auth_service)
@@ -256,7 +258,10 @@ async def delete_meeting(
     user_id = UUID(request.state.user.id)
     from src.services.membership_service import MembershipService
     await MembershipService(db).assert_workspace_boundary("meeting", meeting_id, user_id)
-    await MembershipService(db).assert_meeting_access(meeting, user_id)
+    if meeting.project_id:
+        await require_project_role(MemberRole.MEMBER)(meeting.project_id, request, db)
+    else:
+        await require_client_role(MemberRole.MEMBER)(meeting.client_id, request, db)
     repo = MeetingRepository(db)
     await repo.delete(meeting_id)
     await db.commit()

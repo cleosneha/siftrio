@@ -31,6 +31,16 @@ class ProjectRepository:
         )
         return result.scalar_one_or_none()
 
+    async def update(self, project_id: UUID, **kwargs) -> Project | None:
+        project = await self.get_by_id(project_id)
+        if project is None:
+            return None
+        for key, value in kwargs.items():
+            setattr(project, key, value)
+        await self._db.flush()
+        await self._db.refresh(project)
+        return project
+
     async def list(self, client_id: UUID | None = None, limit: int = 50, offset: int = 0) -> list[Project]:
         query = select(Project)
         if client_id is not None:

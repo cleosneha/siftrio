@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.middleware.auth import require_authenticated_user
+from src.middleware.rbac import require_client_role, require_project_role
+from src.models.base import MemberRole
 from src.repositories.meeting_repository import MeetingRepository
 from src.schemas.base_response import BaseResponse
 from src.services.ingestion_service import run_ingestion_pipeline
@@ -47,6 +49,11 @@ async def upload_transcript(
             message="Meeting not found",
             data=None,
         )
+
+    if meeting.project_id:
+        await require_project_role(MemberRole.MEMBER)(meeting.project_id, request, db)
+    else:
+        await require_client_role(MemberRole.MEMBER)(meeting.client_id, request, db)
 
     result = await db.execute(
         text("""
