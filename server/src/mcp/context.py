@@ -18,3 +18,4 @@ class MCPContext:
     user_id: UUID
     workspace_ids: list[UUID] = field(default_factory=list)
     resolved_workspace: ResolvedWorkspace | None = None
+    api_key_id: UUID | None = None

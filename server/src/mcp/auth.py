@@ -56,5 +56,6 @@ class ApiKeyVerifier(TokenVerifier):
                 claims={
                     "user_id": str(api_key.user_id),
                     "workspace_ids": workspace_ids,
+                    "api_key_id": str(api_key.id),
                 },
             )

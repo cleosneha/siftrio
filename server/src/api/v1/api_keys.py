@@ -26,11 +26,8 @@ async def create_api_key(
     db: AsyncSession = Depends(get_db),
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
-    if body.workspace_id is not None:
-        from src.services.membership_service import MembershipService
-        await MembershipService(db).assert_workspace_boundary("workspace", body.workspace_id, user_id)
     service = ApiKeyService(db)
-    result = await service.create(user_id, body.name, body.scope, body.workspace_id)
+    result = await service.create(user_id, body.name)
     return BaseResponse(
         message="API key created successfully. Copy the secret now — it will not be shown again.",
         data=result.model_dump(),

@@ -5,7 +5,7 @@ from sqlalchemy import DateTime, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import APIKeyScope, Base, TimestampMixin, UUIDMixin
+from src.models.base import Base, TimestampMixin, UUIDMixin
 
 
 class ApiKey(UUIDMixin, TimestampMixin, Base):
@@ -16,18 +16,6 @@ class ApiKey(UUIDMixin, TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-    )
-
-    workspace_id: Mapped[UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("workspaces.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
-
-    scope: Mapped[APIKeyScope] = mapped_column(
-        default=APIKeyScope.READ,
-        nullable=False,
     )
 
     name: Mapped[str] = mapped_column(
@@ -57,12 +45,12 @@ class ApiKey(UUIDMixin, TimestampMixin, Base):
     )
 
     user = relationship("User", back_populates="api_keys")
-    workspace = relationship("Workspace")
 
     __table_args__ = (
         Index(
             "idx_api_keys_active",
             "user_id",
+            unique=True,
             postgresql_where=text("revoked_at IS NULL"),
         ),
     )

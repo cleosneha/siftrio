@@ -16,6 +16,7 @@ def get_auth_context(ctx: Context) -> MCPContext:  # type: ignore[type-arg]
         return MCPContext(
             user_id=user_id,
             workspace_ids=workspace_ids,
+            api_key_id=token.claims.get("api_key_id"),
         )
 
     lifespan_ctx: MCPContext = ctx.request_context.lifespan_context

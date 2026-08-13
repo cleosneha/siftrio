@@ -89,11 +89,3 @@ def require_project_role(
         plan_guard(project_id, role)
 
     return dependency
-
-
-def require_api_key_scope(min_scope: str):
-    async def dependency() -> None:
-        # TODO(phase3): wire MCP API key scope enforcement (RBAC.md §3.1.4)
-        raise NotImplementedError("API key scopes are not implemented yet")
-
-    return dependency

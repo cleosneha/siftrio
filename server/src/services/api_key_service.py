@@ -6,7 +6,6 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
-from src.models.base import APIKeyScope
 from src.repositories.api_key_repository import ApiKeyRepository
 from src.schemas.api_key_schema import ApiKeyCreatedResponse, ApiKeyResponse
 
@@ -16,13 +15,13 @@ class ApiKeyService:
         self.db = db
         self.repo = ApiKeyRepository(db)
 
-    async def create(
-        self,
-        user_id: UUID,
-        name: str,
-        scope: APIKeyScope = APIKeyScope.READ,
-        workspace_id: UUID | None = None,
-    ) -> ApiKeyCreatedResponse:
+    async def create(self, user_id: UUID, name: str) -> ApiKeyCreatedResponse:
+        if await self.repo.get_active_by_user_id(user_id) is not None:
+            raise BaseAPIException(
+                message="An active API key exists — revoke it first",
+                status_code=409,
+            )
+
         raw_secret = f"sk_live_{secrets.token_urlsafe(32)}"
         key_prefix = raw_secret[:12]
         hashed_secret = hashlib.sha256(raw_secret.encode()).hexdigest()
@@ -32,8 +31,6 @@ class ApiKeyService:
             name=name,
             key_prefix=key_prefix,
             hashed_secret=hashed_secret,
-            scope=scope,
-            workspace_id=workspace_id,
         )
         await self.db.commit()
 
@@ -42,8 +39,6 @@ class ApiKeyService:
             name=api_key.name,
             secret=raw_secret,
             key_prefix=api_key.key_prefix,
-            scope=api_key.scope,
-            workspace_id=api_key.workspace_id,
             created_at=api_key.created_at,
         )
 
@@ -51,25 +46,28 @@ class ApiKeyService:
         keys = await self.repo.list_by_user_id(user_id)
         return [ApiKeyResponse.model_validate(k).model_dump() for k in keys]
 
+    async def _assert_owner(self, api_key, user_id: UUID) -> None:
+        if api_key.user_id != user_id:
+            raise BaseAPIException(message="Access denied", status_code=403)
+
     async def revoke(self, api_key_id: UUID, user_id: UUID) -> dict:
         api_key = await self.repo.get_by_id(api_key_id)
         if api_key is None:
             raise BaseAPIException(message="API key not found", status_code=404)
-        if api_key.user_id != user_id:
-            raise BaseAPIException(message="Access denied", status_code=403)
+        await self._assert_owner(api_key, user_id)
         if api_key.revoked_at is not None:
             raise BaseAPIException(message="API key is already revoked", status_code=400)
 
         api_key.revoked_at = datetime.now(timezone.utc)
         await self.db.commit()
+        await self.db.refresh(api_key)
         return ApiKeyResponse.model_validate(api_key).model_dump()
 
     async def delete(self, api_key_id: UUID, user_id: UUID) -> None:
         api_key = await self.repo.get_by_id(api_key_id)
         if api_key is None:
             raise BaseAPIException(message="API key not found", status_code=404)
-        if api_key.user_id != user_id:
-            raise BaseAPIException(message="Access denied", status_code=403)
+        await self._assert_owner(api_key, user_id)
 
         await self.repo.delete(api_key_id)
         await self.db.commit()

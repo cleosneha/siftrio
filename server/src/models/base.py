@@ -46,12 +46,6 @@ class SyncStatus(str, Enum):
     CONFLICT = "conflict"
 
 
-class APIKeyScope(str, Enum):
-    READ = "read"
-    WRITE = "write"
-    ADMIN = "admin"
-
-
 class UUIDMixin:
     id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),

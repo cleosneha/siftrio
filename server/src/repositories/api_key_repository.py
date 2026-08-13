@@ -4,7 +4,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.api_key import ApiKey
-from src.models.base import APIKeyScope
 
 
 class ApiKeyRepository:
@@ -17,21 +16,25 @@ class ApiKeyRepository:
         name: str,
         key_prefix: str,
         hashed_secret: str,
-        scope: APIKeyScope = APIKeyScope.READ,
-        workspace_id: UUID | None = None,
     ) -> ApiKey:
         api_key = ApiKey(
             user_id=user_id,
             name=name,
             key_prefix=key_prefix,
             hashed_secret=hashed_secret,
-            scope=scope,
-            workspace_id=workspace_id,
         )
         self._db.add(api_key)
         await self._db.flush()
         await self._db.refresh(api_key)
         return api_key
+
+    async def get_active_by_user_id(self, user_id: UUID) -> ApiKey | None:
+        result = await self._db.execute(
+            select(ApiKey)
+            .where(ApiKey.user_id == user_id, ApiKey.revoked_at.is_(None))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
 
     async def get_by_id(self, api_key_id: UUID) -> ApiKey | None:
         result = await self._db.execute(
