@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -60,6 +60,35 @@ async def _resolve_entity_project(
     db: AsyncSession, resource_type: str, entity_id: UUID
 ) -> UUID | None:
     return await ResourceRepository(db).get_project_id(resource_type, entity_id)
+
+
+_PROPOSED_STATUS = "proposed"
+_APPROVAL_ENTITY_LABELS = {"requirement": "Requirement", "decision": "Decision"}
+_TERMINAL_STATUS = {
+    "requirement": {"approved", "rejected"},
+    "decision": {"accepted", "rejected"},
+}
+
+
+async def _assert_editable_for_role(
+    db: AsyncSession,
+    request: Request,
+    user_id: UUID,
+    entity_type: str,
+    entity_id: UUID,
+    project_id: UUID,
+    update_fields: dict,
+) -> None:
+    """R6: editing non-proposed items or setting an approval-terminal status requires admin+."""
+    if entity_type not in _APPROVAL_ENTITY_LABELS:
+        return
+    status = await KnowledgeRepository(db).get_status(entity_type, entity_id)
+    status_to_terminal = bool(
+        update_fields.get("status")
+        and str(update_fields["status"].value) in _TERMINAL_STATUS[entity_type]
+    )
+    if (status is not None and status != _PROPOSED_STATUS) or status_to_terminal:
+        await _assert_project_access(db, request, user_id, project_id, MemberRole.ADMIN)
 
 
 async def _resolve_list_scope(
@@ -133,8 +162,12 @@ async def update_requirement(
     if project_id is None:
         return _entity_response(None, "Requirement")
     await _assert_project_access(db, request, user_id, project_id, MemberRole.MEMBER)
+    update_data = body.model_dump(exclude_none=True)
+    await _assert_editable_for_role(
+        db, request, user_id, "requirement", entity_id, project_id, update_data
+    )
     data = await _get_knowledge_service(db).update_requirement(
-        entity_id, body.model_dump(exclude_none=True), visible_project_ids=[project_id]
+        entity_id, update_data, visible_project_ids=[project_id]
     )
     return BaseResponse(message="Requirement updated", data=data)
 
@@ -190,8 +223,12 @@ async def update_action_item(
     if project_id is None:
         return _entity_response(None, "Action item")
     await _assert_project_access(db, request, user_id, project_id, MemberRole.MEMBER)
+    update_data = body.model_dump(exclude_none=True)
+    await _assert_editable_for_role(
+        db, request, user_id, "action_item", entity_id, project_id, update_data
+    )
     data = await _get_knowledge_service(db).update_action_item(
-        entity_id, body.model_dump(exclude_none=True), visible_project_ids=[project_id]
+        entity_id, update_data, visible_project_ids=[project_id]
     )
     return BaseResponse(message="Action item updated", data=data)
 
@@ -247,8 +284,12 @@ async def update_decision(
     if project_id is None:
         return _entity_response(None, "Decision")
     await _assert_project_access(db, request, user_id, project_id, MemberRole.MEMBER)
+    update_data = body.model_dump(exclude_none=True)
+    await _assert_editable_for_role(
+        db, request, user_id, "decision", entity_id, project_id, update_data
+    )
     data = await _get_knowledge_service(db).update_decision(
-        entity_id, body.model_dump(exclude_none=True), visible_project_ids=[project_id]
+        entity_id, update_data, visible_project_ids=[project_id]
     )
     return BaseResponse(message="Decision updated", data=data)
 
@@ -304,8 +345,12 @@ async def update_risk(
     if project_id is None:
         return _entity_response(None, "Risk")
     await _assert_project_access(db, request, user_id, project_id, MemberRole.MEMBER)
+    update_data = body.model_dump(exclude_none=True)
+    await _assert_editable_for_role(
+        db, request, user_id, "risk", entity_id, project_id, update_data
+    )
     data = await _get_knowledge_service(db).update_risk(
-        entity_id, body.model_dump(exclude_none=True), visible_project_ids=[project_id]
+        entity_id, update_data, visible_project_ids=[project_id]
     )
     return BaseResponse(message="Risk updated", data=data)
 
@@ -361,7 +406,57 @@ async def update_question(
     if project_id is None:
         return _entity_response(None, "Question")
     await _assert_project_access(db, request, user_id, project_id, MemberRole.MEMBER)
+    update_data = body.model_dump(exclude_none=True)
+    await _assert_editable_for_role(
+        db, request, user_id, "question", entity_id, project_id, update_data
+    )
     data = await _get_knowledge_service(db).update_question(
-        entity_id, body.model_dump(exclude_none=True), visible_project_ids=[project_id]
+        entity_id, update_data, visible_project_ids=[project_id]
     )
     return BaseResponse(message="Question updated", data=data)
+
+
+@router.post("/{entity_type}/{entity_id}/approve", response_model=BaseResponse)
+async def approve_entity(
+    entity_type: str,
+    entity_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    if entity_type not in _APPROVAL_ENTITY_LABELS:
+        raise HTTPException(
+            status_code=400,
+            detail="approve/reject is only supported for requirements and decisions",
+        )
+    user_id = UUID(request.state.user.id)
+    project_id = await _resolve_entity_project(db, entity_type, entity_id)
+    if project_id is None:
+        return _entity_response(None, _APPROVAL_ENTITY_LABELS[entity_type])
+    await _assert_project_access(db, request, user_id, project_id, MemberRole.ADMIN)
+    data = await _get_knowledge_service(db).approve_entity(
+        entity_type, entity_id, user_id, visible_project_ids=[project_id]
+    )
+    return BaseResponse(message=f"{_APPROVAL_ENTITY_LABELS[entity_type]} approved", data=data)
+
+
+@router.post("/{entity_type}/{entity_id}/reject", response_model=BaseResponse)
+async def reject_entity(
+    entity_type: str,
+    entity_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    if entity_type not in _APPROVAL_ENTITY_LABELS:
+        raise HTTPException(
+            status_code=400,
+            detail="approve/reject is only supported for requirements and decisions",
+        )
+    user_id = UUID(request.state.user.id)
+    project_id = await _resolve_entity_project(db, entity_type, entity_id)
+    if project_id is None:
+        return _entity_response(None, _APPROVAL_ENTITY_LABELS[entity_type])
+    await _assert_project_access(db, request, user_id, project_id, MemberRole.ADMIN)
+    data = await _get_knowledge_service(db).reject_entity(
+        entity_type, entity_id, user_id, visible_project_ids=[project_id]
+    )
+    return BaseResponse(message=f"{_APPROVAL_ENTITY_LABELS[entity_type]} rejected", data=data)

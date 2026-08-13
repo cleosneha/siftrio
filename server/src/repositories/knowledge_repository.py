@@ -18,6 +18,14 @@ from src.models.knowledge_base import (
     RiskStatus,
 )
 
+_ENTITY_MODELS = {
+    "requirement": Requirement,
+    "action_item": ActionItem,
+    "decision": Decision,
+    "risk": Risk,
+    "question": Question,
+}
+
 
 class KnowledgeRepository:
     def __init__(self, db: AsyncSession) -> None:
@@ -249,6 +257,16 @@ class KnowledgeRepository:
             .where(model.id == entity_id, model.project_id.in_(visible_project_ids))
         )
         return result.unique().scalar_one_or_none()
+
+    async def get_status(self, entity_type: str, entity_id: UUID) -> str | None:
+        model = _ENTITY_MODELS.get(entity_type)
+        if model is None:
+            return None
+        result = await self._db.execute(
+            select(model.status).where(model.id == entity_id)
+        )
+        status = result.scalar_one_or_none()
+        return status.value if status is not None else None
 
     async def update_requirement(
         self, entity_id: UUID, visible_project_ids: list[UUID], **kwargs

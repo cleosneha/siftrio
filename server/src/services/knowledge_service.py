@@ -1,9 +1,11 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions.base import BaseAPIException
 from src.models.base import Priority
+from src.models.knowledge_base import DecisionStatus, RequirementStatus
 from src.repositories.knowledge_repository import KnowledgeRepository
 from src.repositories.meeting_chunk_repository import MeetingChunkRepository
 from src.repositories.meeting_repository import MeetingRepository
@@ -25,6 +27,20 @@ def _to_priority(value: str | Priority | None) -> Priority | None:
         return Priority(value.lower())
     except (ValueError, AttributeError):
         return None
+
+
+_APPROVAL_STATES = {
+    "requirement": ("proposed", RequirementStatus.APPROVED, RequirementStatus.REJECTED),
+    "decision": ("proposed", DecisionStatus.ACCEPTED, DecisionStatus.REJECTED),
+}
+_APPROVAL_GETTERS = {
+    "requirement": "get_requirement",
+    "decision": "get_decision",
+}
+_APPROVAL_RESPONSES = {
+    "requirement": RequirementResponse,
+    "decision": DecisionResponse,
+}
 
 
 class KnowledgeService:
@@ -237,6 +253,67 @@ class KnowledgeService:
             raise BaseAPIException(message="Question not found", status_code=404)
         await self.db.commit()
         return self._validate(entity, QuestionResponse)
+
+    async def approve_entity(
+        self,
+        entity_type: str,
+        entity_id: UUID,
+        actor_user_id: UUID,
+        visible_project_ids: list[UUID],
+    ) -> dict:
+        return await self._transition_entity_status(
+            entity_type, entity_id, actor_user_id, visible_project_ids, approved=True
+        )
+
+    async def reject_entity(
+        self,
+        entity_type: str,
+        entity_id: UUID,
+        actor_user_id: UUID,
+        visible_project_ids: list[UUID],
+    ) -> dict:
+        return await self._transition_entity_status(
+            entity_type, entity_id, actor_user_id, visible_project_ids, approved=False
+        )
+
+    async def _transition_entity_status(
+        self,
+        entity_type: str,
+        entity_id: UUID,
+        actor_user_id: UUID,
+        visible_project_ids: list[UUID],
+        approved: bool,
+    ) -> dict:
+        proposed_status, approved_status, rejected_status = _APPROVAL_STATES[entity_type]
+        entity = await getattr(self.repo, _APPROVAL_GETTERS[entity_type])(
+            entity_id, visible_project_ids
+        )
+        if entity is None:
+            raise BaseAPIException(
+                message=f"{entity_type} not found", status_code=404
+            )
+        if entity.status.value != proposed_status:
+            raise BaseAPIException(
+                message=f"Only {proposed_status} items can be approved or rejected",
+                status_code=409,
+            )
+
+        entity.status = approved_status if approved else rejected_status
+        if entity_type == "requirement":
+            entity.approved_by = actor_user_id if approved else None
+            entity.approved_at = datetime.now(timezone.utc) if approved else None
+        self._emit_audit_event(
+            "approval.approved" if approved else "approval.rejected",
+            actor_user_id=actor_user_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+        await self.db.commit()
+        return self._validate(entity, _APPROVAL_RESPONSES[entity_type])
+
+    def _emit_audit_event(self, event: str, **context) -> None:
+        # TODO(phase3): wire into audit service (§3.4)
+        pass
 
     def _validate(self, entity, response_cls) -> dict:
         data = response_cls.model_validate(entity).model_dump()
