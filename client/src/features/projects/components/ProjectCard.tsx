@@ -14,9 +14,14 @@ import type { Client } from "@/types";
 interface ProjectCardProps {
   client: Client;
   onCreateProject: (clientId: string) => void;
+  canCreateProject?: boolean;
 }
 
-export function ProjectCard({ client, onCreateProject }: ProjectCardProps) {
+export function ProjectCard({
+  client,
+  onCreateProject,
+  canCreateProject = true,
+}: ProjectCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -29,18 +34,20 @@ export function ProjectCard({ client, onCreateProject }: ProjectCardProps) {
               </CardDescription>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onCreateProject(client.id);
-            }}
-          >
-            <Plus className="h-3 w-3" />
-            New Project
-          </Button>
+          {canCreateProject && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onCreateProject(client.id);
+              }}
+            >
+              <Plus className="h-3 w-3" />
+              New Project
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>

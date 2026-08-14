@@ -18,6 +18,26 @@ export function useInviteMember(resourceType: string, resourceId: string) {
   });
 }
 
+export function useBulkInviteMembers(resourceType: string, resourceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ emails, role }: { emails: string[]; role: string }) =>
+      Promise.all(
+        emails.map((email) =>
+          invitationService.invite(resourceType, resourceId, email, role),
+        ),
+      ),
+    onSuccess: () => {
+      toast.success("Invitations sent");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-invitations", resourceType, resourceId] });
+      queryClient.invalidateQueries({ queryKey: [`${resourceType}-members`, resourceId] });
+    },
+    onError: (err: unknown) => notifyError(err, "Failed to send invitations"),
+  });
+}
+
 export function usePendingInvitations(resourceType: string, resourceId: string) {
   return useQuery({
     queryKey: ["pending-invitations", resourceType, resourceId],

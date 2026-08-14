@@ -2,6 +2,14 @@ import { api } from "@/lib/api";
 import type { ApiResponse, Member } from "@/types";
 
 export const memberService = {
+  async getMyRole(level: "workspace" | "client" | "project", resourceId: string) {
+    const res = await api.get<ApiResponse<{ role: string | null }>>(
+      `/members/me/role`,
+      { params: { level, resource_id: resourceId } },
+    );
+    return res.data;
+  },
+
   async listWorkspaceMembers(workspaceId: string) {
     const res = await api.get<ApiResponse<Member[]>>(`/members/workspace/${workspaceId}`);
     return res.data;

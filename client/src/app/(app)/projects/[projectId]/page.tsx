@@ -6,9 +6,12 @@ import { Menu, ArrowLeft, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { RoleBadge } from "@/components/ui/role-badge";
 import { useProject } from "@/features/projects/hooks/useProjects";
+import { useClient } from "@/features/clients/hooks/useClients";
 import { useMeetingsByProject } from "@/features/meetings/hooks/useMeetings";
 import { useProjectMembers } from "@/features/members/hooks/useMembers";
+import { useMyRole } from "@/features/members/hooks/useMembers";
 import { usePendingInvitations } from "@/features/invitations/hooks/useInvitations";
 import { useRemoveProjectMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -30,7 +33,9 @@ export default function ProjectPage() {
   const { data: projectData, isLoading: projectLoading } = useProject(projectId);
   const { data: meetingsData } = useMeetingsByProject(projectId);
   const { data: membersData, isLoading: membersLoading } = useProjectMembers(projectId);
+  const { data: myRole } = useMyRole("project", projectId);
   const { data: invitationsData } = usePendingInvitations("project", projectId);
+  const { data: clientData } = useClient(projectData?.data?.client_id ?? "");
   const { mutate: removeMember } = useRemoveProjectMember();
 
   const project = projectData?.data;
@@ -57,7 +62,7 @@ export default function ProjectPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div className="flex flex-1 items-center justify-between">
+        <div className="flex flex-1 items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold">
               {project?.name ?? "Loading..."}
@@ -80,6 +85,7 @@ export default function ProjectPage() {
               <Plus className="h-4 w-4" />
               New Meeting
             </Button>
+            <RoleBadge role={myRole} />
           </div>
         </div>
       </header>
@@ -107,6 +113,7 @@ export default function ProjectPage() {
             currentUserId={user?.id}
             onRemove={(userId) => removeMember({ projectId, userId })}
             isLoading={membersLoading}
+            workspaceId={clientData?.data?.workspace_id ?? ""}
           />
         </div>
       </div>

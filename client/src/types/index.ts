@@ -4,6 +4,19 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export type MemberRole = "owner" | "admin" | "member" | "viewer";
+
+export const MEMBER_ROLE_ORDER: MemberRole[] = [
+  "viewer",
+  "member",
+  "admin",
+  "owner",
+];
+
+export function canCreateResource(role: string | null | undefined) {
+  return role === "owner" || role === "admin";
+}
+
 export interface Workspace {
   id: string;
   name: string;

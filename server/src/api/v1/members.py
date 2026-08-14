@@ -1,6 +1,7 @@
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -16,6 +17,18 @@ router = APIRouter(
     tags=["members"],
     dependencies=[Depends(require_authenticated_user)],
 )
+
+
+@router.get("/me/role", response_model=BaseResponse)
+async def get_my_role(
+    request: Request,
+    level: Literal["workspace", "client", "project"] = Query(...),
+    resource_id: UUID = Query(...),
+    db: AsyncSession = Depends(get_db),
+) -> BaseResponse:
+    user_id = UUID(request.state.user.id)
+    role = await MembershipService(db).get_effective_role(level, resource_id, user_id)
+    return BaseResponse(data={"role": role.value if role else None})
 
 
 @router.get("/workspace/{workspace_id}", response_model=BaseResponse)

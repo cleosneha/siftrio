@@ -4,6 +4,18 @@ import { toast } from "sonner";
 import { notifyError } from "@/lib/error";
 import { memberService } from "@/features/members/services/member.service";
 
+export function useMyRole(
+  level: "workspace" | "client" | "project",
+  resourceId: string,
+) {
+  return useQuery({
+    queryKey: ["my-role", level, resourceId],
+    queryFn: () => memberService.getMyRole(level, resourceId),
+    enabled: !!resourceId,
+    select: (res) => res.data.role,
+  });
+}
+
 export function useWorkspaceMembers(workspaceId: string) {
   return useQuery({
     queryKey: ["workspace-members", workspaceId],

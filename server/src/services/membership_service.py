@@ -19,7 +19,11 @@ from src.repositories.resource_repository import ResourceRepository
 from src.repositories.workspace_member_repository import WorkspaceMemberRepository
 from src.schemas.membership_schema import MemberResponse
 from src.services.audit_service import AuditService
-from src.utils.tenant_scope import tenant_scope_subquery, visible_project_exists
+from src.utils.tenant_scope import (
+    tenant_scope_subquery,
+    visible_client_exists,
+    visible_project_exists,
+)
 
 
 class MembershipService:
@@ -65,7 +69,10 @@ class MembershipService:
         ws_role = await self.ws_member_repo.get_by_user_and_workspace(
             workspace_id, user_id
         )
-        if ws_role is not None:
+        if ws_role is not None and ws_role.role in (
+            MemberRole.OWNER,
+            MemberRole.ADMIN,
+        ):
             all_projects = await self.project_repo.list_by_workspace(workspace_id)
             return [p.id for p in all_projects]
 
@@ -86,7 +93,10 @@ class MembershipService:
         ws_role = await self.ws_member_repo.get_by_user_and_workspace(
             workspace_id, user_id
         )
-        if ws_role is not None:
+        if ws_role is not None and ws_role.role in (
+            MemberRole.OWNER,
+            MemberRole.ADMIN,
+        ):
             return await self.client_repo.list_ids_by_workspace(workspace_id)
 
         visible: set[UUID] = set()
@@ -171,6 +181,26 @@ class MembershipService:
             await self.assert_project_access(meeting.project_id, user_id)
         else:
             await self.assert_client_access(meeting.client_id, user_id)
+
+    async def assert_client_visible(self, client_id: UUID, user_id: UUID) -> None:
+        result = await self.db.execute(
+            exists().where(
+                Client.id == client_id,
+                visible_client_exists(user_id),
+            ).select()
+        )
+        if not result.scalar():
+            raise HTTPException(status_code=403, detail="Access denied to this client")
+
+    async def assert_project_visible(self, project_id: UUID, user_id: UUID) -> None:
+        result = await self.db.execute(
+            exists().where(
+                Project.id == project_id,
+                visible_project_exists(user_id),
+            ).select()
+        )
+        if not result.scalar():
+            raise HTTPException(status_code=403, detail="Access denied to this project")
 
     async def list_workspace_members(self, workspace_id: UUID) -> list[dict]:
         members = await self.ws_member_repo.get_by_workspace(workspace_id)

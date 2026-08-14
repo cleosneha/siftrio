@@ -12,16 +12,19 @@ import { Menu, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TabBar } from "@/components/ui/tab-bar";
-import { ProjectCard } from "@/features/projects/components/ProjectCard";
+import { RoleBadge } from "@/components/ui/role-badge";
+import { ClientProjectCard } from "@/features/projects/components/ClientProjectCard";
 import { useWorkspace } from "@/features/workspaces/hooks/useWorkspaces";
 import { useClients } from "@/features/clients/hooks/useClients";
 import { useWorkspaceMembers } from "@/features/members/hooks/useMembers";
+import { useMyRole } from "@/features/members/hooks/useMembers";
 import { usePendingInvitations } from "@/features/invitations/hooks/useInvitations";
 import { useRemoveWorkspaceMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useAppContext } from "@/lib/app-context";
 import { MembersSection } from "@/features/members/MembersSection";
 import { useWorkspaceJira } from "@/features/jira/hooks/useJira";
+import { canCreateResource } from "@/types";
 
 const CreateClientModal = dynamic(
   () =>
@@ -53,6 +56,7 @@ export default function WorkspacePage() {
   const { data: workspaceData, isLoading: workspaceLoading } =
     useWorkspace(workspaceId);
   const { data: clientsData } = useClients(workspaceId);
+  const { data: myRole } = useMyRole("workspace", workspaceId);
   const { data: membersData, isLoading: membersLoading } =
     useWorkspaceMembers(workspaceId);
   const { data: invitationsData } = usePendingInvitations(
@@ -79,6 +83,7 @@ export default function WorkspacePage() {
   const clients = clientsData?.data ?? [];
   const members = membersData?.data ?? [];
   const pendingInvitations = invitationsData?.data ?? [];
+  const canCreateClient = canCreateResource(myRole);
 
   if (!workspaceLoading && !workspace) {
     notFound();
@@ -100,7 +105,7 @@ export default function WorkspacePage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-semibold">
             {workspace?.name ?? "Loading..."}
           </h1>
@@ -110,6 +115,7 @@ export default function WorkspacePage() {
             </p>
           )}
         </div>
+        <RoleBadge role={myRole} />
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -132,10 +138,12 @@ export default function WorkspacePage() {
                   {clients.length} client{clients.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              <Button onClick={() => setShowCreateClientModal(true)}>
-                <Plus className="h-4 w-4" />
-                New Client
-              </Button>
+              {canCreateClient && (
+                <Button onClick={() => setShowCreateClientModal(true)}>
+                  <Plus className="h-4 w-4" />
+                  New Client
+                </Button>
+              )}
             </div>
 
             {clients.length === 0 ? (
@@ -144,24 +152,24 @@ export default function WorkspacePage() {
                 <p className="mb-4 text-sm text-muted-foreground">
                   Create a client to start organizing projects
                 </p>
-                <Button onClick={() => setShowCreateClientModal(true)}>
-                  <Plus className="h-4 w-4" />
-                  Create Client
-                </Button>
+                {canCreateClient && (
+                  <Button onClick={() => setShowCreateClientModal(true)}>
+                    <Plus className="h-4 w-4" />
+                    Create Client
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {clients.map((client) => (
-                  <Link key={client.id} href={`/clients/${client.id}`}>
-                    <ProjectCard
-                      key={client.id}
-                      client={client}
-                      onCreateProject={(clientId) => {
-                        setSelectedClientId(clientId);
-                        setShowCreateProjectModal(true);
-                      }}
-                    />
-                  </Link>
+                  <ClientProjectCard
+                    key={client.id}
+                    client={client}
+                    onCreateProject={(clientId) => {
+                      setSelectedClientId(clientId);
+                      setShowCreateProjectModal(true);
+                    }}
+                  />
                 ))}
               </div>
             )}
@@ -177,6 +185,7 @@ export default function WorkspacePage() {
             currentUserId={user?.id}
             onRemove={(userId) => removeMember({ workspaceId, userId })}
             isLoading={membersLoading}
+            workspaceId={workspaceId}
           />
         )}
       </div>

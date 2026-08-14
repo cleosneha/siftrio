@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import exists, select
 
+from src.models.base import MemberRole
 from src.models.client import Client
 from src.models.client_member import ClientMember
 from src.models.project import Project
@@ -30,6 +31,7 @@ def visible_client_exists(user_id: UUID):
         exists().where(
             WorkspaceMember.workspace_id == Client.workspace_id,
             WorkspaceMember.user_id == user_id,
+            WorkspaceMember.role.in_([MemberRole.OWNER, MemberRole.ADMIN]),
         )
         | exists().where(
             ClientMember.client_id == Client.id,
@@ -57,5 +59,6 @@ def visible_project_exists(user_id: UUID):
             Client.id == Project.client_id,
             WorkspaceMember.workspace_id == Client.workspace_id,
             WorkspaceMember.user_id == user_id,
+            WorkspaceMember.role.in_([MemberRole.OWNER, MemberRole.ADMIN]),
         )
     )

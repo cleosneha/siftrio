@@ -16,6 +16,7 @@ interface MembersSectionProps {
   currentUserId?: string;
   onRemove?: (userId: string) => void;
   isLoading?: boolean;
+  workspaceId?: string;
 }
 
 export function MembersSection({
@@ -26,6 +27,7 @@ export function MembersSection({
   currentUserId,
   onRemove,
   isLoading,
+  workspaceId,
 }: MembersSectionProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"active members" | "pending">(
@@ -95,7 +97,7 @@ export function MembersSection({
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-xs text-muted-foreground px-2">
+                      <span className="inline-flex h-7 items-center justify-center gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] border border-muted-foreground/50">
                         {inv.role}
                       </span>
                       <Button
@@ -140,14 +142,14 @@ export function MembersSection({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-muted-foreground px-2">
+                    <span className="inline-flex h-7 items-center justify-center gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] border border-muted-foreground/50">
                       {member.role}
                     </span>
                     {onRemove &&
                       member.user_id !== currentUserId &&
                       member.role !== "owner" && (
                         <Button
-                          variant="ghost"
+                          variant="default"
                           size="sm"
                           onClick={() => onRemove(member.user_id)}
                         >
@@ -167,6 +169,7 @@ export function MembersSection({
         onClose={() => setShowInviteModal(false)}
         resourceType={resourceType}
         resourceId={resourceId}
+        workspaceId={workspaceId}
       />
     </>
   );

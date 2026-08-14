@@ -59,6 +59,7 @@ async def get_client(
 ) -> BaseResponse:
     user_id = UUID(request.state.user.id)
     await MembershipService(db).assert_workspace_boundary("client", client_id, user_id)
+    await MembershipService(db).assert_client_visible(client_id, user_id)
     service = ClientService(db, ClientRepository(db), WorkspaceRepository(db))
     data = await service.get_by_id(client_id)
     if data is None:

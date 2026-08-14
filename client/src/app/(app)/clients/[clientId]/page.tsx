@@ -12,10 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TabBar } from "@/components/ui/tab-bar";
+import { RoleBadge } from "@/components/ui/role-badge";
 import { useClient } from "@/features/clients/hooks/useClients";
 import { useProjects } from "@/features/projects/hooks/useProjects";
 import { useMiscellaneousMeetings } from "@/features/meetings/hooks/useMeetings";
 import { useClientMembers } from "@/features/members/hooks/useMembers";
+import { useMyRole } from "@/features/members/hooks/useMembers";
 import { usePendingInvitations } from "@/features/invitations/hooks/useInvitations";
 import { useRemoveClientMember } from "@/features/members/hooks/useMembers";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -23,6 +25,7 @@ import { useAppContext } from "@/lib/app-context";
 import { CreateProjectModal } from "@/features/projects/components/CreateProjectModal";
 import { CreateMeetingModal } from "@/features/meetings/components/CreateMeetingModal";
 import { MembersSection } from "@/features/members/MembersSection";
+import { canCreateResource } from "@/types";
 
 export default function ClientPage() {
   const params = useParams();
@@ -39,6 +42,7 @@ export default function ClientPage() {
   const { data: projectsData } = useProjects(clientId);
   const { data: meetingsData } = useMiscellaneousMeetings(clientId);
   const { data: membersData, isLoading: membersLoading } = useClientMembers(clientId);
+  const { data: myRole } = useMyRole("client", clientId);
   const { data: invitationsData } = usePendingInvitations("client", clientId);
   const { mutate: removeMember } = useRemoveClientMember();
 
@@ -47,6 +51,7 @@ export default function ClientPage() {
   const meetings = meetingsData?.data ?? [];
   const members = membersData?.data ?? [];
   const pendingInvitations = invitationsData?.data ?? [];
+  const canCreateProject = canCreateResource(myRole);
 
   if (!clientLoading && !client) {
     notFound();
@@ -79,6 +84,7 @@ export default function ClientPage() {
               </p>
             )}
           </div>
+          <RoleBadge role={myRole} />
         </div>
       </header>
 
@@ -103,10 +109,12 @@ export default function ClientPage() {
                   {projects.length} project{projects.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              <Button onClick={() => setShowCreateProject(true)}>
-                <Plus className="h-4 w-4" />
-                New Project
-              </Button>
+              {canCreateProject && (
+                <Button onClick={() => setShowCreateProject(true)}>
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              )}
             </div>
 
             {projects.length === 0 ? (
@@ -114,10 +122,12 @@ export default function ClientPage() {
                 <p className="mb-4 text-sm text-muted-foreground">
                   No projects yet
                 </p>
-                <Button onClick={() => setShowCreateProject(true)}>
-                  <Plus className="h-4 w-4" />
-                  Create Project
-                </Button>
+                {canCreateProject && (
+                  <Button onClick={() => setShowCreateProject(true)}>
+                    <Plus className="h-4 w-4" />
+                    Create Project
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -216,6 +226,7 @@ export default function ClientPage() {
             currentUserId={user?.id}
             onRemove={(userId) => removeMember({ clientId, userId })}
             isLoading={membersLoading}
+            workspaceId={client?.workspace_id ?? ""}
           />
         )}
       </div>
