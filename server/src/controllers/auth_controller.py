@@ -1,3 +1,6 @@
+import secrets
+
+from fastapi import Cookie
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,10 +16,29 @@ class AuthController:
         self.service = AuthService(AuthRepository(db))
 
     async def login(self) -> RedirectResponse:
-        url = get_authorization_url()
-        return RedirectResponse(url=url)
+        state = secrets.token_urlsafe(32)
+        url = get_authorization_url(state)
+        response = RedirectResponse(url=url)
+        response.set_cookie(
+            key="oauth_state",
+            value=state,
+            httponly=True,
+            secure=settings.COOKIE_SECURE,
+            samesite=settings.COOKIE_SAMESITE,
+            max_age=600,
+            path="/api/auth/google/callback",
+        )
+        return response
 
-    async def callback(self, code: str) -> RedirectResponse:
+    async def callback(
+        self,
+        code: str,
+        state: str | None = None,
+        oauth_state: str | None = Cookie(default=None),
+    ) -> RedirectResponse:
+        if not oauth_state or not state or not secrets.compare_digest(state, oauth_state):
+            return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=true")
+
         try:
             user, access_token, refresh_token = await self.service.handle_google_callback(code)
             await self.db.commit()
@@ -24,6 +46,7 @@ class AuthController:
             return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=true")
 
         response = RedirectResponse(url=f"{settings.FRONTEND_URL}/dashboard")
+        response.delete_cookie(key="oauth_state", path="/api/auth/google/callback")
         response.set_cookie(
             key="access_token",
             value=access_token,

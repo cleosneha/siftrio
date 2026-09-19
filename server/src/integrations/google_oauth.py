@@ -17,12 +17,13 @@ def create_oauth_client() -> AsyncOAuth2Client:
     )
 
 
-def get_authorization_url() -> str:
+def get_authorization_url(state: str | None = None) -> str:
     client = create_oauth_client()
     uri, _ = client.create_authorization_url(
         "https://accounts.google.com/o/oauth2/auth",
         access_type="offline",
         prompt="consent",
+        state=state,
     )
     return uri
 
