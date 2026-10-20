@@ -22,10 +22,12 @@ async def google_login(db: AsyncSession = Depends(get_db)):
 @router.get("/google/callback")
 async def google_callback(
     code: str,
+    state: str | None = None,
+    oauth_state: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     controller = AuthController(db)
-    return await controller.callback(code)
+    return await controller.callback(code=code, state=state, oauth_state=oauth_state)
 
 
 @router.get("/me", response_model=BaseResponse, dependencies=[Depends(require_authenticated_user)])
@@ -40,7 +42,7 @@ async def refresh_token(
 ):
     if not refresh_token:
         return JSONResponse(
-            status_code=200,
+            status_code=401,
             content=BaseResponse(success=False, message="Refresh token not found").model_dump(),
         )
 
@@ -48,6 +50,7 @@ async def refresh_token(
     new_access_token = await service.refresh_access_token(refresh_token)
     if not new_access_token:
         resp = JSONResponse(
+            status_code=401,
             content=BaseResponse(success=False, message="Invalid or expired refresh token").model_dump(),
         )
         resp.delete_cookie(key="access_token", path="/")

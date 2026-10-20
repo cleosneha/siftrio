@@ -1,6 +1,5 @@
 import secrets
 
-from fastapi import Cookie
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +33,7 @@ class AuthController:
         self,
         code: str,
         state: str | None = None,
-        oauth_state: str | None = Cookie(default=None),
+        oauth_state: str | None = None,
     ) -> RedirectResponse:
         if not oauth_state or not state or not secrets.compare_digest(state, oauth_state):
             return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=true")
